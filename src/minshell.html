@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="EN-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+  <title>raylib web game</title>
+
+  <meta name="title" content="raylib web game">
+  <meta name="description" content="New raylib web videogame, developed using raylib videogames library">
+  <meta name="keywords"
+    content="raylib, programming, examples, html5, C, C++, library, learn, games, videogames">
+  <meta name="viewport" content="width=device-width">
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="raylib web game">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image" content="https://www.raylib.com/common/raylib_logo.png">
+  <meta property="og:image:alt"
+    content="New raylib web videogame, developed using raylib videogames library" />
+  <meta property="og:site_name" content="raylib - example">
+  <meta property="og:url" content="https://www.raylib.com/games.html">
+  <meta property="og:description"
+    content="New raylib web videogame, developed using raylib videogames library">
+
+  <meta name="bluesky:card" content="summary_large_image">
+  <meta name="bluesky:site" content="@maiconpinto.bsky.social">
+  <meta name="bluesky:title" content="raylib web game">
+  <meta name="bluesky:image" content="https://www.raylib.com/common/raylib_logo.png">
+  <meta name="bluesky:image:alt"
+    content="New raylib web videogame, developed using raylib videogames library">
+  <meta name="bluesky:url" content="https://www.raylib.com/games.html">
+  <meta name="bluesky:description"
+    content="New raylib web videogame, developed using raylib videogames library">
+
+  <link rel="shortcut icon" href="https://www.raylib.com/favicon.ico">
+
+  <style>
+    body {
+      overflow: hidden;
+      background-color: black;
+      display: flex;
+      flex-direction: column;
+      /* Align items vertically */
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    canvas.emscripten {
+      border: 0px none;
+      background-color: black;
+      /* Allow canvas width to adjust automatically */
+      image-rendering: pixelated; /* Ensure integer scaling */
+    }
+  </style>
+  <script type='text/javascript'
+    src="https://cdn.jsdelivr.net/gh/eligrey/FileSaver.js/dist/FileSaver.min.js">
+    </script>
+  <script type='text/javascript'>
+    function saveFileFromMEMFSToDisk(memoryFSname, localFSname) // This can be called by C/C++ code
+    {
+      var isSafari = false; // Not supported, navigator.userAgent access is being restricted
+      //var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      var data = FS.readFile(memoryFSname);
+      var blob;
+
+      if (isSafari) blob = new Blob([data.buffer], { type: "application/octet-stream" });
+      else blob = new Blob([data.buffer], { type: "application/octet-binary" });
+
+      // NOTE: SaveAsDialog is a browser setting. For example, in Google Chrome,
+      // in Settings/Advanced/Downloads section you have a setting:
+      // 'Ask where to save each file before downloading' - which you can set true/false.
+      // If you enable this setting it would always ask you and bring the SaveAsDialog
+      saveAs(blob, localFSname);
+    }
+  </script>
+</head>
+
+<body>
+  <div style="height: 100vh; display: flex; align-items: center;">
+    <canvas class=emscripten id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas>
+  </div>
+  <p id="output" />
+  <script>
+    var Module = {
+      print: (function () {
+        var element = document.getElementById('output');
+        if (element) element.value = ''; // clear browser cache
+        return function (text) {
+          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+          console.log(text);
+          if (element) {
+            element.value += text + "\n";
+            element.scrollTop = element.scrollHeight; // focus on bottom
+          }
+        };
+      })(),
+      canvas: (function () {
+        var canvas = document.getElementById('canvas');
+        // As a default initial behavior, pop up an alert when webgl context is lost.
+        // To make your application robust, you may want to override this behavior before shipping!
+        // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+        canvas.addEventListener("webglcontextlost", function (e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+        return canvas;
+      })()
+    };  
+    const userAgent = navigator.userAgent;
+    if (/Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
+      Module.requestFullscreen(false, false);
+    } 
+  </script>
+  {{{ SCRIPT }}}
+</body>
+
+</html>

@@ -1,0 +1,124 @@
+# Build and Publish on Itch.io
+# Only run when pushed to main
+
+name: CD
+on:
+  push:
+    branches: main
+    paths:
+      - 'src/**' # Deploy web every change in src folder
+      - '.github/workflows/cd.yml'
+    
+permissions:
+  contents: read
+
+jobs:
+  build-itchio:
+    permissions:
+      contents: write       # for actions/upload-release-asset to upload release asset
+    runs-on: ubuntu-latest
+    
+    env:
+      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }} # Needs to be added through github
+      PROJECT_NAME: space-researcher
+      WEB_BUILD_DIR: zig-out/htmlout
+      LINUX_BUILD_DIR: zig-out/linux
+      WINDOWS_BUILD_DIR: zig-out/windows
+
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4.2.1
+
+      - name: Cache build/emsdk-cache
+        uses: actions/cache@v3
+        with:
+          path: ${{github.workspace}}/emsdk-cache
+          key: emsdk-cache
+          restore-keys: emsdk-cache
+
+      - name: Cache build/zig-cache
+        uses: actions/cache@v3
+        with:
+          path: ${{github.workspace}}/.zig-cache
+          key: .zig-cache
+          restore-keys: .zig-cache
+
+      # - name: Cache build/zig-test-cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ${{github.workspace}}/.zig-test-cache
+      #     key: .zig-test-cache
+      #     restore-keys: .zig-test-cache
+
+      - name: Setup Environment
+        run: | 
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3 libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libwayland-dev libxkbcommon-dev cmake
+          sudo snap install zig --classic --beta
+        shell: bash
+
+      # - name: Unit Test
+      #   run: zig build test --summary new --cache-dir .zig-test-cache
+  
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          actions-cache-folder: 'emsdk-cache'
+          
+      - name: Build Web Project
+        run: |
+          zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall --sysroot ${{ env.EMSDK }}/upstream/emscripten
+          
+      - name: Build Linux Project
+        run: |
+          zig build -Doptimize=ReleaseSmall --prefix-exe-dir linux
+          
+      - name: Build Windows Project
+        run: |
+          zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSmall --prefix-exe-dir windows
+
+      - name: Generate Artifacts
+        run: |
+          cp README.md ${{ env.WEB_BUILD_DIR }}
+          cp LICENSE ${{ env.WEB_BUILD_DIR }}
+          cp README.md ${{ env.LINUX_BUILD_DIR }}
+          cp LICENSE ${{ env.LINUX_BUILD_DIR }}
+          cp README.md ${{ env.WINDOWS_BUILD_DIR }}
+          cp LICENSE ${{ env.WINDOWS_BUILD_DIR }}
+
+      - name: Upload Web Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME }}-web.zip
+          path: ./${{ env.WEB_BUILD_DIR }}/*
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME }}-linux.zip
+          path: ./${{ env.LINUX_BUILD_DIR }}/*
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME }}-windows.zip
+          path: ./${{ env.WINDOWS_BUILD_DIR }}/*
+
+      - name: Download + Authorize Butler
+        run: |
+            curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+            unzip butler.zip
+            chmod +x butler
+            ./butler -V
+
+      - name: Login To Butler
+        run: ./butler login
+
+      - name: Push Web to Itch
+        run: ./butler push ${{ env.WEB_BUILD_DIR }} maiconspas/space-researcher:web
+
+      - name: Push Linux to Itch
+        run: ./butler push ${{ env.LINUX_BUILD_DIR }} maiconspas/space-researcher:linux
+
+      - name: Push Windows to Itch
+        run: ./butler push ${{ env.WINDOWS_BUILD_DIR }} maiconspas/space-researcher:windows
