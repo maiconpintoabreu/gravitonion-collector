@@ -1,32 +1,19 @@
 const rl = @import("raylib");
+const std = @import("std");
 const gameController = @import("game_controller.zig");
 
-const c = @cImport({
-    @cInclude("emscripten/emscripten.h");
-});
+pub fn main() anyerror!void {
+    rl.traceLog(rl.TraceLogLevel.info, "Initializing Game!", .{});
+    defer rl.closeWindow(); // Close window and OpenGL context
+    defer gameController.closeGame();
 
-export fn main() callconv(.C) c_int {
-    return safeMain() catch |err| {
-        rl.traceLog(rl.TraceLogLevel.err, "ERROR: {s}", .{err});
-        return 1;
-    };
-}
+    // rl.setTargetFPS(60);
+    rl.setConfigFlags(rl.ConfigFlags{ .window_resizable = true });
 
-export fn emsc_set_window_size(width: c_int, height: c_int) callconv(.C) void {
-    rl.setWindowSize(@intCast(width), @intCast(height));
-}
-
-fn safeMain() !c_int {
     if (gameController.startGame()) {
-        defer gameController.closeGame();
-        defer rl.closeWindow();
-
-        c.emscripten_set_main_loop(updateFrame, 0, true);
-        return 0;
+        std.os.emscripten.emscripten_set_main_loop(updateFrame, 0, 1);
     }
-    return 1;
 }
-
 export fn updateFrame() callconv(.C) void {
     _ = gameController.updateFrame();
 }

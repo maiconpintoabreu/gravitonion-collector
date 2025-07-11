@@ -6,53 +6,69 @@ const Player = playerZig.Player;
 const asteroidZig = @import("asteroid.zig");
 const Asteroid = asteroidZig.Asteroid;
 const rand = std.crypto.random;
+const IS_DEBUG = false;
 
+// Global Variables
 var game: Game = .{};
-var target: rl.RenderTexture2D = std.mem.zeroes(rl.RenderTexture2D);
+var projectiles: [MAX_PROJECTILES]Projectile = std.mem.zeroes([MAX_PROJECTILES]Projectile);
 var asteroidTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
+var controlTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
+var projectilesCount: usize = 0;
 
 // Screen consts
 const NATIVE_WIDTH = 160 * 3;
 const NATIVE_HEIGHT = 90 * 3;
 const NATIVE_CENTER = rl.Vector2{ .x = NATIVE_WIDTH / 2, .y = NATIVE_HEIGHT / 2 };
 
-const NATIVE_REC: rl.Rectangle = .{
-    .x = 0,
-    .y = 0,
-    .width = NATIVE_WIDTH,
-    .height = -NATIVE_HEIGHT,
-};
-
 // Game Costs
-const MAX_PARTICLE_DISTANCE = 120;
-const MAX_BLACKHOLE_PARTICLES = 20000;
+const BLACK_HOLE_SPRINTE_COUNT = 11;
+const BLACK_HOLE_FRAME_SPEED: f32 = 0.3;
 const MAX_ASTEROIDS = 100;
-const DEFAULT_ASTEROID_CD = 10;
-const PixelParticles = struct {
+const DEFAULT_ASTEROID_CD = 5;
+const DEFAULT_SHOOTING_CD = 0.5;
+const PHYSICS_TICK_SPEED = 0.02;
+const MAX_PROJECTILES = 1000;
+const BLACK_HOLE_SCALE = 20;
+
+// Game Structs
+const Projectile = struct {
     position: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    anglePoint: f32 = 0,
-    color: rl.Color = rl.Color.dark_gray,
-    speed: f32 = 2,
-    distanceCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
+    size: f32 = 10,
+    direction: rl.Vector2 = std.mem.zeroes(rl.Vector2),
+    speed: f32 = 20,
+
+    fn tick(self: *Projectile, delta: f32) void {
+        self.position = self.position.add(self.direction.scale(self.speed * delta));
+    }
 };
 const BlackHole = struct {
-    size: f32 = 10,
+    size: f32 = 0.6,
+    finalSize: f32 = 0.6 * BLACK_HOLE_SCALE,
     resizeCD: f32 = 2,
-    particles: [MAX_BLACKHOLE_PARTICLES]PixelParticles = std.mem.zeroes([MAX_BLACKHOLE_PARTICLES]PixelParticles),
+    frameTimer: f32 = BLACK_HOLE_FRAME_SPEED,
+    currentFrame: usize = 0,
+    textures: [BLACK_HOLE_SPRINTE_COUNT]rl.Texture2D = std.mem.zeroes([BLACK_HOLE_SPRINTE_COUNT]rl.Texture2D),
+    origin: rl.Vector2 = std.mem.zeroes(rl.Vector2),
 };
 
 const Game = struct {
     player: Player = .{},
     blackHole: BlackHole = .{},
     asteroids: [MAX_ASTEROIDS]Asteroid = std.mem.zeroes([MAX_ASTEROIDS]Asteroid),
-    screenRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     virtualRatio: f32 = 1,
+    nativeSizeScaled: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     width: i32 = 800,
     height: i32 = 460,
     asteroidAmount: usize = 0,
     asteroidSpawnCd: f32 = DEFAULT_ASTEROID_CD,
+    shootingCd: f32 = DEFAULT_SHOOTING_CD,
+    currentTickLength: f32 = 0.0,
     isPlaying: bool = false,
     isPaused: bool = false,
+    isTouchLeft: bool = false,
+    isTouchRight: bool = false,
+    isTouchUp: bool = false,
+    isShooting: bool = false,
 };
 
 fn updateRatio() void {
@@ -64,22 +80,13 @@ fn updateRatio() void {
         game.height = rl.getScreenHeight();
     }
     game.virtualRatio = @as(f32, @floatFromInt(game.height)) / @as(f32, @floatFromInt(NATIVE_HEIGHT));
-    rl.setMouseScale(1 / game.virtualRatio, 1 / game.virtualRatio);
+    game.nativeSizeScaled = NATIVE_CENTER.scale(game.virtualRatio);
 }
 
 pub fn startGame() bool {
     rl.initWindow(game.width, game.height, "Space Researcher");
     game.isPlaying = true;
-    target = rl.loadRenderTexture(NATIVE_WIDTH, NATIVE_HEIGHT) catch |err| switch (err) {
-        rl.RaylibError.LoadRenderTexture => {
-            std.debug.print("LoadRenderTexture ERROR", .{});
-            return false;
-        },
-        else => {
-            std.debug.print("ERROR", .{});
-            return false;
-        },
-    };
+    updateRatio();
     const playerTexture = rl.loadTexture("resources/ship.png") catch |err| switch (err) {
         rl.RaylibError.LoadTexture => {
             std.debug.print("LoadTexture ship ERROR", .{});
@@ -113,8 +120,8 @@ pub fn startGame() bool {
     game.player = Player{
         .physicsObject = .{
             .rotationSpeed = 200,
-            .position = rl.Vector2{ .x = 20, .y = 20 },
-            .speed = 0.2,
+            .position = rl.Vector2{ .x = 20 * game.virtualRatio, .y = 20 * game.virtualRatio },
+            .speed = 0.1,
             .isFacingMovement = false,
         },
         .textureCenter = playerTextureCenter,
@@ -136,188 +143,367 @@ pub fn startGame() bool {
         asteroid.textureCenter = asteroidTextureCenter;
         asteroid.textureRec = asteroidTextureRec;
     }
-    for (0..MAX_BLACKHOLE_PARTICLES) |blackholeIndex| {
-        const angle = rand.float(f32) * 2.0 * math.pi;
-        const distanceCenter = rl.Vector2{
-            .x = (rand.float(f32) + 0.01),
-            .y = (rand.float(f32) + 0.01),
+    for (0..BLACK_HOLE_SPRINTE_COUNT) |blackholeIndex| {
+        const indexPlus: usize = blackholeIndex + 1;
+        game.blackHole.textures[blackholeIndex] = rl.loadTexture(rl.textFormat(
+            "resources/blackhole/black_hole%i.png",
+            .{indexPlus},
+        )) catch |err| switch (err) {
+            rl.RaylibError.LoadTexture => {
+                std.debug.print(
+                    "LoadTexture blackhole ERROR",
+                    .{},
+                );
+                return false;
+            },
+            else => {
+                std.debug.print("ERROR", .{});
+                return false;
+            },
         };
-
-        const particle: rl.Vector2 = .{
-            .x = NATIVE_CENTER.x + (game.blackHole.size + distanceCenter.x * MAX_PARTICLE_DISTANCE) * math.cos(angle),
-            .y = NATIVE_CENTER.y + (game.blackHole.size + distanceCenter.y * MAX_PARTICLE_DISTANCE) * math.sin(angle),
-        };
-        game.blackHole.particles[blackholeIndex].position = particle;
-        game.blackHole.particles[blackholeIndex].anglePoint = angle;
-        game.blackHole.particles[blackholeIndex].distanceCenter = distanceCenter;
-        game.blackHole.particles[blackholeIndex].speed = rand.float(f32) + 0.1 * 5;
-        const distanceCenterF = game.blackHole.particles[blackholeIndex].position.distance(NATIVE_CENTER);
-        const baseColor = 30;
-        if (distanceCenterF < 40) {
-            game.blackHole.particles[blackholeIndex].color = rl.Color.init(baseColor, baseColor, baseColor, 255);
-        } else if (distanceCenterF < 90) {
-            game.blackHole.particles[blackholeIndex].color = rl.Color.init(baseColor + 5, baseColor + 5, baseColor + 5, 255);
-        } else {
-            game.blackHole.particles[blackholeIndex].color = rl.Color.init(baseColor + 10, baseColor + 10, baseColor + 10, 255);
-        }
     }
+    // Set orgin of blackhole
+    game.blackHole.origin = rl.Vector2{
+        .x = @as(f32, @floatFromInt(game.blackHole.textures[0].width)) / 2,
+        .y = @as(f32, @floatFromInt(game.blackHole.textures[0].height)) / 2,
+    };
 
     // Start with one asteroid
     spawnAsteroidRandom();
-
+    var controlImage: rl.Image = rl.genImageColor(16 * 4, 16, rl.Color.blank);
+    rl.imageDrawTriangle(&controlImage, rl.Vector2{ .x = 9, .y = 2 }, rl.Vector2{ .x = 9, .y = 12 }, rl.Vector2{ .x = 4, .y = 7 }, rl.Color.white);
+    rl.imageDrawTriangle(&controlImage, rl.Vector2{ .x = 16 + 7, .y = 2 }, rl.Vector2{ .x = 16 + 16 - 4, .y = 7 }, rl.Vector2{ .x = 16 + 7, .y = 12 }, rl.Color.white);
+    rl.imageDrawTriangle(&controlImage, rl.Vector2{ .x = 32 + 8, .y = 5 }, rl.Vector2{ .x = 32 + 13, .y = 10 }, rl.Vector2{ .x = 32 + 3, .y = 10 }, rl.Color.white);
+    rl.imageDrawText(&controlImage, "x", 48 + 3, -3, 20, rl.Color.white);
+    controlTexture = rl.loadTextureFromImage(controlImage) catch |err| switch (err) {
+        rl.RaylibError.LoadTexture => {
+            std.debug.print("LoadTexture controller ERROR", .{});
+            return false;
+        },
+        else => {
+            std.debug.print("ERROR", .{});
+            return false;
+        },
+    };
+    rl.unloadImage(controlImage);
     return true;
 }
+fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
+    rl.drawCircleV(buttom, buttomSize, rl.Color.gray);
+    const buttomEdge = rl.Vector2{ .x = buttom.x - buttomSize / 2, .y = buttom.y - buttomSize / 2 };
+    rl.drawTexturePro(controlTexture, rl.Rectangle{ .x = 16 * icon, .y = 0, .width = 16, .height = 16 }, .{ .x = buttomEdge.x, .y = buttomEdge.y, .width = buttomSize, .height = buttomSize }, rl.Vector2.zero(), 0, rl.Color.white);
+    if (rl.isMouseButtonDown(.left) and rl.checkCollisionPointCircle(rl.getMousePosition(), buttom, buttomSize)) {
+        return true;
+    }
+
+    for (0..@as(usize, @intCast(rl.getTouchPointCount()))) |touchIndex| {
+        if (rl.checkCollisionPointCircle(rl.getTouchPosition(@intCast(touchIndex)), buttom, buttomSize)) {
+            return true;
+        }
+    }
+
+    return false;
+}
 pub fn closeGame() void {
-    rl.unloadRenderTexture(target);
     game.player.unload();
     if (asteroidTexture.id > 0) {
         rl.unloadTexture(asteroidTexture);
     }
+    if (controlTexture.id > 0) {
+        rl.unloadTexture(controlTexture);
+    }
+
+    for (0..BLACK_HOLE_SPRINTE_COUNT) |blackholeIndex| {
+        if (game.blackHole.textures[blackholeIndex].id > 0) {
+            rl.unloadTexture(game.blackHole.textures[blackholeIndex]);
+        }
+    }
+}
+fn playerShot() void {
+    if (projectilesCount + 1 == MAX_PROJECTILES) {
+        return;
+    }
+    const direction: rl.Vector2 = .{
+        .x = math.sin(math.degreesToRadians(game.player.physicsObject.rotation)),
+        .y = -math.cos(math.degreesToRadians(game.player.physicsObject.rotation)),
+    };
+    const norm_vector: rl.Vector2 = rl.Vector2.normalize(direction);
+    projectiles[projectilesCount].position = game.player.physicsObject.position;
+    projectiles[projectilesCount].direction = norm_vector;
+    projectiles[projectilesCount].speed = 1000;
+    projectiles[projectilesCount].size = 1;
+    projectilesCount += 1;
+}
+fn removeProjectile(index: usize) void {
+    projectiles[index] = projectiles[projectilesCount - 1];
+    projectilesCount -= 1;
 }
 fn removeAsteroid(index: usize) void {
     game.asteroids[index] = game.asteroids[game.asteroidAmount - 1];
     game.asteroidAmount -= 1;
 }
 fn spawnAsteroidRandom() void {
-    if (rl.getRandomValue(0, 1) > 0) {
-        if (rl.getRandomValue(0, 1) > 0) {
+    if (rand.boolean()) {
+        if (rand.boolean()) {
             game.asteroids[game.asteroidAmount].physicsObject.position.x = 0;
-            game.asteroids[game.asteroidAmount].physicsObject.velocity.x = 100;
-            game.asteroids[game.asteroidAmount].physicsObject.velocity.y = 100;
         } else {
-            game.asteroids[game.asteroidAmount].physicsObject.position.x = 480.0;
-            game.asteroids[game.asteroidAmount].physicsObject.velocity.x = -100;
-            game.asteroids[game.asteroidAmount].physicsObject.velocity.y = -100;
+            game.asteroids[game.asteroidAmount].physicsObject.position.x = @as(f32, @floatFromInt(game.width));
         }
-        game.asteroids[game.asteroidAmount].physicsObject.position.y = @as(f32, @floatFromInt(rl.getRandomValue(0, 1))) / 1.0 * 270.0;
+        game.asteroids[game.asteroidAmount].physicsObject.position.y = rand.float(f32) * @as(f32, @floatFromInt(game.height));
     } else {
-        if (rl.getRandomValue(0, 1) > 0) {
+        if (rand.boolean()) {
             game.asteroids[game.asteroidAmount].physicsObject.position.y = 0;
-            game.asteroids[game.asteroidAmount].physicsObject.velocity.y = 100;
-            game.asteroids[game.asteroidAmount].physicsObject.velocity.x = 100;
         } else {
-            game.asteroids[game.asteroidAmount].physicsObject.position.y = 270.0;
-            game.asteroids[game.asteroidAmount].physicsObject.velocity.x = -100;
-            game.asteroids[game.asteroidAmount].physicsObject.velocity.x = -100;
+            game.asteroids[game.asteroidAmount].physicsObject.position.y = @as(f32, @floatFromInt(game.height));
         }
-        game.asteroids[game.asteroidAmount].physicsObject.position.x = @as(f32, @floatFromInt(rl.getRandomValue(0, 100))) / 100.0 * 480.0;
+        game.asteroids[game.asteroidAmount].physicsObject.position.x = rand.float(f32) * @as(f32, @floatFromInt(game.width));
     }
-    game.asteroids[game.asteroidAmount].physicsObject.velocity = rl.Vector2.clampValue(game.asteroids[game.asteroidAmount].physicsObject.velocity, 0, 0.2);
+    game.asteroids[game.asteroidAmount].physicsObject.velocity = rl.Vector2.clampValue(
+        game.asteroids[game.asteroidAmount].physicsObject.velocity,
+        0,
+        0.2,
+    );
+    game.asteroids[game.asteroidAmount].physicsObject.collisionSize = 5;
     game.asteroidAmount += 1;
 }
 pub fn updateFrame() bool {
     if (rl.isWindowResized()) {
+        const previousScale = game.virtualRatio;
         updateRatio();
+        var scaleDiff = game.virtualRatio - previousScale;
+        if (scaleDiff != 0) {
+            if (scaleDiff < 0) {
+                scaleDiff = scaleDiff * -1;
+                scaleDiff = 1 / scaleDiff;
+            }
+            for (0..projectilesCount) |projectileIndex| {
+                projectiles[projectileIndex].position = projectiles[projectileIndex].position.scale(scaleDiff);
+            }
+            for (0..game.asteroidAmount) |asteroidIndex| {
+                game.asteroids[asteroidIndex].physicsObject.position = game.asteroids[asteroidIndex].physicsObject.position.scale(scaleDiff);
+            }
+        }
+        game.player.physicsObject.position = game.player.physicsObject.position.scale(scaleDiff);
     }
-
-    if (rl.isKeyPressed(.space)) {
-        game.isPaused = !game.isPaused;
+    if (!rl.isWindowFocused() and !game.isPaused) {
+        game.isPaused = true;
+    } else if (rl.isWindowFocused() and game.isPaused) {
+        game.isPaused = false;
     }
     if (!game.isPaused) {
         // Tick
         const delta = rl.getFrameTime();
         game.asteroidSpawnCd -= delta;
+        game.shootingCd -= delta;
+        game.blackHole.frameTimer -= delta;
+        if (game.blackHole.frameTimer <= 0) {
+            game.blackHole.currentFrame += 1;
+            game.blackHole.frameTimer = BLACK_HOLE_FRAME_SPEED;
+            if (game.blackHole.currentFrame == BLACK_HOLE_SPRINTE_COUNT) {
+                game.blackHole.currentFrame = 0;
+            }
+        }
         if (game.asteroidSpawnCd < 0) {
             game.asteroidSpawnCd = DEFAULT_ASTEROID_CD;
             spawnAsteroidRandom();
         }
         // Input
-        if (rl.isKeyPressed(.enter)) {
-            rl.toggleFullscreen();
-            updateRatio();
+        if (rl.isKeyDown(.space) or game.isShooting) {
+            if (game.shootingCd < 0) {
+                game.shootingCd = DEFAULT_SHOOTING_CD;
+                playerShot();
+            }
         }
-        if (rl.isKeyDown(.left)) {
+        if (rl.isKeyDown(.left) or game.isTouchLeft) {
             game.player.physicsObject.isTurningLeft = true;
             game.player.physicsObject.applyTorque(-1 * delta);
         } else {
             game.player.physicsObject.isTurningLeft = false;
         }
-        if (rl.isKeyDown(.right)) {
+        if (rl.isKeyDown(.right) or game.isTouchRight) {
             game.player.physicsObject.isTurningRight = true;
             game.player.physicsObject.applyTorque(1 * delta);
         } else {
             game.player.physicsObject.isTurningRight = false;
         }
 
-        if (rl.isKeyDown(.up)) {
+        if (rl.isKeyDown(.up) or game.isTouchUp) {
             game.player.physicsObject.isAccelerating = true;
             game.player.physicsObject.applyForce(1 * delta);
         } else {
             game.player.physicsObject.isAccelerating = false;
         }
 
-        const direction = rl.Vector2.subtract(NATIVE_CENTER, game.player.physicsObject.position).normalize();
-        game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, 0.1 * game.blackHole.size / 10 * delta));
-        game.player.tick(delta);
-        for (0..game.asteroidAmount) |asteroidIndex| {
-            const asteroidDirection = rl.Vector2.subtract(NATIVE_CENTER, game.asteroids[asteroidIndex].physicsObject.position).normalize();
-            game.asteroids[asteroidIndex].physicsObject.applyDirectedForce(rl.Vector2.scale(asteroidDirection, 0.1 * game.blackHole.size / 10 * delta));
-            game.asteroids[asteroidIndex].tick(delta);
-            if (rl.checkCollisionCircles(
-                NATIVE_CENTER,
-                game.blackHole.size,
-                game.asteroids[asteroidIndex].physicsObject.position,
-                game.asteroids[asteroidIndex].physicsObject.collisionSize,
-            )) {
-                removeAsteroid(asteroidIndex);
-                game.blackHole.size += 1;
-            } else if (rl.checkCollisionCircles(
-                game.player.physicsObject.position,
-                game.player.physicsObject.collisionSize,
-                game.asteroids[asteroidIndex].physicsObject.position,
-                game.asteroids[asteroidIndex].physicsObject.collisionSize,
-            )) {
-                removeAsteroid(asteroidIndex);
-            }
-        }
+        game.currentTickLength += delta;
+        while (game.currentTickLength > PHYSICS_TICK_SPEED) {
+            game.currentTickLength -= PHYSICS_TICK_SPEED;
+            const direction = rl.Vector2.subtract(game.nativeSizeScaled, game.player.physicsObject.position).normalize();
+            game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, 0.1 * game.blackHole.finalSize * game.virtualRatio / 10 * delta));
+            game.player.tick();
 
-        for (0..MAX_BLACKHOLE_PARTICLES) |blackholeIndex| {
-            game.blackHole.particles[blackholeIndex].anglePoint += 0.01 * delta;
-            if (game.blackHole.particles[blackholeIndex].anglePoint > 2.0 * math.pi) {
-                game.blackHole.particles[blackholeIndex].anglePoint -= 2.0 * math.pi;
+            game.player.physicsObject.calculateWrap(game.width, game.height);
+
+            for (0..projectilesCount) |projectileIndex| {
+                projectiles[projectileIndex].tick(delta);
+                const particlePosition = projectiles[projectileIndex].position;
+                if (particlePosition.x < 0 or particlePosition.x > @as(f32, @floatFromInt(game.width))) {
+                    removeProjectile(projectileIndex);
+                    continue;
+                }
+                if (particlePosition.y < 0 or particlePosition.y > @as(f32, @floatFromInt(game.height))) {
+                    removeProjectile(projectileIndex);
+                    continue;
+                }
+                if (rl.checkCollisionCircles(
+                    game.nativeSizeScaled,
+                    game.blackHole.finalSize * game.virtualRatio,
+                    particlePosition,
+                    projectiles[projectileIndex].size * game.virtualRatio,
+                )) {
+                    removeProjectile(projectileIndex);
+                    continue;
+                }
+
+                for (0..game.asteroidAmount) |asteroidIndex| {
+                    if (rl.checkCollisionCircles(
+                        game.asteroids[asteroidIndex].physicsObject.position,
+                        game.asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
+                        particlePosition,
+                        projectiles[projectileIndex].size * game.virtualRatio,
+                    )) {
+                        removeProjectile(projectileIndex);
+                        removeAsteroid(asteroidIndex);
+                    }
+                }
             }
-            game.blackHole.particles[blackholeIndex].position.x = NATIVE_CENTER.x + (game.blackHole.size + game.blackHole.particles[blackholeIndex].distanceCenter.x * MAX_PARTICLE_DISTANCE) * math.cos(game.blackHole.particles[blackholeIndex].anglePoint);
-            game.blackHole.particles[blackholeIndex].position.y = NATIVE_CENTER.y + (game.blackHole.size + game.blackHole.particles[blackholeIndex].distanceCenter.y * MAX_PARTICLE_DISTANCE) * math.sin(game.blackHole.particles[blackholeIndex].anglePoint);
+            for (0..game.asteroidAmount) |asteroidIndex| {
+                const asteroidDirection = rl.Vector2.subtract(game.nativeSizeScaled, game.asteroids[asteroidIndex].physicsObject.position).normalize();
+                game.asteroids[asteroidIndex].physicsObject.applyDirectedForce(rl.Vector2.scale(asteroidDirection, 0.5 * game.blackHole.finalSize * game.virtualRatio / 10 * delta));
+                game.asteroids[asteroidIndex].tick();
+                if (rl.checkCollisionCircles(
+                    game.nativeSizeScaled,
+                    game.blackHole.finalSize * game.virtualRatio,
+                    game.asteroids[asteroidIndex].physicsObject.position,
+                    game.asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
+                )) {
+                    removeAsteroid(asteroidIndex);
+                    game.blackHole.size += 0.05;
+                    game.blackHole.finalSize = game.blackHole.size * BLACK_HOLE_SCALE;
+                } else if (rl.checkCollisionCircles(
+                    game.player.physicsObject.position,
+                    game.player.physicsObject.collisionSize * game.virtualRatio,
+                    game.asteroids[asteroidIndex].physicsObject.position,
+                    game.asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
+                )) {
+                    removeAsteroid(asteroidIndex);
+                }
+            }
         }
     }
     {
-        rl.beginTextureMode(target);
-        defer rl.endTextureMode();
+        rl.beginDrawing();
+        defer rl.endDrawing();
         rl.clearBackground(rl.Color.init(20, 20, 20, 255));
-        rl.drawCircleV(NATIVE_CENTER, game.blackHole.size, .black);
-        for (game.blackHole.particles) |particle| {
-            rl.drawPixelV(particle.position, particle.color);
-        }
 
+        const blackHoleTexture = game.blackHole.textures[game.blackHole.currentFrame];
+        blackHoleTexture.drawPro(
+            rl.Rectangle{
+                .x = 0,
+                .y = 0,
+                .width = @as(f32, @floatFromInt(blackHoleTexture.width)),
+                .height = @as(f32, @floatFromInt(blackHoleTexture.height)),
+            },
+            rl.Rectangle{
+                .x = game.nativeSizeScaled.x + (2 * game.virtualRatio),
+                .y = game.nativeSizeScaled.y + (-1 * game.virtualRatio),
+                .width = @as(f32, @floatFromInt(blackHoleTexture.width)) * game.blackHole.size * game.virtualRatio,
+                .height = @as(f32, @floatFromInt(blackHoleTexture.height)) * game.blackHole.size * game.virtualRatio,
+            },
+            game.blackHole.origin.scale(game.blackHole.size).scale(game.virtualRatio),
+            0,
+            .white,
+        );
+        if (IS_DEBUG) {
+            rl.drawCircleV(
+                game.nativeSizeScaled,
+                game.blackHole.finalSize * game.virtualRatio,
+                .{ .r = 0, .g = 100, .b = 100, .a = 100 },
+            );
+        }
+        {
+            rl.beginBlendMode(.additive);
+            defer rl.endBlendMode();
+            for (0..projectilesCount) |projectileIndex| {
+                rl.drawCircleV(projectiles[projectileIndex].position, projectiles[projectileIndex].size * game.virtualRatio, .white);
+            }
+        }
         for (0..game.asteroidAmount) |asteroidIndex| {
-            game.asteroids[asteroidIndex].draw();
+            if (IS_DEBUG) {
+                rl.drawCircleV(
+                    game.asteroids[asteroidIndex].physicsObject.position,
+                    game.asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
+                    .yellow,
+                );
+            }
+            game.asteroids[asteroidIndex].draw(game.virtualRatio);
         }
-        game.player.draw();
-        // Debug player center
-        // rl.drawCircleV(game.player.physicsObject.position, 1, .yellow);
+        game.player.draw(game.virtualRatio);
+        // UI
+        if (uiButtomIcon(
+            .{
+                .x = 40 * game.virtualRatio,
+                .y = (@as(f32, @floatFromInt(game.height)) - 50 * game.virtualRatio),
+            },
+            30 * game.virtualRatio,
+            0,
+        )) {
+            game.isTouchLeft = true;
+        } else {
+            game.isTouchLeft = false;
+        }
+        if (uiButtomIcon(
+            .{
+                .x = (100 + 30) * game.virtualRatio,
+                .y = (@as(f32, @floatFromInt(game.height)) - 50 * game.virtualRatio),
+            },
+            30 * game.virtualRatio,
+            1,
+        )) {
+            game.isTouchRight = true;
+        } else {
+            game.isTouchRight = false;
+        }
+        if (uiButtomIcon(
+            .{
+                .x = (@as(f32, @floatFromInt(game.width)) - 30) - 30 * game.virtualRatio,
+                .y = (@as(f32, @floatFromInt(game.height)) - 50 * game.virtualRatio),
+            },
+            30 * game.virtualRatio,
+            2,
+        )) {
+            game.isTouchUp = true;
+        } else {
+            game.isTouchUp = false;
+        }
+        if (uiButtomIcon(
+            .{
+                .x = (@as(f32, @floatFromInt(game.width)) - 30) - 30 * game.virtualRatio,
+                .y = (@as(f32, @floatFromInt(game.height)) - 120 * game.virtualRatio),
+            },
+            30 * game.virtualRatio,
+            3,
+        )) {
+            game.isShooting = true;
+        } else {
+            game.isShooting = false;
+        }
+        // Start Debug
+        rl.drawFPS(10, 10);
+        rl.drawText(rl.textFormat("------------------------------", .{}), 10, 30, 10, .white);
+        rl.drawText(rl.textFormat("Projectiles: %i", .{projectilesCount}), 10, 40, 10, .white);
+        rl.drawText(rl.textFormat("ASteroids: %i", .{game.asteroidAmount}), 10, 50, 10, .white);
     }
-    rl.beginDrawing();
-    rl.clearBackground(.black);
-
-    // Define the destination rectangle on the screen (the entire screen)
-    game.screenRec = rl.Rectangle{
-        .x = -game.virtualRatio,
-        .y = -game.virtualRatio,
-        .width = @as(f32, @floatFromInt(game.width)) + (game.virtualRatio * 2),
-        .height = @as(f32, @floatFromInt(game.height)) + (game.virtualRatio * 2),
-    };
-    // Draw the render texture to the screen, scaled up, with nearest-neighbor filtering
-    rl.drawTexturePro(target.texture, // The texture to draw
-        NATIVE_REC, // Part of the texture to draw (entire texture)
-        game.screenRec, // Where on the screen to draw it
-        rl.Vector2{ .x = 0.0, .y = 0.0 }, // Origin for rotation (top-left)
-        0.0, // Rotation angle
-        .white // Tint color (use WHITE to draw as is)
-    );
-    // Start Debug
-    rl.drawFPS(10, 10);
     // End Debug
-    rl.endDrawing(); // Ensure drawing is ended
     if (rl.isKeyDown(rl.KeyboardKey.escape) or rl.windowShouldClose()) {
         game.isPlaying = false;
     }

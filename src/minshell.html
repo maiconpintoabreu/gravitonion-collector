@@ -5,55 +5,40 @@
   <meta charset="utf-8">
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-  <title>raylib web game</title>
+  <title>Space Researcher</title>
 
-  <meta name="title" content="raylib web game">
-  <meta name="description" content="New raylib web videogame, developed using raylib videogames library">
+  <meta name="title" content="maicon game">
+  <meta name="description" content="New maicon videogame, developed using raylib videogames library">
   <meta name="keywords"
-    content="raylib, programming, examples, html5, C, C++, library, learn, games, videogames">
+    content="raylib, programming, examples, html5, C, zig, library, learn, games, videogames">
   <meta name="viewport" content="width=device-width">
 
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="raylib web game">
+  <meta property="og:title" content="maicon game">
   <meta property="og:image:type" content="image/png">
-  <meta property="og:image" content="https://www.raylib.com/common/raylib_logo.png">
+  <meta property="og:image" content="https://img.itch.zone/aW1nLzIxNTQxODAzLmpwZw==/347x500/A4GAQS.jpg">
   <meta property="og:image:alt"
-    content="New raylib web videogame, developed using raylib videogames library" />
+    content="New maicon videogame, developed using raylib videogames library" />
   <meta property="og:site_name" content="raylib - example">
   <meta property="og:url" content="https://www.raylib.com/games.html">
   <meta property="og:description"
-    content="New raylib web videogame, developed using raylib videogames library">
+    content="New maicon videogame, developed using raylib videogames library">
 
   <meta name="bluesky:card" content="summary_large_image">
   <meta name="bluesky:site" content="@maiconpinto.bsky.social">
-  <meta name="bluesky:title" content="raylib web game">
-  <meta name="bluesky:image" content="https://www.raylib.com/common/raylib_logo.png">
+  <meta name="bluesky:title" content="maicon game">
+  <meta name="bluesky:image" content="https://img.itch.zone/aW1nLzIxNTQxODAzLmpwZw==/347x500/A4GAQS.jpg">
   <meta name="bluesky:image:alt"
-    content="New raylib web videogame, developed using raylib videogames library">
+    content="New maicon videogame, developed using raylib videogames library">
   <meta name="bluesky:url" content="https://www.raylib.com/games.html">
   <meta name="bluesky:description"
-    content="New raylib web videogame, developed using raylib videogames library">
+    content="New maicon videogame, developed using raylib videogames library">
 
-  <link rel="shortcut icon" href="https://www.raylib.com/favicon.ico">
+<link type="image/jpeg" href="https://img.itch.zone/aW1nLzIxNTQxODAzLmpwZw==/32x32%23/Ua%2BUip.jpg" rel="icon">
 
   <style>
-    body {
-      overflow: hidden;
-      background-color: black;
-      display: flex;
-      flex-direction: column;
-      /* Align items vertically */
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    canvas.emscripten {
-      border: 0px none;
-      background-color: black;
-      /* Allow canvas width to adjust automatically */
-      image-rendering: pixelated; /* Ensure integer scaling */
-    }
+      body { margin: 0px; overflow: hidden; background-color: black; }
+      canvas.emscripten { margin: auto; border: 0px none; background-color: black; }
   </style>
   <script type='text/javascript'
     src="https://cdn.jsdelivr.net/gh/eligrey/FileSaver.js/dist/FileSaver.min.js">
@@ -106,10 +91,6 @@
         return canvas;
       })()
     };  
-    const userAgent = navigator.userAgent;
-    if (/Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
-      Module.requestFullscreen(false, false);
-    } 
   </script>
   {{{ SCRIPT }}}
 </body>

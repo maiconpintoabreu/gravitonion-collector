@@ -3,6 +3,7 @@
 
 name: CD
 on:
+  workflow_dispatch: 
   push:
     branches: main
     paths:
@@ -32,9 +33,9 @@ jobs:
       - name: Cache build/emsdk-cache
         uses: actions/cache@v3
         with:
-          path: ${{github.workspace}}/emsdk-cache
-          key: emsdk-cache
-          restore-keys: emsdk-cache
+          path: ${{github.workspace}}/emsdk
+          key: emsdk
+          restore-keys: emsdk
 
       - name: Cache build/zig-cache
         uses: actions/cache@v3
@@ -42,13 +43,6 @@ jobs:
           path: ${{github.workspace}}/.zig-cache
           key: .zig-cache
           restore-keys: .zig-cache
-
-      # - name: Cache build/zig-test-cache
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ${{github.workspace}}/.zig-test-cache
-      #     key: .zig-test-cache
-      #     restore-keys: .zig-test-cache
 
       - name: Setup Environment
         run: | 
@@ -61,21 +55,23 @@ jobs:
       #   run: zig build test --summary new --cache-dir .zig-test-cache
   
       - name: Setup emsdk
-        uses: mymindstorm/setup-emsdk@v14
-        with:
-          actions-cache-folder: 'emsdk-cache'
-          
+        run: |
+          if cd emsdk; then git pull; else git clone https://github.com/emscripten-core/emsdk.git emsdk; cd emsdk; fi
+          ./emsdk install latest
+          ./emsdk activate latest
+          source ./emsdk_env.sh
+
       - name: Build Web Project
         run: |
-          zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall --sysroot ${{ env.EMSDK }}/upstream/emscripten
+          zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall --sysroot emsdk/upstream/emscripten
           
       - name: Build Linux Project
         run: |
-          zig build -Doptimize=ReleaseSmall --prefix-exe-dir linux
+          zig build -Doptimize=ReleaseSmall --prefix zig-out/linux --prefix-exe-dir ""
           
       - name: Build Windows Project
         run: |
-          zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSmall --prefix-exe-dir windows
+          zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSmall --prefix zig-out/windows --prefix-exe-dir ""
 
       - name: Generate Artifacts
         run: |
