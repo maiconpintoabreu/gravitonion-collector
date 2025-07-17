@@ -6,6 +6,7 @@ pub const PhysicsObject = struct {
     velocity: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     speed: f32 = 2,
     rotation: f32 = 90,
+    direction: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     torque: f32 = 0,
     rotationSpeed: f32 = 20,
     collisionSize: f32 = 10,
@@ -51,11 +52,7 @@ pub const PhysicsObject = struct {
         self.position = rl.Vector2.add(self.position, self.velocity);
     }
     pub fn applyForce(self: *PhysicsObject, force: f32) void {
-        const direction: rl.Vector2 = .{
-            .x = math.sin(math.degreesToRadians(self.rotation)),
-            .y = -math.cos(math.degreesToRadians(self.rotation)),
-        };
-        const norm_vector: rl.Vector2 = rl.Vector2.normalize(direction);
+        const norm_vector: rl.Vector2 = rl.Vector2.normalize(self.direction);
         self.velocity = self.velocity.add(rl.Vector2.scale(
             norm_vector,
             force * self.speed * 20,
@@ -80,5 +77,9 @@ pub const PhysicsObject = struct {
     }
     pub fn applyTorque(self: *PhysicsObject, torque: f32) void {
         self.rotation += torque * self.rotationSpeed;
+        self.direction = rl.Vector2{
+            .x = math.sin(math.degreesToRadians(self.rotation)),
+            .y = -math.cos(math.degreesToRadians(self.rotation)),
+        };
     }
 };

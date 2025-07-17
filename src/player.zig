@@ -25,12 +25,19 @@ pub const Player = struct {
         }
         const currentWidth = self.textureRec.width * scale;
         const currentHeight = self.textureRec.height * scale;
-        rl.drawTexturePro(self.texture, self.textureRec, .{
-            .x = self.physicsObject.position.x,
-            .y = self.physicsObject.position.y,
-            .width = currentWidth,
-            .height = currentHeight,
-        }, .{ .x = currentWidth / 2, .y = currentHeight / 2 }, self.physicsObject.rotation, .white);
+        rl.drawTexturePro(
+            self.texture,
+            self.textureRec,
+            .{
+                .x = self.physicsObject.position.x,
+                .y = self.physicsObject.position.y,
+                .width = currentWidth,
+                .height = currentHeight,
+            },
+            .{ .x = currentWidth / 2, .y = currentHeight / 2 },
+            self.physicsObject.rotation,
+            .white,
+        );
     }
     pub fn unload(self: *Player) void {
         if (self.texture.id > 0) {

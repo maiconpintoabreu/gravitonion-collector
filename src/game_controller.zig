@@ -10,6 +10,10 @@ const IS_DEBUG = false;
 
 // Global Variables
 var game: Game = .{};
+var music: rl.Music = std.mem.zeroes(rl.Music);
+var shoot: rl.Sound = std.mem.zeroes(rl.Sound);
+var destruction: rl.Sound = std.mem.zeroes(rl.Sound);
+var blackholeincreasing: rl.Sound = std.mem.zeroes(rl.Sound);
 var projectiles: [MAX_PROJECTILES]Projectile = std.mem.zeroes([MAX_PROJECTILES]Projectile);
 var asteroidTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
 var controlTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
@@ -25,19 +29,23 @@ const BLACK_HOLE_SPRINTE_COUNT = 11;
 const BLACK_HOLE_FRAME_SPEED: f32 = 0.3;
 const MAX_ASTEROIDS = 100;
 const DEFAULT_ASTEROID_CD = 5;
-const DEFAULT_SHOOTING_CD = 0.5;
+const DEFAULT_SHOOTING_CD = 0.1;
 const PHYSICS_TICK_SPEED = 0.02;
-const MAX_PROJECTILES = 1000;
 const BLACK_HOLE_SCALE = 20;
+
+const MAX_PROJECTILES = 1000;
+const MAX_PROJECTILE_TAIL_SIZE = 3;
 
 // Game Structs
 const Projectile = struct {
     position: rl.Vector2 = std.mem.zeroes(rl.Vector2),
+    oldPositions: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     size: f32 = 10,
     direction: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     speed: f32 = 20,
 
     fn tick(self: *Projectile, delta: f32) void {
+        self.oldPositions = self.position;
         self.position = self.position.add(self.direction.scale(self.speed * delta));
     }
 };
@@ -69,6 +77,8 @@ const Game = struct {
     isTouchRight: bool = false,
     isTouchUp: bool = false,
     isShooting: bool = false,
+    currentScore: f32 = 0,
+    highestScore: f32 = 0,
 };
 
 fn updateRatio() void {
@@ -85,8 +95,49 @@ fn updateRatio() void {
 
 pub fn startGame() bool {
     rl.initWindow(game.width, game.height, "Space Researcher");
+    rl.initAudioDevice();
     game.isPlaying = true;
     updateRatio();
+    music = rl.loadMusicStream("resources/ambient.mp3") catch |err| switch (err) {
+        rl.RaylibError.LoadAudioStream => {
+            std.debug.print("LoadAudioStream ERROR", .{});
+            return false;
+        },
+        else => {
+            std.debug.print("ERROR", .{});
+            return false;
+        },
+    };
+    shoot = rl.loadSound("resources/shoot.wav") catch |err| switch (err) {
+        rl.RaylibError.LoadSound => {
+            std.debug.print("LoadSound Shoot ERROR", .{});
+            return false;
+        },
+        else => {
+            std.debug.print("ERROR", .{});
+            return false;
+        },
+    };
+    destruction = rl.loadSound("resources/destruction.wav") catch |err| switch (err) {
+        rl.RaylibError.LoadSound => {
+            std.debug.print("LoadSound destruction ERROR", .{});
+            return false;
+        },
+        else => {
+            std.debug.print("ERROR", .{});
+            return false;
+        },
+    };
+    blackholeincreasing = rl.loadSound("resources/blackholeincreasing.mp3") catch |err| switch (err) {
+        rl.RaylibError.LoadSound => {
+            std.debug.print("LoadSound blackholeincreasing ERROR", .{});
+            return false;
+        },
+        else => {
+            std.debug.print("ERROR", .{});
+            return false;
+        },
+    };
     const playerTexture = rl.loadTexture("resources/ship.png") catch |err| switch (err) {
         rl.RaylibError.LoadTexture => {
             std.debug.print("LoadTexture ship ERROR", .{});
@@ -118,12 +169,6 @@ pub fn startGame() bool {
         },
     };
     game.player = Player{
-        .physicsObject = .{
-            .rotationSpeed = 200,
-            .position = rl.Vector2{ .x = 20 * game.virtualRatio, .y = 20 * game.virtualRatio },
-            .speed = 0.1,
-            .isFacingMovement = false,
-        },
         .textureCenter = playerTextureCenter,
         .texture = playerTexture,
         .textureRec = playerTextureRec,
@@ -186,7 +231,26 @@ pub fn startGame() bool {
         },
     };
     rl.unloadImage(controlImage);
+    restartGame();
     return true;
+}
+
+fn restartGame() void {
+    game.currentScore = 0;
+    // TODO: Align names later
+    game.asteroidAmount = 0;
+    projectilesCount = 0;
+    if (rl.isMusicValid(music)) {
+        rl.stopMusicStream(music);
+        rl.playMusicStream(music);
+    }
+
+    game.player.physicsObject = .{
+        .rotationSpeed = 200,
+        .position = rl.Vector2{ .x = 20 * game.virtualRatio, .y = 20 * game.virtualRatio },
+        .speed = 0.1,
+        .isFacingMovement = false,
+    };
 }
 fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
     rl.drawCircleV(buttom, buttomSize, rl.Color.gray);
@@ -205,6 +269,12 @@ fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
     return false;
 }
 pub fn closeGame() void {
+    if (rl.isMusicValid(music)) rl.unloadMusicStream(music);
+    if (rl.isSoundValid(shoot)) rl.unloadSound(shoot);
+    if (rl.isSoundValid(destruction)) rl.unloadSound(destruction);
+    if (rl.isSoundValid(blackholeincreasing)) rl.unloadSound(blackholeincreasing);
+
+    rl.closeAudioDevice();
     game.player.unload();
     if (asteroidTexture.id > 0) {
         rl.unloadTexture(asteroidTexture);
@@ -229,10 +299,12 @@ fn playerShot() void {
     };
     const norm_vector: rl.Vector2 = rl.Vector2.normalize(direction);
     projectiles[projectilesCount].position = game.player.physicsObject.position;
+    projectiles[projectilesCount].oldPositions = game.player.physicsObject.position;
     projectiles[projectilesCount].direction = norm_vector;
     projectiles[projectilesCount].speed = 1000;
     projectiles[projectilesCount].size = 1;
     projectilesCount += 1;
+    rl.playSound(shoot);
 }
 fn removeProjectile(index: usize) void {
     projectiles[index] = projectiles[projectilesCount - 1];
@@ -278,6 +350,7 @@ pub fn updateFrame() bool {
             }
             for (0..projectilesCount) |projectileIndex| {
                 projectiles[projectileIndex].position = projectiles[projectileIndex].position.scale(scaleDiff);
+                projectiles[projectileIndex].oldPositions = projectiles[projectileIndex].oldPositions.scale(scaleDiff);
             }
             for (0..game.asteroidAmount) |asteroidIndex| {
                 game.asteroids[asteroidIndex].physicsObject.position = game.asteroids[asteroidIndex].physicsObject.position.scale(scaleDiff);
@@ -289,6 +362,10 @@ pub fn updateFrame() bool {
         game.isPaused = true;
     } else if (rl.isWindowFocused() and game.isPaused) {
         game.isPaused = false;
+    }
+
+    if (rl.isMusicValid(music)) {
+        rl.updateMusicStream(music);
     }
     if (!game.isPaused) {
         // Tick
@@ -308,26 +385,41 @@ pub fn updateFrame() bool {
             spawnAsteroidRandom();
         }
         // Input
-        if (rl.isKeyDown(.space) or game.isShooting) {
+        if (rl.isKeyDown(.space) or rl.isGamepadButtonDown(0, .right_face_down) or game.isShooting) {
             if (game.shootingCd < 0) {
                 game.shootingCd = DEFAULT_SHOOTING_CD;
                 playerShot();
             }
         }
-        if (rl.isKeyDown(.left) or game.isTouchLeft) {
+        const gamepadSide = rl.getGamepadAxisMovement(0, .left_x);
+        rl.traceLog(.info, "%f", .{gamepadSide});
+        if (gamepadSide < -0.01) {
+            rl.traceLog(.info, "left", .{});
             game.player.physicsObject.isTurningLeft = true;
-            game.player.physicsObject.applyTorque(-1 * delta);
-        } else {
-            game.player.physicsObject.isTurningLeft = false;
-        }
-        if (rl.isKeyDown(.right) or game.isTouchRight) {
+            game.player.physicsObject.applyTorque(gamepadSide * delta);
+        } else if (gamepadSide > 0.01) {
+            rl.traceLog(.info, "right", .{});
             game.player.physicsObject.isTurningRight = true;
-            game.player.physicsObject.applyTorque(1 * delta);
+            game.player.physicsObject.applyTorque(gamepadSide * delta);
         } else {
-            game.player.physicsObject.isTurningRight = false;
+            if (rl.isKeyDown(.left) or rl.isGamepadButtonDown(0, .left_face_left) or game.isTouchLeft) {
+                game.player.physicsObject.isTurningLeft = true;
+                game.player.physicsObject.applyTorque(-1 * delta);
+            } else {
+                game.player.physicsObject.isTurningLeft = false;
+            }
+            if (rl.isKeyDown(.right) or rl.isGamepadButtonDown(0, .left_face_right) or game.isTouchRight) {
+                game.player.physicsObject.isTurningRight = true;
+                game.player.physicsObject.applyTorque(1 * delta);
+            } else {
+                game.player.physicsObject.isTurningRight = false;
+            }
         }
-
-        if (rl.isKeyDown(.up) or game.isTouchUp) {
+        const gamepadAceleration = rl.getGamepadAxisMovement(0, .right_trigger);
+        if (rl.isGamepadButtonDown(0, .right_trigger_2)) {
+            game.player.physicsObject.isAccelerating = true;
+            game.player.physicsObject.applyForce(gamepadAceleration * delta);
+        } else if (rl.isKeyDown(.up) or game.isTouchUp) {
             game.player.physicsObject.isAccelerating = true;
             game.player.physicsObject.applyForce(1 * delta);
         } else {
@@ -373,6 +465,7 @@ pub fn updateFrame() bool {
                     )) {
                         removeProjectile(projectileIndex);
                         removeAsteroid(asteroidIndex);
+                        rl.playSound(destruction);
                     }
                 }
             }
@@ -389,6 +482,7 @@ pub fn updateFrame() bool {
                     removeAsteroid(asteroidIndex);
                     game.blackHole.size += 0.05;
                     game.blackHole.finalSize = game.blackHole.size * BLACK_HOLE_SCALE;
+                    rl.playSound(blackholeincreasing);
                 } else if (rl.checkCollisionCircles(
                     game.player.physicsObject.position,
                     game.player.physicsObject.collisionSize * game.virtualRatio,
@@ -435,6 +529,11 @@ pub fn updateFrame() bool {
             defer rl.endBlendMode();
             for (0..projectilesCount) |projectileIndex| {
                 rl.drawCircleV(projectiles[projectileIndex].position, projectiles[projectileIndex].size * game.virtualRatio, .white);
+                rl.drawLineV(
+                    projectiles[projectileIndex].position,
+                    projectiles[projectileIndex].oldPositions,
+                    .white,
+                );
             }
         }
         for (0..game.asteroidAmount) |asteroidIndex| {
@@ -447,55 +546,62 @@ pub fn updateFrame() bool {
             }
             game.asteroids[asteroidIndex].draw(game.virtualRatio);
         }
+        rl.drawCircleV(
+            game.player.physicsObject.position.add(game.player.physicsObject.direction.normalize().scale(-10 * game.virtualRatio)),
+            2 * game.virtualRatio,
+            .yellow,
+        );
         game.player.draw(game.virtualRatio);
         // UI
-        if (uiButtomIcon(
-            .{
-                .x = 40 * game.virtualRatio,
-                .y = (@as(f32, @floatFromInt(game.height)) - 50 * game.virtualRatio),
-            },
-            30 * game.virtualRatio,
-            0,
-        )) {
-            game.isTouchLeft = true;
-        } else {
-            game.isTouchLeft = false;
-        }
-        if (uiButtomIcon(
-            .{
-                .x = (100 + 30) * game.virtualRatio,
-                .y = (@as(f32, @floatFromInt(game.height)) - 50 * game.virtualRatio),
-            },
-            30 * game.virtualRatio,
-            1,
-        )) {
-            game.isTouchRight = true;
-        } else {
-            game.isTouchRight = false;
-        }
-        if (uiButtomIcon(
-            .{
-                .x = (@as(f32, @floatFromInt(game.width)) - 30) - 30 * game.virtualRatio,
-                .y = (@as(f32, @floatFromInt(game.height)) - 50 * game.virtualRatio),
-            },
-            30 * game.virtualRatio,
-            2,
-        )) {
-            game.isTouchUp = true;
-        } else {
-            game.isTouchUp = false;
-        }
-        if (uiButtomIcon(
-            .{
-                .x = (@as(f32, @floatFromInt(game.width)) - 30) - 30 * game.virtualRatio,
-                .y = (@as(f32, @floatFromInt(game.height)) - 120 * game.virtualRatio),
-            },
-            30 * game.virtualRatio,
-            3,
-        )) {
-            game.isShooting = true;
-        } else {
-            game.isShooting = false;
+        if (!rl.isGamepadAvailable(0)) {
+            if (uiButtomIcon(
+                .{
+                    .x = 40 * game.virtualRatio,
+                    .y = (@as(f32, @floatFromInt(game.height)) - 50 * game.virtualRatio),
+                },
+                30 * game.virtualRatio,
+                0,
+            )) {
+                game.isTouchLeft = true;
+            } else {
+                game.isTouchLeft = false;
+            }
+            if (uiButtomIcon(
+                .{
+                    .x = (100 + 30) * game.virtualRatio,
+                    .y = (@as(f32, @floatFromInt(game.height)) - 50 * game.virtualRatio),
+                },
+                30 * game.virtualRatio,
+                1,
+            )) {
+                game.isTouchRight = true;
+            } else {
+                game.isTouchRight = false;
+            }
+            if (uiButtomIcon(
+                .{
+                    .x = (@as(f32, @floatFromInt(game.width)) - 30) - 30 * game.virtualRatio,
+                    .y = (@as(f32, @floatFromInt(game.height)) - 50 * game.virtualRatio),
+                },
+                30 * game.virtualRatio,
+                2,
+            )) {
+                game.isTouchUp = true;
+            } else {
+                game.isTouchUp = false;
+            }
+            if (uiButtomIcon(
+                .{
+                    .x = (@as(f32, @floatFromInt(game.width)) - 30) - 30 * game.virtualRatio,
+                    .y = (@as(f32, @floatFromInt(game.height)) - 120 * game.virtualRatio),
+                },
+                30 * game.virtualRatio,
+                3,
+            )) {
+                game.isShooting = true;
+            } else {
+                game.isShooting = false;
+            }
         }
         // Start Debug
         rl.drawFPS(10, 10);
