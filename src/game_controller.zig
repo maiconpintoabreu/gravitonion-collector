@@ -3,6 +3,8 @@ const math = std.math;
 const rl = @import("raylib");
 const playerZig = @import("player.zig");
 const Player = playerZig.Player;
+const projectileZig = @import("projectile.zig");
+const Projectile = projectileZig.Projectile;
 const asteroidZig = @import("asteroid.zig");
 const Asteroid = asteroidZig.Asteroid;
 const rand = std.crypto.random;
@@ -10,13 +12,22 @@ const IS_DEBUG = false;
 
 // Global Variables
 var game: Game = .{};
+var asteroids: [MAX_ASTEROIDS]Asteroid = std.mem.zeroes([MAX_ASTEROIDS]Asteroid);
+var projectiles: [MAX_PROJECTILES]Projectile = std.mem.zeroes([MAX_PROJECTILES]Projectile);
+
+// Audios
 var music: rl.Music = std.mem.zeroes(rl.Music);
 var shoot: rl.Sound = std.mem.zeroes(rl.Sound);
 var destruction: rl.Sound = std.mem.zeroes(rl.Sound);
 var blackholeincreasing: rl.Sound = std.mem.zeroes(rl.Sound);
-var projectiles: [MAX_PROJECTILES]Projectile = std.mem.zeroes([MAX_PROJECTILES]Projectile);
+
+// Textures
 var asteroidTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
 var controlTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
+var bulletTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
+
+// Extra (may need to be moved)
+var asteroidCount: usize = 0;
 var projectilesCount: usize = 0;
 
 // Screen consts
@@ -37,18 +48,6 @@ const MAX_PROJECTILES = 1000;
 const MAX_PROJECTILE_TAIL_SIZE = 3;
 
 // Game Structs
-const Projectile = struct {
-    position: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    oldPositions: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    size: f32 = 10,
-    direction: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    speed: f32 = 20,
-
-    fn tick(self: *Projectile, delta: f32) void {
-        self.oldPositions = self.position;
-        self.position = self.position.add(self.direction.scale(self.speed * delta));
-    }
-};
 const BlackHole = struct {
     size: f32 = 0.6,
     finalSize: f32 = 0.6 * BLACK_HOLE_SCALE,
@@ -62,12 +61,10 @@ const BlackHole = struct {
 const Game = struct {
     player: Player = .{},
     blackHole: BlackHole = .{},
-    asteroids: [MAX_ASTEROIDS]Asteroid = std.mem.zeroes([MAX_ASTEROIDS]Asteroid),
     virtualRatio: f32 = 1,
     nativeSizeScaled: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     width: i32 = 800,
     height: i32 = 460,
-    asteroidAmount: usize = 0,
     asteroidSpawnCd: f32 = DEFAULT_ASTEROID_CD,
     shootingCd: f32 = DEFAULT_SHOOTING_CD,
     currentTickLength: f32 = 0.0,
@@ -168,11 +165,32 @@ pub fn startGame() bool {
             return false;
         },
     };
+    bulletTexture = rl.loadTexture("resources/bullet.png") catch |err| switch (err) {
+        rl.RaylibError.LoadTexture => {
+            std.debug.print("LoadTexture bullet ERROR", .{});
+            return false;
+        },
+        else => {
+            std.debug.print("ERROR", .{});
+            return false;
+        },
+    };
     game.player = Player{
         .textureCenter = playerTextureCenter,
         .texture = playerTexture,
         .textureRec = playerTextureRec,
     };
+    const bulletTextureRec = rl.Rectangle{
+        .x = 0,
+        .y = 0,
+        .width = @as(f32, @floatFromInt(bulletTexture.width)),
+        .height = @as(f32, @floatFromInt(bulletTexture.height)),
+    };
+
+    for (&projectiles) |*projectile| {
+        projectile.texture = bulletTexture;
+        projectile.textureRec = bulletTextureRec;
+    }
     const asteroidTextureCenter = rl.Vector2{
         .x = @as(f32, @floatFromInt(playerTexture.width)) / 2,
         .y = @as(f32, @floatFromInt(playerTexture.height)) / 2 + 2,
@@ -183,7 +201,7 @@ pub fn startGame() bool {
         .width = @as(f32, @floatFromInt(asteroidTexture.width)),
         .height = @as(f32, @floatFromInt(asteroidTexture.height)),
     };
-    for (&game.asteroids) |*asteroid| {
+    for (&asteroids) |*asteroid| {
         asteroid.texture = asteroidTexture;
         asteroid.textureCenter = asteroidTextureCenter;
         asteroid.textureRec = asteroidTextureRec;
@@ -238,7 +256,7 @@ pub fn startGame() bool {
 fn restartGame() void {
     game.currentScore = 0;
     // TODO: Align names later
-    game.asteroidAmount = 0;
+    asteroidCount = 0;
     projectilesCount = 0;
     if (rl.isMusicValid(music)) {
         rl.stopMusicStream(music);
@@ -276,6 +294,9 @@ pub fn closeGame() void {
 
     rl.closeAudioDevice();
     game.player.unload();
+    if (bulletTexture.id > 0) {
+        rl.unloadTexture(bulletTexture);
+    }
     if (asteroidTexture.id > 0) {
         rl.unloadTexture(asteroidTexture);
     }
@@ -299,9 +320,9 @@ fn playerShot() void {
     };
     const norm_vector: rl.Vector2 = rl.Vector2.normalize(direction);
     projectiles[projectilesCount].position = game.player.physicsObject.position;
-    projectiles[projectilesCount].oldPositions = game.player.physicsObject.position;
+    projectiles[projectilesCount].rotation = game.player.physicsObject.rotation;
     projectiles[projectilesCount].direction = norm_vector;
-    projectiles[projectilesCount].speed = 1000;
+    projectiles[projectilesCount].speed = 20;
     projectiles[projectilesCount].size = 1;
     projectilesCount += 1;
     rl.playSound(shoot);
@@ -311,32 +332,32 @@ fn removeProjectile(index: usize) void {
     projectilesCount -= 1;
 }
 fn removeAsteroid(index: usize) void {
-    game.asteroids[index] = game.asteroids[game.asteroidAmount - 1];
-    game.asteroidAmount -= 1;
+    asteroids[index] = asteroids[asteroidCount - 1];
+    asteroidCount -= 1;
 }
 fn spawnAsteroidRandom() void {
     if (rand.boolean()) {
         if (rand.boolean()) {
-            game.asteroids[game.asteroidAmount].physicsObject.position.x = 0;
+            asteroids[asteroidCount].physicsObject.position.x = 0;
         } else {
-            game.asteroids[game.asteroidAmount].physicsObject.position.x = @as(f32, @floatFromInt(game.width));
+            asteroids[asteroidCount].physicsObject.position.x = @as(f32, @floatFromInt(game.width));
         }
-        game.asteroids[game.asteroidAmount].physicsObject.position.y = rand.float(f32) * @as(f32, @floatFromInt(game.height));
+        asteroids[asteroidCount].physicsObject.position.y = rand.float(f32) * @as(f32, @floatFromInt(game.height));
     } else {
         if (rand.boolean()) {
-            game.asteroids[game.asteroidAmount].physicsObject.position.y = 0;
+            asteroids[asteroidCount].physicsObject.position.y = 0;
         } else {
-            game.asteroids[game.asteroidAmount].physicsObject.position.y = @as(f32, @floatFromInt(game.height));
+            asteroids[asteroidCount].physicsObject.position.y = @as(f32, @floatFromInt(game.height));
         }
-        game.asteroids[game.asteroidAmount].physicsObject.position.x = rand.float(f32) * @as(f32, @floatFromInt(game.width));
+        asteroids[asteroidCount].physicsObject.position.x = rand.float(f32) * @as(f32, @floatFromInt(game.width));
     }
-    game.asteroids[game.asteroidAmount].physicsObject.velocity = rl.Vector2.clampValue(
-        game.asteroids[game.asteroidAmount].physicsObject.velocity,
+    asteroids[asteroidCount].physicsObject.velocity = rl.Vector2.clampValue(
+        asteroids[asteroidCount].physicsObject.velocity,
         0,
         0.2,
     );
-    game.asteroids[game.asteroidAmount].physicsObject.collisionSize = 5;
-    game.asteroidAmount += 1;
+    asteroids[asteroidCount].physicsObject.collisionSize = 5;
+    asteroidCount += 1;
 }
 pub fn updateFrame() bool {
     if (rl.isWindowResized()) {
@@ -350,10 +371,9 @@ pub fn updateFrame() bool {
             }
             for (0..projectilesCount) |projectileIndex| {
                 projectiles[projectileIndex].position = projectiles[projectileIndex].position.scale(scaleDiff);
-                projectiles[projectileIndex].oldPositions = projectiles[projectileIndex].oldPositions.scale(scaleDiff);
             }
-            for (0..game.asteroidAmount) |asteroidIndex| {
-                game.asteroids[asteroidIndex].physicsObject.position = game.asteroids[asteroidIndex].physicsObject.position.scale(scaleDiff);
+            for (0..asteroidCount) |asteroidIndex| {
+                asteroids[asteroidIndex].physicsObject.position = asteroids[asteroidIndex].physicsObject.position.scale(scaleDiff);
             }
         }
         game.player.physicsObject.position = game.player.physicsObject.position.scale(scaleDiff);
@@ -430,7 +450,9 @@ pub fn updateFrame() bool {
         while (game.currentTickLength > PHYSICS_TICK_SPEED) {
             game.currentTickLength -= PHYSICS_TICK_SPEED;
             const direction = rl.Vector2.subtract(game.nativeSizeScaled, game.player.physicsObject.position).normalize();
-            game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, 0.1 * game.blackHole.finalSize * game.virtualRatio / 10 * delta));
+            const gravity = 0.1 * game.blackHole.finalSize * game.virtualRatio * delta;
+
+            game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, gravity));
             game.player.tick();
 
             game.player.physicsObject.calculateWrap(game.width, game.height);
@@ -456,10 +478,10 @@ pub fn updateFrame() bool {
                     continue;
                 }
 
-                for (0..game.asteroidAmount) |asteroidIndex| {
+                for (0..asteroidCount) |asteroidIndex| {
                     if (rl.checkCollisionCircles(
-                        game.asteroids[asteroidIndex].physicsObject.position,
-                        game.asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
+                        asteroids[asteroidIndex].physicsObject.position,
+                        asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
                         particlePosition,
                         projectiles[projectileIndex].size * game.virtualRatio,
                     )) {
@@ -469,15 +491,15 @@ pub fn updateFrame() bool {
                     }
                 }
             }
-            for (0..game.asteroidAmount) |asteroidIndex| {
-                const asteroidDirection = rl.Vector2.subtract(game.nativeSizeScaled, game.asteroids[asteroidIndex].physicsObject.position).normalize();
-                game.asteroids[asteroidIndex].physicsObject.applyDirectedForce(rl.Vector2.scale(asteroidDirection, 0.5 * game.blackHole.finalSize * game.virtualRatio / 10 * delta));
-                game.asteroids[asteroidIndex].tick();
+            for (0..asteroidCount) |asteroidIndex| {
+                const asteroidDirection = rl.Vector2.subtract(game.nativeSizeScaled, asteroids[asteroidIndex].physicsObject.position).normalize();
+                asteroids[asteroidIndex].physicsObject.applyDirectedForce(rl.Vector2.scale(asteroidDirection, gravity));
+                asteroids[asteroidIndex].tick();
                 if (rl.checkCollisionCircles(
                     game.nativeSizeScaled,
                     game.blackHole.finalSize * game.virtualRatio,
-                    game.asteroids[asteroidIndex].physicsObject.position,
-                    game.asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
+                    asteroids[asteroidIndex].physicsObject.position,
+                    asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
                 )) {
                     removeAsteroid(asteroidIndex);
                     game.blackHole.size += 0.05;
@@ -486,8 +508,8 @@ pub fn updateFrame() bool {
                 } else if (rl.checkCollisionCircles(
                     game.player.physicsObject.position,
                     game.player.physicsObject.collisionSize * game.virtualRatio,
-                    game.asteroids[asteroidIndex].physicsObject.position,
-                    game.asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
+                    asteroids[asteroidIndex].physicsObject.position,
+                    asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
                 )) {
                     removeAsteroid(asteroidIndex);
                 }
@@ -528,29 +550,24 @@ pub fn updateFrame() bool {
             rl.beginBlendMode(.additive);
             defer rl.endBlendMode();
             for (0..projectilesCount) |projectileIndex| {
-                rl.drawCircleV(projectiles[projectileIndex].position, projectiles[projectileIndex].size * game.virtualRatio, .white);
-                rl.drawLineV(
-                    projectiles[projectileIndex].position,
-                    projectiles[projectileIndex].oldPositions,
-                    .white,
-                );
+                projectiles[projectileIndex].draw(game.virtualRatio);
             }
         }
-        for (0..game.asteroidAmount) |asteroidIndex| {
+        for (0..asteroidCount) |asteroidIndex| {
             if (IS_DEBUG) {
                 rl.drawCircleV(
-                    game.asteroids[asteroidIndex].physicsObject.position,
-                    game.asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
+                    asteroids[asteroidIndex].physicsObject.position,
+                    asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
                     .yellow,
                 );
             }
-            game.asteroids[asteroidIndex].draw(game.virtualRatio);
+            asteroids[asteroidIndex].draw(game.virtualRatio);
         }
-        rl.drawCircleV(
-            game.player.physicsObject.position.add(game.player.physicsObject.direction.normalize().scale(-10 * game.virtualRatio)),
-            2 * game.virtualRatio,
-            .yellow,
-        );
+        // rl.drawCircleV(
+        //     game.player.physicsObject.position.add(game.player.physicsObject.direction.normalize().scale(-10 * game.virtualRatio)),
+        //     2 * game.virtualRatio,
+        //     .yellow,
+        // );
         game.player.draw(game.virtualRatio);
         // UI
         if (!rl.isGamepadAvailable(0)) {
@@ -605,9 +622,10 @@ pub fn updateFrame() bool {
         }
         // Start Debug
         rl.drawFPS(10, 10);
-        rl.drawText(rl.textFormat("------------------------------", .{}), 10, 30, 10, .white);
-        rl.drawText(rl.textFormat("Projectiles: %i", .{projectilesCount}), 10, 40, 10, .white);
-        rl.drawText(rl.textFormat("ASteroids: %i", .{game.asteroidAmount}), 10, 50, 10, .white);
+        const fontSize = 10 * @as(i32, @intFromFloat(game.virtualRatio));
+        rl.drawText(rl.textFormat("--------------DEBUG--------------", .{}), 10, 20 + fontSize, fontSize, .white);
+        rl.drawText(rl.textFormat("Projectiles: %i", .{projectilesCount}), 10, 20 + fontSize * 2, fontSize, .white);
+        rl.drawText(rl.textFormat("ASteroids: %i", .{asteroidCount}), 10, 20 + fontSize * 3, fontSize, .white);
     }
     // End Debug
     if (rl.isKeyDown(rl.KeyboardKey.escape) or rl.windowShouldClose()) {
