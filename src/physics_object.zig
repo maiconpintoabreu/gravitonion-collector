@@ -12,35 +12,10 @@ pub const PhysicsObject = struct {
     collisionSize: f32 = 10,
     currentTickLength: f32 = 0.01,
     defaultTickLength: f32 = 0.01,
-    isFacingMovement: bool = true,
     isTurningLeft: bool = false,
     isTurningRight: bool = false,
     isAccelerating: bool = false,
     pub fn tick(self: *PhysicsObject) void {
-        if (self.isFacingMovement and !self.isAccelerating and !self.isTurningLeft and !self.isTurningRight) {
-            var angle = math.radiansToDegrees(math.atan2(self.velocity.y, self.velocity.x)) + 90;
-            if (angle > 180) {
-                angle -= 360;
-            }
-            if (angle < -180) {
-                angle += 360;
-            }
-            if (self.rotation > angle) {
-                const rotDiff = self.rotation - angle;
-                if (rotDiff > 180) {
-                    self.rotation += 1;
-                } else {
-                    self.rotation -= 1;
-                }
-            } else {
-                const rotDiff = angle - self.rotation;
-                if (rotDiff > 180) {
-                    self.rotation -= 1;
-                } else {
-                    self.rotation += 1;
-                }
-            }
-        }
         if (!self.isAccelerating) {
             self.velocity = self.velocity.subtract(self.velocity.normalize().scale(0.002));
         }

@@ -9,7 +9,6 @@ const MAX_POWER = 100;
 pub const Player = struct {
     physicsObject: PhysicsObject = .{
         .rotationSpeed = 200,
-        .isFacingMovement = true,
     },
     textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
@@ -17,6 +16,7 @@ pub const Player = struct {
     health: f32 = MAX_HEALTH,
     power: f32 = MAX_POWER,
     pub fn tick(self: *Player) void {
+        self.physicsObject.velocity = rl.Vector2.clampValue(self.physicsObject.velocity, 0, 1.8);
         self.physicsObject.tick();
     }
     pub fn draw(self: *Player, scale: f32) void {

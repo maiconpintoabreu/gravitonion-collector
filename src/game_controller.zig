@@ -38,14 +38,13 @@ const NATIVE_CENTER = rl.Vector2{ .x = NATIVE_WIDTH / 2, .y = NATIVE_HEIGHT / 2 
 // Game Costs
 const BLACK_HOLE_SPRINTE_COUNT = 11;
 const BLACK_HOLE_FRAME_SPEED: f32 = 0.3;
-const MAX_ASTEROIDS = 100;
+const MAX_ASTEROIDS = 50;
 const DEFAULT_ASTEROID_CD = 5;
 const DEFAULT_SHOOTING_CD = 0.1;
 const PHYSICS_TICK_SPEED = 0.02;
 const BLACK_HOLE_SCALE = 20;
 
-const MAX_PROJECTILES = 1000;
-const MAX_PROJECTILE_TAIL_SIZE = 3;
+const MAX_PROJECTILES = 200;
 
 // Game Structs
 const BlackHole = struct {
@@ -267,7 +266,6 @@ fn restartGame() void {
         .rotationSpeed = 200,
         .position = rl.Vector2{ .x = 20 * game.virtualRatio, .y = 20 * game.virtualRatio },
         .speed = 0.1,
-        .isFacingMovement = false,
     };
 }
 fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
@@ -450,15 +448,16 @@ pub fn updateFrame() bool {
         while (game.currentTickLength > PHYSICS_TICK_SPEED) {
             game.currentTickLength -= PHYSICS_TICK_SPEED;
             const direction = rl.Vector2.subtract(game.nativeSizeScaled, game.player.physicsObject.position).normalize();
-            const gravity = 0.1 * game.blackHole.finalSize * game.virtualRatio * delta;
-
-            game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, gravity));
+            const gravity = (game.blackHole.finalSize * game.virtualRatio / 20) * PHYSICS_TICK_SPEED;
+            if (!game.player.physicsObject.isAccelerating) {
+                game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, gravity));
+            }
             game.player.tick();
 
             game.player.physicsObject.calculateWrap(game.width, game.height);
 
             for (0..projectilesCount) |projectileIndex| {
-                projectiles[projectileIndex].tick(delta);
+                projectiles[projectileIndex].tick(PHYSICS_TICK_SPEED);
                 const particlePosition = projectiles[projectileIndex].position;
                 if (particlePosition.x < 0 or particlePosition.x > @as(f32, @floatFromInt(game.width))) {
                     removeProjectile(projectileIndex);
