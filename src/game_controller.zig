@@ -14,7 +14,8 @@ const IS_DEBUG = false;
 var game: Game = .{};
 var asteroids: [MAX_ASTEROIDS]Asteroid = std.mem.zeroes([MAX_ASTEROIDS]Asteroid);
 var projectiles: [MAX_PROJECTILES]Projectile = std.mem.zeroes([MAX_PROJECTILES]Projectile);
-
+var gameTime: f32 = 0;
+var isWeb: bool = false;
 // Audios
 var music: rl.Music = std.mem.zeroes(rl.Music);
 var shoot: rl.Sound = std.mem.zeroes(rl.Sound);
@@ -89,7 +90,9 @@ fn updateRatio() void {
     game.nativeSizeScaled = NATIVE_CENTER.scale(game.virtualRatio);
 }
 
-pub fn startGame() bool {
+pub fn startGame(isEmscripten: bool) bool {
+    // TODO: check why the trigger does not work well
+    isWeb = isEmscripten;
     rl.initWindow(game.width, game.height, "Space Researcher");
     rl.initAudioDevice();
     game.isPlaying = true;
@@ -254,6 +257,7 @@ pub fn startGame() bool {
 
 fn restartGame() void {
     game.currentScore = 0;
+    gameTime = 0;
     // TODO: Align names later
     asteroidCount = 0;
     projectilesCount = 0;
@@ -391,6 +395,7 @@ pub fn updateFrame() bool {
     if (!game.isPaused) {
         // Tick
         const delta = rl.getFrameTime();
+        gameTime += delta;
         game.currentScore += 20 / game.player.physicsObject.position.distance(game.nativeSizeScaled) * delta;
         game.asteroidSpawnCd -= delta;
         game.shootingCd -= delta;
@@ -403,7 +408,7 @@ pub fn updateFrame() bool {
             }
         }
         if (game.asteroidSpawnCd < 0) {
-            game.asteroidSpawnCd = DEFAULT_ASTEROID_CD;
+            game.asteroidSpawnCd = rl.math.clamp(DEFAULT_ASTEROID_CD - gameTime / 10, 0.2, 100);
             spawnAsteroidRandom();
         }
         // Input
@@ -437,9 +442,14 @@ pub fn updateFrame() bool {
             }
         }
         const gamepadAceleration = rl.getGamepadAxisMovement(0, .right_trigger);
+        // TODO: check this if web
         if (rl.isGamepadButtonDown(0, .right_trigger_2)) {
             game.player.physicsObject.isAccelerating = true;
-            game.player.physicsObject.applyForce(gamepadAceleration * delta);
+            if (isWeb) {
+                game.player.physicsObject.applyForce(1 * delta);
+            } else {
+                game.player.physicsObject.applyForce(gamepadAceleration * delta);
+            }
         } else if (rl.isKeyDown(.up) or game.isTouchUp) {
             game.player.physicsObject.isAccelerating = true;
             game.player.physicsObject.applyForce(1 * delta);

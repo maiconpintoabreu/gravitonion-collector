@@ -10,7 +10,7 @@ pub fn main() anyerror!void {
     // rl.setTargetFPS(60);
     rl.setConfigFlags(rl.ConfigFlags{ .window_resizable = true });
 
-    if (gameController.startGame()) {
+    if (gameController.startGame(true)) {
         std.os.emscripten.emscripten_set_main_loop(updateFrame, 0, 1);
     }
 }

@@ -16,7 +16,7 @@ pub fn main() anyerror!void {
         .window_resizable = true,
     });
 
-    if (gameController.startGame()) {
+    if (gameController.startGame(false)) {
         while (gameController.updateFrame()) {}
     }
 }
