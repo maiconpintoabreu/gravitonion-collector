@@ -262,6 +262,9 @@ fn restartGame() void {
         rl.playMusicStream(music);
     }
 
+    game.blackHole.size = 0.6;
+    game.blackHole.finalSize = 0.6 * BLACK_HOLE_SCALE;
+
     game.player.physicsObject = .{
         .rotationSpeed = 200,
         .position = rl.Vector2{ .x = 20 * game.virtualRatio, .y = 20 * game.virtualRatio },
@@ -275,8 +278,8 @@ fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
     if (rl.isMouseButtonDown(.left) and rl.checkCollisionPointCircle(rl.getMousePosition(), buttom, buttomSize)) {
         return true;
     }
-
-    for (0..@as(usize, @intCast(rl.getTouchPointCount()))) |touchIndex| {
+    const touchCount = @as(usize, @intCast(rl.getTouchPointCount()));
+    for (0..touchCount) |touchIndex| {
         if (rl.checkCollisionPointCircle(rl.getTouchPosition(@intCast(touchIndex)), buttom, buttomSize)) {
             return true;
         }
@@ -388,6 +391,7 @@ pub fn updateFrame() bool {
     if (!game.isPaused) {
         // Tick
         const delta = rl.getFrameTime();
+        game.currentScore += 20 / game.player.physicsObject.position.distance(game.nativeSizeScaled) * delta;
         game.asteroidSpawnCd -= delta;
         game.shootingCd -= delta;
         game.blackHole.frameTimer -= delta;
@@ -410,7 +414,6 @@ pub fn updateFrame() bool {
             }
         }
         const gamepadSide = rl.getGamepadAxisMovement(0, .left_x);
-        rl.traceLog(.info, "%f", .{gamepadSide});
         if (gamepadSide < -0.01) {
             rl.traceLog(.info, "left", .{});
             game.player.physicsObject.isTurningLeft = true;
@@ -453,6 +456,14 @@ pub fn updateFrame() bool {
                 game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, gravity));
             }
             game.player.tick();
+            if (rl.checkCollisionCircles(
+                game.player.physicsObject.position,
+                game.player.physicsObject.collisionSize * game.virtualRatio,
+                game.nativeSizeScaled,
+                game.blackHole.finalSize * game.virtualRatio,
+            )) {
+                restartGame();
+            }
 
             game.player.physicsObject.calculateWrap(game.width, game.height);
 
@@ -501,7 +512,7 @@ pub fn updateFrame() bool {
                     asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
                 )) {
                     removeAsteroid(asteroidIndex);
-                    game.blackHole.size += 0.05;
+                    game.blackHole.size += 0.5;
                     game.blackHole.finalSize = game.blackHole.size * BLACK_HOLE_SCALE;
                     rl.playSound(blackholeincreasing);
                 } else if (rl.checkCollisionCircles(
@@ -550,8 +561,16 @@ pub fn updateFrame() bool {
             defer rl.endBlendMode();
             for (0..projectilesCount) |projectileIndex| {
                 projectiles[projectileIndex].draw(game.virtualRatio);
+                // if (IS_DEBUG) {
+                rl.drawCircleV(
+                    projectiles[projectileIndex].position,
+                    projectiles[projectileIndex].size * game.virtualRatio,
+                    .{ .r = 0, .g = 100, .b = 100, .a = 100 },
+                );
+                // }
             }
         }
+
         for (0..asteroidCount) |asteroidIndex| {
             if (IS_DEBUG) {
                 rl.drawCircleV(
@@ -619,12 +638,21 @@ pub fn updateFrame() bool {
                 game.isShooting = false;
             }
         }
+        const fontSize = 15 * @as(i32, @intFromFloat(game.virtualRatio));
+        rl.drawText(
+            rl.textFormat("Score: %3.2f", .{game.currentScore}),
+            @as(i32, @intFromFloat(game.nativeSizeScaled.x)) - fontSize,
+            fontSize,
+            fontSize,
+            .white,
+        );
         // Start Debug
-        rl.drawFPS(10, 10);
-        const fontSize = 10 * @as(i32, @intFromFloat(game.virtualRatio));
-        rl.drawText(rl.textFormat("--------------DEBUG--------------", .{}), 10, 20 + fontSize, fontSize, .white);
-        rl.drawText(rl.textFormat("Projectiles: %i", .{projectilesCount}), 10, 20 + fontSize * 2, fontSize, .white);
-        rl.drawText(rl.textFormat("ASteroids: %i", .{asteroidCount}), 10, 20 + fontSize * 3, fontSize, .white);
+        if (IS_DEBUG) {
+            rl.drawFPS(10, 10);
+            rl.drawText(rl.textFormat("--------------DEBUG--------------", .{}), 10, 20 + fontSize, fontSize, .white);
+            rl.drawText(rl.textFormat("Projectiles: %i", .{projectilesCount}), 10, 20 + fontSize * 2, fontSize, .white);
+            rl.drawText(rl.textFormat("ASteroids: %i", .{asteroidCount}), 10, 20 + fontSize * 3, fontSize, .white);
+        }
     }
     // End Debug
     if (rl.isKeyDown(rl.KeyboardKey.escape) or rl.windowShouldClose()) {
