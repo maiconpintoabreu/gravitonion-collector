@@ -7,13 +7,10 @@ pub fn main() anyerror!void {
     defer rl.closeWindow(); // Close window and OpenGL context
     defer gameController.closeGame();
 
-    // rl.setTargetFPS(60);
-    rl.setConfigFlags(rl.ConfigFlags{ .window_resizable = true });
-
-    if (gameController.startGame(true)) {
+    if (gameController.initGame(true)) {
         std.os.emscripten.emscripten_set_main_loop(updateFrame, 0, 1);
     }
 }
 export fn updateFrame() callconv(.C) void {
-    _ = gameController.updateFrame();
+    _ = gameController.update();
 }
