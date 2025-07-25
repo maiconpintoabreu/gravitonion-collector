@@ -8,8 +8,11 @@ pub fn build(b: *std.Build) !void {
     const raylib_dep = b.dependency("raylib_zig", .{
         .target = target,
         .optimize = optimize,
+        .linux_display_backend = .X11,
+        .shared = true,
     });
     const raylib = raylib_dep.module("raylib");
+    const raygui = raylib_dep.module("raygui"); // raygui module
     const raylib_artifact = raylib_dep.artifact("raylib");
 
     //web exports are completely separate
@@ -24,13 +27,13 @@ pub fn build(b: *std.Build) !void {
 
         exe_lib.linkLibrary(raylib_artifact);
         exe_lib.root_module.addImport("raylib", raylib);
+        exe_lib.root_module.addImport("raygui", raygui);
 
         // Note that raylib itself is not actually added to the exe_lib output file, so it also needs to be linked with emscripten.
         const link_step = try rlz.emcc.linkWithEmscripten(
             b,
             &[_]*std.Build.Step.Compile{ exe_lib, raylib_artifact },
         );
-        _ = link_step.argv.pop();
         //this lets your program access files like "resources/my-image.png":
         link_step.addArg("--shell-file");
         link_step.addArg("src/minshell.html");
@@ -63,6 +66,7 @@ pub fn build(b: *std.Build) !void {
 
     exe.linkLibrary(raylib_artifact);
     exe.root_module.addImport("raylib", raylib);
+    exe.root_module.addImport("raygui", raygui);
 
     const run_cmd = b.addRunArtifact(exe);
     const run_step = b.step("run", "Run space_researcher");

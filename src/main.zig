@@ -17,6 +17,7 @@ pub fn main() anyerror!void {
     });
 
     if (gameController.initGame(false)) {
+        rl.setExitKey(.null);
         while (gameController.update()) {}
     }
 }

@@ -9,6 +9,7 @@ const asteroidZig = @import("asteroid.zig");
 const Asteroid = asteroidZig.Asteroid;
 const gameZig = @import("../game.zig");
 const Game = gameZig.Game;
+const GameState = gameZig.GameState;
 const rand = std.crypto.random;
 const IS_DEBUG = false;
 
@@ -36,7 +37,6 @@ pub fn startGame(currentGame: *Game, isEmscripten: bool) bool {
     game = currentGame;
     // TODO: check why the trigger does not work well
     isWeb = isEmscripten;
-    game.isPlaying = true;
     music = rl.loadMusicStream("resources/ambient.mp3") catch |err| switch (err) {
         rl.RaylibError.LoadAudioStream => {
             std.debug.print("LoadAudioStream ERROR", .{});
@@ -167,7 +167,6 @@ pub fn startGame(currentGame: *Game, isEmscripten: bool) bool {
         },
     };
     if (!game.blackHole.initTexture()) {
-        std.debug.print("ERROR", .{});
         return false;
     }
     rl.unloadImage(controlImage);
@@ -175,7 +174,7 @@ pub fn startGame(currentGame: *Game, isEmscripten: bool) bool {
     return true;
 }
 
-fn restartGame() void {
+pub fn restartGame() void {
     game.currentScore = 0;
     gameTime = 0;
     // TODO: Align names later
@@ -277,11 +276,15 @@ fn spawnAsteroidRandom() void {
     game.asteroids[game.asteroidCount].physicsObject.collisionSize = 5;
     game.asteroidCount += 1;
 }
-pub fn updateFrame() bool {
+pub fn updateFrame() void {
+    // End Debug
+    if (rl.isKeyReleased(rl.KeyboardKey.escape)) {
+        game.gameState = GameState.Pause;
+    }
     if (rl.isMusicValid(music)) {
         rl.updateMusicStream(music);
     }
-    if (!game.isPaused) {
+    if (game.gameState == GameState.Playing) {
         // Tick
         const delta = rl.getFrameTime();
         gameTime += delta;
@@ -355,7 +358,11 @@ pub fn updateFrame() bool {
                 game.nativeSizeScaled,
                 game.blackHole.finalSize * game.virtualRatio,
             )) {
-                restartGame();
+                if (game.highestScore < game.currentScore) {
+                    game.highestScore = game.currentScore;
+                }
+                game.gameState = GameState.GameOver;
+                return;
             }
 
             game.player.physicsObject.calculateWrap(game.width, game.height);
@@ -418,12 +425,6 @@ pub fn updateFrame() bool {
             }
         }
     }
-
-    // End Debug
-    if (rl.isKeyDown(rl.KeyboardKey.escape) or rl.windowShouldClose()) {
-        game.isPlaying = false;
-    }
-    return game.isPlaying;
 }
 pub fn drawFrame() void {
     const blackHoleTexture = game.blackHole.textures[game.blackHole.currentFrame];

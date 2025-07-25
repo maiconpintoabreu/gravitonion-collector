@@ -8,6 +8,7 @@ pub fn main() anyerror!void {
     defer gameController.closeGame();
 
     if (gameController.initGame(true)) {
+        rl.setExitKey(.null);
         std.os.emscripten.emscripten_set_main_loop(updateFrame, 0, 1);
     }
 }

@@ -13,6 +13,7 @@ pub const GameState = enum {
     Playing,
     GameOver,
     Pause,
+    Quit,
 };
 
 // Game consts
@@ -89,8 +90,6 @@ pub const Game = struct {
     asteroidSpawnCd: f32 = 0,
     shootingCd: f32 = 0,
     currentTickLength: f32 = 0.0,
-    isPlaying: bool = false,
-    isPaused: bool = false,
     isTouchLeft: bool = false,
     isTouchRight: bool = false,
     isTouchUp: bool = false,
