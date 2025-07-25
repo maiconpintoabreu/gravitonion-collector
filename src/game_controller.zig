@@ -1,4 +1,5 @@
 const rl = @import("raylib");
+const rg = @import("raygui");
 const gameZig = @import("game.zig");
 const Game = gameZig.Game;
 const playingZig = @import("game_logic/playing.zig");
@@ -55,8 +56,8 @@ pub fn update() bool {
             for (0..game.asteroidCount) |asteroidIndex| {
                 game.asteroids[asteroidIndex].physicsObject.position = game.asteroids[asteroidIndex].physicsObject.position.scale(scaleDiff);
             }
+            game.player.physicsObject.position = game.player.physicsObject.position.scale(scaleDiff);
         }
-        game.player.physicsObject.position = game.player.physicsObject.position.scale(scaleDiff);
     }
     if (!rl.isWindowFocused() and game.gameState == GameState.Playing) {
         game.gameState = GameState.Pause;
@@ -84,6 +85,9 @@ pub fn update() bool {
             defer rl.endDrawing();
             rl.clearBackground(rl.Color.init(20, 20, 20, 255));
             menuZig.drawFrame();
+            if (game.gameState == GameState.Playing) {
+                playingZig.restartGame();
+            }
         },
         GameState.Pause => {
             menuZig.updateFrame();
@@ -107,10 +111,12 @@ pub fn update() bool {
 }
 
 pub fn closeGame() void {
+    defer rl.closeAudioDevice();
     for (game.blackHole.textures) |blackhole| {
         if (blackhole.id > 0) {
             rl.unloadTexture(blackhole);
         }
     }
     playingZig.closeGame();
+    menuZig.closeMenu();
 }

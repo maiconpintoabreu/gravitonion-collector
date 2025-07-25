@@ -215,7 +215,6 @@ pub fn closeGame() void {
     if (rl.isSoundValid(destruction)) rl.unloadSound(destruction);
     if (rl.isSoundValid(blackholeincreasing)) rl.unloadSound(blackholeincreasing);
 
-    rl.closeAudioDevice();
     game.player.unload();
     if (bulletTexture.id > 0) {
         rl.unloadTexture(bulletTexture);
