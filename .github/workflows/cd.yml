@@ -63,7 +63,7 @@ jobs:
 
       - name: Build Web Project
         run: |
-          zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall --sysroot emsdk/upstream/emscripten
+          zig build -Draylib-shared=false -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall --sysroot emsdk/upstream/emscripten
           
       - name: Build Linux Project
         run: |
