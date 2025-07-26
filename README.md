@@ -8,13 +8,11 @@ Player needs to protect the BackHole from the asteroids so it does not go too bi
 
 
 ## TODO:
-* When the black hole grows more than some value it will beam later around.
-* If the player flies close to the black hole it will rechange the power and get better multiplier.
+* When the black hole grows more than some value it will beam later around reducing it size to the minimal.
 * UI to show the power (with power mechanics)
 * UI to toogle UI controller
 * UI to Pause
-* Add Gameover if the player touchs the blackhole or one of the asteroids
-* Increase difficulty by time (increase gravity, number of asteroids per second)
+* Add Gameover if the player touchs one of the asteroids
 * Add power ups (gun modifier and temp shield dropped by the asteroids) 
 
 ### Maybes:
