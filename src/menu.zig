@@ -60,12 +60,14 @@ pub fn drawFrame() void {
                 .b = 0,
                 .a = 100,
             });
-            uiText(rl.Rectangle{
-                .x = xPosition,
-                .y = game.nativeSizeScaled.y - (80 * game.virtualRatio),
-                .width = width,
-                .height = 30 * game.virtualRatio,
-            }, rl.textFormat("Highest Score: %3.3f", .{game.highestScore}), 10 * game.virtualRatio, .white);
+            if (game.highestScore > 0) {
+                uiText(rl.Rectangle{
+                    .x = xPosition,
+                    .y = game.nativeSizeScaled.y - (80 * game.virtualRatio),
+                    .width = width,
+                    .height = 30 * game.virtualRatio,
+                }, rl.textFormat("Highest Score: %3.2f", .{game.highestScore}), 10 * game.virtualRatio, .white);
+            }
             if (game.gameState == GameState.Pause) {
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
