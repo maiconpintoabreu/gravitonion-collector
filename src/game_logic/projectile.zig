@@ -6,6 +6,7 @@ const PhysicsObject = physicsZig.PhysicsObject;
 
 pub const Projectile = struct {
     position: rl.Vector2 = std.mem.zeroes(rl.Vector2),
+    previousPosition: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     size: f32 = 10,
     speed: f32 = 20,
     rotation: f32 = 0,
@@ -14,6 +15,7 @@ pub const Projectile = struct {
     texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
     pub fn tick(self: *Projectile, delta: f32) void {
         self.speed += self.speed * delta;
+        self.previousPosition = self.position;
         self.position = self.position.add(self.direction.scale(self.speed));
     }
     pub fn draw(self: *Projectile, scale: f32) void {

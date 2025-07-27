@@ -388,6 +388,12 @@ pub fn updateFrame() void {
                 }
 
                 for (0..game.asteroidCount) |asteroidIndex| {
+                    if (rl.checkCollisionCircleLine(
+                        game.asteroids[asteroidIndex].physicsObject.position,
+                        game.asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
+                        particlePosition,
+                        game.projectiles[projectileIndex].previousPosition,
+                    )) {}
                     if (rl.checkCollisionCircles(
                         game.asteroids[asteroidIndex].physicsObject.position,
                         game.asteroids[asteroidIndex].physicsObject.collisionSize * game.virtualRatio,
