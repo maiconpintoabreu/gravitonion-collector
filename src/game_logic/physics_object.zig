@@ -36,18 +36,16 @@ pub const PhysicsObject = struct {
     pub fn applyDirectedForce(self: *PhysicsObject, force: rl.Vector2) void {
         self.velocity = self.velocity.add(force);
     }
-    pub fn calculateWrap(self: *PhysicsObject, width: i32, height: i32) void {
-        const fWitdh = @as(f32, @floatFromInt(width));
-        const fHeight = @as(f32, @floatFromInt(height));
-        if (self.position.x < 0) {
-            self.position.x = fWitdh;
-        } else if (self.position.x > fWitdh) {
-            self.position.x = 0;
+    pub fn calculateWrap(self: *PhysicsObject, window: rl.Rectangle) void {
+        if (self.position.x < window.x) {
+            self.position.x = window.width;
+        } else if (self.position.x > window.width) {
+            self.position.x = window.x;
         }
-        if (self.position.y < 0) {
-            self.position.y = fHeight;
-        } else if (self.position.y > fHeight) {
-            self.position.y = 0;
+        if (self.position.y < window.y) {
+            self.position.y = window.height;
+        } else if (self.position.y > window.height) {
+            self.position.y = window.y;
         }
     }
     pub fn applyTorque(self: *PhysicsObject, torque: f32) void {

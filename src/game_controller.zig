@@ -7,8 +7,8 @@ const menuZig = @import("menu.zig");
 const GameState = gameZig.GameState;
 
 // Screen consts
-const NATIVE_WIDTH = 160 * 3;
-const NATIVE_HEIGHT = 90 * 3;
+const NATIVE_WIDTH = 480;
+const NATIVE_HEIGHT = 270;
 const NATIVE_CENTER = rl.Vector2{ .x = NATIVE_WIDTH / 2, .y = NATIVE_HEIGHT / 2 };
 
 // Global Variables
@@ -34,7 +34,8 @@ fn updateRatio() void {
         game.height = rl.getScreenHeight();
     }
     game.virtualRatio = @as(f32, @floatFromInt(game.height)) / @as(f32, @floatFromInt(NATIVE_HEIGHT));
-    game.nativeSizeScaled = NATIVE_CENTER.scale(game.virtualRatio);
+    game.nativeSizeScaled = NATIVE_CENTER;
+    game.camera.zoom = 1 * game.virtualRatio;
 }
 
 pub fn update() bool {
@@ -42,22 +43,7 @@ pub fn update() bool {
         return false;
     }
     if (rl.isWindowResized()) {
-        const previousScale = game.virtualRatio;
         updateRatio();
-        var scaleDiff = game.virtualRatio - previousScale;
-        if (scaleDiff != 0) {
-            if (scaleDiff < 0) {
-                scaleDiff = scaleDiff * -1;
-                scaleDiff = 1 / scaleDiff;
-            }
-            for (0..game.projectilesCount) |projectileIndex| {
-                game.projectiles[projectileIndex].position = game.projectiles[projectileIndex].position.scale(scaleDiff);
-            }
-            for (0..game.asteroidCount) |asteroidIndex| {
-                game.asteroids[asteroidIndex].physicsObject.position = game.asteroids[asteroidIndex].physicsObject.position.scale(scaleDiff);
-            }
-            game.player.physicsObject.position = game.player.physicsObject.position.scale(scaleDiff);
-        }
     }
     if (!rl.isWindowFocused() and game.gameState == GameState.Playing) {
         game.gameState = GameState.Pause;
@@ -79,6 +65,7 @@ pub fn update() bool {
             defer rl.endDrawing();
             rl.clearBackground(rl.Color.init(20, 20, 20, 255));
             playingZig.drawFrame();
+            menuZig.drawFrame();
         },
         GameState.GameOver => {
             rl.beginDrawing();

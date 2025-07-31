@@ -19,12 +19,12 @@ pub const Player = struct {
         self.physicsObject.velocity = rl.Vector2.clampValue(self.physicsObject.velocity, 0, 1.8);
         self.physicsObject.tick();
     }
-    pub fn draw(self: *Player, scale: f32) void {
+    pub fn draw(self: *Player) void {
         if (self.texture.id == 0) {
             return;
         }
-        const currentWidth = self.textureRec.width * scale;
-        const currentHeight = self.textureRec.height * scale;
+        const currentWidth = self.textureRec.width;
+        const currentHeight = self.textureRec.height;
         rl.drawTexturePro(
             self.texture,
             self.textureRec,

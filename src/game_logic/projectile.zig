@@ -18,12 +18,12 @@ pub const Projectile = struct {
         self.previousPosition = self.position;
         self.position = self.position.add(self.direction.scale(self.speed));
     }
-    pub fn draw(self: *Projectile, scale: f32) void {
+    pub fn draw(self: *Projectile) void {
         if (self.texture.id == 0) {
             return;
         }
-        const currentWidth = self.textureRec.width * scale * 0.4;
-        const currentHeight = self.textureRec.height * scale * 0.4;
+        const currentWidth = self.textureRec.width * 0.4;
+        const currentHeight = self.textureRec.height * 0.4;
         rl.drawTexturePro(self.texture, self.textureRec, .{
             .x = self.position.x,
             .y = self.position.y,
