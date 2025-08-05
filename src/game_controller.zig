@@ -20,6 +20,7 @@ pub fn initGame(isEmscripten: bool) bool {
     updateRatio();
     game.gameState = GameState.MainMenu;
     const menuReady = menuZig.initMenu(&game);
+    game.camera.target = game.nativeSizeScaled;
     // TODO: if needed start game only after the menu when player pressed `Play`
     const gameReady = playingZig.startGame(&game, isEmscripten);
     return menuReady and gameReady;
@@ -33,9 +34,13 @@ fn updateRatio() void {
         game.width = rl.getScreenWidth();
         game.height = rl.getScreenHeight();
     }
-    game.virtualRatio = @as(f32, @floatFromInt(game.height)) / @as(f32, @floatFromInt(NATIVE_HEIGHT));
+    game.virtualRatio = .{
+        .x = @as(f32, @floatFromInt(game.width)) / @as(f32, @floatFromInt(NATIVE_WIDTH)),
+        .y = @as(f32, @floatFromInt(game.height)) / @as(f32, @floatFromInt(NATIVE_HEIGHT)),
+    };
     game.nativeSizeScaled = NATIVE_CENTER;
-    game.camera.zoom = 1 * game.virtualRatio;
+    game.camera.zoom = 1 * game.virtualRatio.y;
+    game.camera.offset = .{ .x = game.nativeSizeScaled.x * game.virtualRatio.x, .y = game.nativeSizeScaled.y * game.virtualRatio.y };
 }
 
 pub fn update() bool {

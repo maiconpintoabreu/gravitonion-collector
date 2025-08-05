@@ -43,6 +43,9 @@ pub fn closeMenu() void {
     if (font.isReady()) {
         rl.unloadFont(font);
     }
+    if (controlTexture.id > 0) {
+        rl.unloadTexture(controlTexture);
+    }
 }
 pub fn updateFrame() void {
     if (rl.isKeyReleased(.escape) and game.gameState == GameState.Pause) {
@@ -51,25 +54,25 @@ pub fn updateFrame() void {
 }
 
 pub fn drawFrame() void {
-    const width = 140 * game.virtualRatio;
-    const centerNormalized = game.nativeSizeScaled.scale(game.virtualRatio);
+    const width = 140 * game.virtualRatio.y;
+    const centerNormalized = game.nativeSizeScaled.scale(game.virtualRatio.y);
     const xPosition = centerNormalized.x - width / 2;
     switch (game.gameState) {
         GameState.MainMenu => {
             if (uiTextButtom(rl.Rectangle{
                 .x = xPosition,
-                .y = centerNormalized.y - (20 * game.virtualRatio),
+                .y = centerNormalized.y - (20 * game.virtualRatio.y),
                 .width = width,
-                .height = 30 * game.virtualRatio,
-            }, "Play", 20 * game.virtualRatio, .black)) {
+                .height = 30 * game.virtualRatio.y,
+            }, "Play", 20 * game.virtualRatio.y, .black)) {
                 game.gameState = GameState.Playing;
             }
             if (uiTextButtom(rl.Rectangle{
                 .x = xPosition,
-                .y = centerNormalized.y - (-30 * game.virtualRatio),
+                .y = centerNormalized.y - (-30 * game.virtualRatio.y),
                 .width = width,
-                .height = 30 * game.virtualRatio,
-            }, "Quit", 20 * game.virtualRatio, .black)) {
+                .height = 30 * game.virtualRatio.y,
+            }, "Quit", 20 * game.virtualRatio.y, .black)) {
                 game.gameState = GameState.Quit;
             }
         },
@@ -83,59 +86,59 @@ pub fn drawFrame() void {
             if (game.highestScore > 0) {
                 uiText(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (80 * game.virtualRatio),
+                    .y = centerNormalized.y - (80 * game.virtualRatio.y),
                     .width = width,
-                    .height = 30 * game.virtualRatio,
-                }, rl.textFormat("Highest Score: %3.2f", .{game.highestScore}), 10 * game.virtualRatio, .white);
+                    .height = 30 * game.virtualRatio.y,
+                }, rl.textFormat("Highest Score: %3.2f", .{game.highestScore}), 10 * game.virtualRatio.y, .white);
             }
             if (game.gameState == GameState.Pause) {
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (40 * game.virtualRatio),
+                    .y = centerNormalized.y - (40 * game.virtualRatio.y),
                     .width = width,
-                    .height = 30 * game.virtualRatio,
-                }, "Continue", 20 * game.virtualRatio, .black)) {
+                    .height = 30 * game.virtualRatio.y,
+                }, "Continue", 20 * game.virtualRatio.y, .black)) {
                     game.gameState = GameState.Playing;
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (0 * game.virtualRatio),
+                    .y = centerNormalized.y - (0 * game.virtualRatio.y),
                     .width = width,
-                    .height = 30 * game.virtualRatio,
-                }, "Main Menu", 20 * game.virtualRatio, .black)) {
+                    .height = 30 * game.virtualRatio.y,
+                }, "Main Menu", 20 * game.virtualRatio.y, .black)) {
                     game.gameState = GameState.MainMenu;
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (-40 * game.virtualRatio),
+                    .y = centerNormalized.y - (-40 * game.virtualRatio.y),
                     .width = width,
-                    .height = 30 * game.virtualRatio,
-                }, "Quit", 20 * game.virtualRatio, .black)) {
+                    .height = 30 * game.virtualRatio.y,
+                }, "Quit", 20 * game.virtualRatio.y, .black)) {
                     game.gameState = GameState.Quit;
                 }
             } else if (game.gameState == GameState.GameOver) {
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (40 * game.virtualRatio),
+                    .y = centerNormalized.y - (40 * game.virtualRatio.y),
                     .width = width,
-                    .height = 30 * game.virtualRatio,
-                }, "Restart", 20 * game.virtualRatio, .black)) {
+                    .height = 30 * game.virtualRatio.y,
+                }, "Restart", 20 * game.virtualRatio.y, .black)) {
                     game.gameState = GameState.Playing;
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (0 * game.virtualRatio),
+                    .y = centerNormalized.y - (0 * game.virtualRatio.y),
                     .width = width,
-                    .height = 30 * game.virtualRatio,
-                }, "Main Menu", 20 * game.virtualRatio, .black)) {
+                    .height = 30 * game.virtualRatio.y,
+                }, "Main Menu", 20 * game.virtualRatio.y, .black)) {
                     game.gameState = GameState.MainMenu;
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (-40 * game.virtualRatio),
+                    .y = centerNormalized.y - (-40 * game.virtualRatio.y),
                     .width = width,
-                    .height = 30 * game.virtualRatio,
-                }, "Quit", 20 * game.virtualRatio, .black)) {
+                    .height = 30 * game.virtualRatio.y,
+                }, "Quit", 20 * game.virtualRatio.y, .black)) {
                     game.gameState = GameState.Quit;
                 }
             }
@@ -145,10 +148,10 @@ pub fn drawFrame() void {
             if (!rl.isGamepadAvailable(0)) {
                 if (uiButtomIcon(
                     .{
-                        .x = 40 * game.virtualRatio,
-                        .y = @as(f32, @floatFromInt(game.height)) - (50 * game.virtualRatio),
+                        .x = 40 * game.virtualRatio.y,
+                        .y = @as(f32, @floatFromInt(game.height)) - (50 * game.virtualRatio.y),
                     },
-                    30 * game.virtualRatio,
+                    30 * game.virtualRatio.y,
                     0,
                 )) {
                     game.isTouchLeft = true;
@@ -157,10 +160,10 @@ pub fn drawFrame() void {
                 }
                 if (uiButtomIcon(
                     .{
-                        .x = (100 + 30) * game.virtualRatio,
-                        .y = @as(f32, @floatFromInt(game.height)) - (50 * game.virtualRatio),
+                        .x = (100 + 30) * game.virtualRatio.y,
+                        .y = @as(f32, @floatFromInt(game.height)) - (50 * game.virtualRatio.y),
                     },
-                    30 * game.virtualRatio,
+                    30 * game.virtualRatio.y,
                     1,
                 )) {
                     game.isTouchRight = true;
@@ -169,10 +172,10 @@ pub fn drawFrame() void {
                 }
                 if (uiButtomIcon(
                     .{
-                        .x = @as(f32, @floatFromInt(game.width)) - ((30 + 30) * game.virtualRatio),
-                        .y = @as(f32, @floatFromInt(game.height)) - (50 * game.virtualRatio),
+                        .x = @as(f32, @floatFromInt(game.width)) - ((30 + 30) * game.virtualRatio.y),
+                        .y = @as(f32, @floatFromInt(game.height)) - (50 * game.virtualRatio.y),
                     },
-                    30 * game.virtualRatio,
+                    30 * game.virtualRatio.y,
                     2,
                 )) {
                     game.isTouchUp = true;
@@ -181,10 +184,10 @@ pub fn drawFrame() void {
                 }
                 if (uiButtomIcon(
                     .{
-                        .x = @as(f32, @floatFromInt(game.width)) - ((30 + 30) * game.virtualRatio),
-                        .y = @as(f32, @floatFromInt(game.height)) - 120 * game.virtualRatio,
+                        .x = @as(f32, @floatFromInt(game.width)) - ((30 + 30) * game.virtualRatio.y),
+                        .y = @as(f32, @floatFromInt(game.height)) - 120 * game.virtualRatio.y,
                     },
-                    30 * game.virtualRatio,
+                    30 * game.virtualRatio.y,
                     3,
                 )) {
                     game.isShooting = true;
@@ -192,10 +195,10 @@ pub fn drawFrame() void {
                     game.isShooting = false;
                 }
             }
-            const fontSize = 15 * @as(i32, @intFromFloat(game.virtualRatio));
+            const fontSize = 15 * @as(i32, @intFromFloat(game.virtualRatio.y));
             rl.drawText(
                 rl.textFormat("Score: %3.2f", .{game.currentScore}),
-                @as(i32, @intFromFloat(xPosition + (40 * game.virtualRatio))),
+                @as(i32, @intFromFloat(xPosition + (40 * game.virtualRatio.y))),
                 fontSize,
                 fontSize,
                 .white,

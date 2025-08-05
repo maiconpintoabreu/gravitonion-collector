@@ -20,7 +20,9 @@ pub const GameState = enum {
 // Game consts
 pub const MAX_PROJECTILES = 200;
 pub const MAX_ASTEROIDS = 50;
-const BLACK_HOLE_PHASER_CD: f32 = 5;
+const BLACK_HOLE_PHASER_CD: f32 = 15;
+const BLACK_HOLE_PHASER_MIN_DURATION: f32 = 1;
+const BLACK_HOLE_COLLISION_POINTS = 4;
 
 const BLACK_HOLE_SCALE = 20;
 const BLACK_HOLE_SPRINTE_COUNT = 11;
@@ -31,6 +33,7 @@ const BlackHole = struct {
     size: f32 = 0.6,
     finalSize: f32 = 0.6 * BLACK_HOLE_SCALE,
     phasersCD: f32 = BLACK_HOLE_PHASER_CD,
+    phasersMinDuration: f32 = BLACK_HOLE_PHASER_MIN_DURATION,
     isPhasing: bool = false,
     rotation: f32 = 0,
     isRotatingRight: bool = false,
@@ -38,6 +41,7 @@ const BlackHole = struct {
     frameTimer: f32 = BLACK_HOLE_FRAME_SPEED,
     currentFrame: usize = 0,
     textures: [BLACK_HOLE_SPRINTE_COUNT]rl.Texture2D = std.mem.zeroes([BLACK_HOLE_SPRINTE_COUNT]rl.Texture2D),
+    collisionpoints: [BLACK_HOLE_COLLISION_POINTS]rl.Vector2 = std.mem.zeroes([BLACK_HOLE_COLLISION_POINTS]rl.Vector2),
     origin: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     pub fn tick(self: *BlackHole, delta: f32) void {
         self.frameTimer -= delta;
@@ -53,16 +57,21 @@ const BlackHole = struct {
             self.rotation -= 360;
         }
         if (self.isPhasing) {
-            const tempSize = self.size - delta;
-            if (tempSize < 0.6) {
-                self.setSize(0.6);
-                self.isPhasing = false;
+            if (self.phasersMinDuration < 0) {
+                const tempSize = self.size - delta;
+                if (tempSize < 0.6) {
+                    self.setSize(0.6);
+                    self.isPhasing = false;
+                } else {
+                    self.setSize(self.size - (0.1 * delta));
+                }
             } else {
-                self.setSize(self.size - (0.2 * delta));
+                self.phasersMinDuration -= delta;
             }
         }
         if ((self.size > 1 or self.phasersCD < 0) and !self.isPhasing) {
             self.phasersCD = BLACK_HOLE_PHASER_CD;
+            self.phasersMinDuration = BLACK_HOLE_PHASER_MIN_DURATION;
             self.isPhasing = true;
             self.isRotatingRight = rand.boolean();
         }
@@ -133,7 +142,7 @@ pub const Game = struct {
     player: Player = .{},
     blackHole: BlackHole = .{},
     gameState: GameState = GameState.MainMenu,
-    virtualRatio: f32 = 1,
+    virtualRatio: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     nativeSizeScaled: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     width: i32 = 800,
     height: i32 = 460,
