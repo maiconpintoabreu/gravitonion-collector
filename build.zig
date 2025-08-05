@@ -43,7 +43,7 @@ pub fn build(b: *std.Build) !void {
 
         b.getInstallStep().dependOn(&link_step.step);
         const run_step = try rlz.emcc.emscriptenRunStep(b);
-        // run_step.addArg("--no_browser");
+        run_step.addArg("--no_browser");
         run_step.step.dependOn(&link_step.step);
         const run_option = b.step("run", "Run space_researcher");
         run_option.dependOn(&run_step.step);

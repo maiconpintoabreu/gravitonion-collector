@@ -7,10 +7,10 @@ varying vec2 fragTexCoord;
 varying vec4 fragColor;
 
 // Uniforms to control the effect
-uniform vec2 screenResolution = vec2(800, 460);
+uniform vec2 screenResolution;
 uniform float iTime;
-uniform float radius = 2;
-uniform float speed = 0.6;
+uniform float radius;
+uniform float speed;
 
 // A simple random number generator for procedural noise
 vec2 random2(vec2 st){
@@ -58,7 +58,7 @@ void main()
     vec3 backgroundColor = vec3(stars * 0.5);
 
     // Make the rotation speed depend on the radius (r).
-    float rotationSpeed = 4 * speed * (1 + 0.5 / (r + 0.1)) ;
+    float rotationSpeed = 4.0 * speed * (1.0 + 0.5 / (r + 0.1)) ;
     vec2 diskUv = rotate2d(rotationSpeed) * centeredUv; // Swirl the coordinates
     
     // Create the ring shape and add turbulent noise
@@ -70,8 +70,8 @@ void main()
     // --- 4. Black Hole and Color ---
     // Smooth transition to the black center (event horizon)
     float blackHole = 1.0;
-    float rInverted = 1 / r / 4;
-    float edge = 0.5f;
+    float rInverted = 1.0 / r / 4.0;
+    float edge = 0.5;
     float alpha = smoothstep(radius, radius - edge, r);
     // Combine the background and disk, then apply the black hole mask
     vec3 finalColor = mix(backgroundColor, vec3(rInverted), ring);

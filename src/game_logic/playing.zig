@@ -373,7 +373,7 @@ pub fn updateFrame() void {
             if (!game.player.physicsObject.isAccelerating) {
                 game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, gravity));
             }
-            // game.player.tick();
+            game.player.tick();
             if (rl.checkCollisionCircles(
                 game.player.physicsObject.position,
                 game.player.physicsObject.collisionSize,
@@ -601,13 +601,13 @@ pub fn drawFrame() void {
             game.blackHole.collisionpoints[0],
             game.blackHole.collisionpoints[2],
             1,
-            .white,
+            .{ .r = 0, .g = 0, .b = 0, .a = 150 },
         );
         rl.drawLineEx(
             game.blackHole.collisionpoints[3],
             game.blackHole.collisionpoints[1],
             1,
-            .white,
+            .{ .r = 0, .g = 0, .b = 0, .a = 150 },
         );
     }
 
