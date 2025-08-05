@@ -1,114 +1,80 @@
 #version 100
 
-// GLSL ES requires a default precision for float types.
-precision highp float;
+precision mediump float;
 
-// Varying from vertex shader (replaces 'in')
 varying vec2 fragTexCoord;
 
-// Uniforms passed from the Zig program
-// Note: Large uniform arrays may not be supported on all older hardware.
-uniform vec2 resolution;
-uniform float time;
-uniform vec2 blackhole_center;
-uniform int particle_count = 2048;
-uniform vec2 particles[2048]; // Max particles
+varying vec4 fragColor;
 
-// --- Helper Functions ---
+// Uniforms to control the effect
+uniform vec2 screenResolution = vec2(800, 460);
+uniform float iTime;
+uniform float radius = 2;
+uniform float speed = 0.6;
 
-// Generates a pseudo-random number from a 2D vector
-float random(vec2 st) {
-    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+// A simple random number generator for procedural noise
+vec2 random2(vec2 st){
+    st = vec2( dot(st,vec2(127.1,311.7)),
+              dot(st,vec2(269.5,183.3)) );
+    return -1.0 + 2.0*fract(sin(st)*43758.5453123);
 }
 
-// 2D noise function based on the random function
+// Gradient Noise by Inigo Quilez - iq/2013
+// This is the core of our procedural textures
 float noise(vec2 st) {
     vec2 i = floor(st);
     vec2 f = fract(st);
 
-    float a = random(i);
-    float b = random(i + vec2(1.0, 0.0));
-    float c = random(i + vec2(0.0, 1.0));
-    float d = random(i + vec2(1.0, 1.0));
+    vec2 u = f*f*(3.0-2.0*f);
 
-    // Smooth interpolation
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.y * u.x;
+    return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
+                     dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
+                mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
+                     dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
 }
 
-// Draws a smoothed circle
-float smooth_circle(vec2 uv, float radius, float smoothness) {
-    return 1.0 - smoothstep(radius - smoothness, radius + smoothness, length(uv));
+// A 2D rotation matrix
+mat2 rotate2d(float _angle){
+    return mat2(cos(_angle),-sin(_angle),
+                sin(_angle),cos(_angle));
 }
 
-// Custom atan(y, x) function, as it's not available in GLSL 100
-float atan2(float y, float x) {
-    return x == 0.0 ? sign(y)*1.5707963 : atan(y, x);
-}
+void main()
+{
+    // Normalize coordinates and adjust for screen aspect ratio
+    vec2 uv = fragTexCoord;
+    vec2 centeredUv = uv - vec2(0.5);
+    centeredUv.x *= screenResolution.x / screenResolution.y;
 
-void main() {
-    // --- Setup UVs and Coordinates ---
-    // Use fragment texture coordinates, mapping them to a -1.0 to 1.0 range
-    vec2 uv = (fragTexCoord - 0.5) * 2.0;
-    // Correct for aspect ratio
-    uv.x *= resolution.x / resolution.y;
+    float r = length(centeredUv); // Distance from the center
 
-    // Center the coordinates on the black hole
-    vec2 centered_uv = uv - blackhole_center;
+    float lensFactor = 1.0 / (r * r + 0.05); 
+    vec2 warpedUv = uv + centeredUv * lensFactor * 10.0;
 
-    // --- Gravitational Lensing ---
-    float dist_to_center = length(centered_uv);
-    // Strength of the lensing effect. Inversely proportional to distance.
-    // The 0.15 is the "mass" or intensity of the black hole.
-    float lens_strength = 0.15 / (dist_to_center + 0.001); // add small value to avoid division by zero
-    // Apply the distortion by pulling the UV coordinates towards the center
-    vec2 distorted_uv = centered_uv * (1.0 - lens_strength);
+    // --- 2. Starfield Background ---
+    vec2 starfieldUv = warpedUv * 100.0;
+    float starfieldNoise = noise(starfieldUv + iTime * 0.03);
+    float stars = smoothstep(0.1, 1.0, starfieldNoise);
+    vec3 backgroundColor = vec3(stars * 0.5);
 
-    // --- Main Visual Components ---
-    vec3 col = vec3(0.0); // Start with a black background
+    // Make the rotation speed depend on the radius (r).
+    float rotationSpeed = 4 * speed * (1 + 0.5 / (r + 0.1)) ;
+    vec2 diskUv = rotate2d(rotationSpeed) * centeredUv; // Swirl the coordinates
+    
+    // Create the ring shape and add turbulent noise
+    float ring = smoothstep(0.4, 0.45, length(diskUv));
+    ring *= 1.0 - smoothstep(0.2, 0.25, length(diskUv));
+    ring += noise(diskUv * 15.0 + iTime * 0.8) * 0.1;
+    ring += noise(diskUv * 5.0 + iTime * 0.2) * 0.05;
 
-    // 1. Accretion Disk
-    // We use the distorted coordinates to create the swirling effect
-    float disk_dist = length(distorted_uv);
-    // Create a ring shape for the disk
-    float disk_mask = smooth_circle(distorted_uv, 0.5, 0.1) - smooth_circle(distorted_uv, 0.25, 0.05);
-    if (disk_mask > 0.0) {
-        // Create a swirling pattern using noise and time
-        float angle = atan2(distorted_uv.y, distorted_uv.x);
-        float swirl = noise(vec2(disk_dist * 5.0, angle * 2.0 + time * 0.5));
-        
-        // Color the disk with fiery colors based on distance and swirl
-        vec3 disk_color = mix(vec3(1.0, 0.5, 0.1), vec3(0.8, 0.1, 0.0), swirl);
-        col += disk_color * disk_mask * 1.5;
-    }
-
-    // 2. Stars/Background
-    // Use the original, non-distorted UVs for the background stars
-    float star_noise = noise(uv * 20.0);
-    if (star_noise > 0.95) {
-        col += vec3(0.8, 0.8, 1.0) * (star_noise - 0.95) * 5.0;
-    }
-
-    // 3. Particles
-    // Loop through the particle array and draw each one
-    for (int i = 0; i < 2048; i++) {
-        if (i >= particle_count) break; // Exit loop if we've processed all active particles
-        vec2 particle_pos = particles[i];
-        // Center the particle position relative to the black hole
-        vec2 particle_uv = (particle_pos - 0.5) * 2.0;
-        particle_uv.x *= resolution.x / resolution.y;
-        
-        // Draw a small, bright circle for each particle
-        float particle_shape = smooth_circle(centered_uv - (particle_uv - blackhole_center), 0.015, 0.01);
-        col += vec3(1.0, 0.9, 0.7) * particle_shape;
-    }
-
-    // 4. Event Horizon (the black center)
-    // This should be drawn last to obscure everything behind it
-    float event_horizon = smooth_circle(centered_uv, 0.2, 0.01);
-    col = mix(col, vec3(0.0), event_horizon); // Mix with black
-
-    // --- Final Output ---
-    // Use the built-in gl_FragColor instead of a custom 'out' variable
-    gl_FragColor = vec4(col, 1.0);
+    // --- 4. Black Hole and Color ---
+    // Smooth transition to the black center (event horizon)
+    float blackHole = 1.0;
+    float rInverted = 1 / r / 4;
+    float edge = 0.5f;
+    float alpha = smoothstep(radius, radius - edge, r);
+    // Combine the background and disk, then apply the black hole mask
+    vec3 finalColor = mix(backgroundColor, vec3(rInverted), ring);
+    finalColor *= blackHole;
+    gl_FragColor = vec4(finalColor, alpha);
 }

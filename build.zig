@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const raylib_shared = b.option(bool, "raylib-shared", "Build raylib as shared") orelse true;
+    const raylib_shared = b.option(bool, "raylib-shared", "Build raylib as shared") orelse false;
 
     const raylib_dep = b.dependency("raylib_zig", .{
         .target = target,
