@@ -257,7 +257,7 @@ fn playerShot() void {
     game.projectiles[game.projectilesCount].rotation = game.player.physicsObject.rotation;
     game.projectiles[game.projectilesCount].direction = norm_vector;
     game.projectiles[game.projectilesCount].speed = 20;
-    game.projectiles[game.projectilesCount].size = 1;
+    game.projectiles[game.projectilesCount].size = 3;
     game.projectilesCount += 1;
     rl.playSound(shoot);
 }
@@ -607,14 +607,34 @@ pub fn drawFrame() void {
         rl.beginBlendMode(.additive);
         defer rl.endBlendMode();
         for (0..game.projectilesCount) |projectileIndex| {
-            game.projectiles[projectileIndex].draw();
-            // if (IS_DEBUG) {
-            rl.drawCircleV(
-                game.projectiles[projectileIndex].position,
-                game.projectiles[projectileIndex].size,
-                .{ .r = 0, .g = 100, .b = 100, .a = 100 },
+            const projectile: Projectile = game.projectiles[projectileIndex];
+            game.projectiles[projectileIndex].texture.drawPro(
+                .{
+                    .x = 0,
+                    .y = 0,
+                    .width = @as(f32, @floatFromInt(projectile.texture.width)),
+                    .height = @as(f32, @floatFromInt(projectile.texture.height)),
+                },
+                .{
+                    .x = projectile.position.x,
+                    .y = projectile.position.y,
+                    .width = @as(f32, @floatFromInt(projectile.texture.width)) / 2,
+                    .height = @as(f32, @floatFromInt(projectile.texture.height)) / 2,
+                },
+                .{
+                    .x = @as(f32, @floatFromInt(projectile.texture.width)) / 4,
+                    .y = @as(f32, @floatFromInt(projectile.texture.height)) / 4,
+                },
+                game.projectiles[projectileIndex].rotation,
+                .white,
             );
-            // }
+            if (IS_DEBUG) {
+                rl.drawCircleV(
+                    game.projectiles[projectileIndex].position,
+                    game.projectiles[projectileIndex].size,
+                    .yellow,
+                );
+            }
         }
     }
 

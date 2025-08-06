@@ -35,6 +35,7 @@ pub fn build(b: *std.Build) !void {
             &[_]*std.Build.Step.Compile{ exe_lib, raylib_artifact },
         );
         //this lets your program access files like "resources/my-image.png":
+        // link_step.addArg("--emrun");
         link_step.addArg("-sERROR_ON_UNDEFINED_SYMBOLS=0");
         link_step.addArg("--shell-file");
         link_step.addArg("src/minshell.html");

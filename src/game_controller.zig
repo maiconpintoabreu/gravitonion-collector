@@ -7,8 +7,10 @@ const GameState = gameZig.GameState;
 
 // Global Variables
 var game: Game = .{};
+var isWeb = false;
 
 pub fn initGame(isEmscripten: bool) bool {
+    isWeb = isEmscripten;
     rl.initWindow(@as(i32, @intFromFloat(game.screen.x)), @as(i32, @intFromFloat(game.screen.y)), "Space Researcher");
     rl.initAudioDevice();
     updateRatio();
@@ -22,11 +24,18 @@ pub fn initGame(isEmscripten: bool) bool {
 
 fn updateRatio() void {
     if (rl.isWindowFullscreen()) {
-        game.screen.x = @as(f32, @floatFromInt(rl.getMonitorWidth(rl.getCurrentMonitor())));
-        game.screen.y = @as(f32, @floatFromInt(rl.getMonitorHeight(rl.getCurrentMonitor())));
+        if (isWeb) {
+            game.screen.x = @as(f32, @floatFromInt(rl.getRenderWidth()));
+            game.screen.y = @as(f32, @floatFromInt(rl.getRenderHeight()));
+        } else {
+            game.screen.x = @as(f32, @floatFromInt(rl.getMonitorWidth(rl.getCurrentMonitor())));
+            game.screen.y = @as(f32, @floatFromInt(rl.getMonitorHeight(rl.getCurrentMonitor())));
+        }
+        rl.traceLog(.info, "FullScreen Window: %f x %f", .{ game.screen.x, game.screen.y });
     } else {
         game.screen.x = @as(f32, @floatFromInt(rl.getScreenWidth()));
         game.screen.y = @as(f32, @floatFromInt(rl.getScreenHeight()));
+        rl.traceLog(.info, "Window: %f x %f", .{ game.screen.x, game.screen.y });
     }
     game.virtualRatio = .{
         .x = game.screen.x / @as(f32, @floatFromInt(gameZig.NATIVE_WIDTH)),

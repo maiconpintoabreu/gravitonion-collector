@@ -236,7 +236,8 @@ fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
 }
 
 fn uiTextButtom(buttom: rl.Rectangle, text: [:0]const u8, fontSize: f32, color: rl.Color) bool {
-    if (rl.checkCollisionPointRec(rl.getMousePosition(), buttom)) {
+    const mousePosition = rl.getMousePosition();
+    if (rl.checkCollisionPointRec(mousePosition, buttom)) {
         rl.drawRectangleRec(buttom, BUTTON_BACKGROUND_HOVER);
     } else {
         rl.drawRectangleRec(buttom, BUTTON_BACKGROUND_NORMAL);
@@ -245,7 +246,7 @@ fn uiTextButtom(buttom: rl.Rectangle, text: [:0]const u8, fontSize: f32, color: 
         .x = buttom.x + 5,
         .y = (buttom.y + buttom.height / 2) - (fontSize / 2),
     }, fontSize, 5, color);
-    if (rl.isMouseButtonDown(.left) and rl.checkCollisionPointRec(rl.getMousePosition(), buttom)) {
+    if (rl.isMouseButtonDown(.left) and rl.checkCollisionPointRec(mousePosition, buttom)) {
         return true;
     }
 
