@@ -149,7 +149,7 @@ pub fn drawFrame() void {
                 if (uiButtomIcon(
                     .{
                         .x = 40 * game.virtualRatio.y,
-                        .y = game.screen.y - (50 * game.virtualRatio.y),
+                        .y = game.screen.y - (80 * game.virtualRatio.y),
                     },
                     30 * game.virtualRatio.y,
                     0,
@@ -161,7 +161,7 @@ pub fn drawFrame() void {
                 if (uiButtomIcon(
                     .{
                         .x = (100 + 30) * game.virtualRatio.y,
-                        .y = game.screen.y - (50 * game.virtualRatio.y),
+                        .y = game.screen.y - (80 * game.virtualRatio.y),
                     },
                     30 * game.virtualRatio.y,
                     1,
@@ -173,7 +173,7 @@ pub fn drawFrame() void {
                 if (uiButtomIcon(
                     .{
                         .x = game.screen.x - ((30 + 30) * game.virtualRatio.y),
-                        .y = game.screen.y - (50 * game.virtualRatio.y),
+                        .y = game.screen.y - (80 * game.virtualRatio.y),
                     },
                     30 * game.virtualRatio.y,
                     2,
@@ -185,7 +185,7 @@ pub fn drawFrame() void {
                 if (uiButtomIcon(
                     .{
                         .x = game.screen.x - ((30 + 30) * game.virtualRatio.y),
-                        .y = game.screen.y - 120 * game.virtualRatio.y,
+                        .y = game.screen.y - 150 * game.virtualRatio.y,
                     },
                     30 * game.virtualRatio.y,
                     3,
