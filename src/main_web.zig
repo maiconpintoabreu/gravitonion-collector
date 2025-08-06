@@ -11,9 +11,13 @@ pub fn main() anyerror!void {
     );
     defer rl.closeWindow(); // Close window and OpenGL context
     defer gameController.closeGame();
+    rl.setConfigFlags(rl.ConfigFlags{
+        .window_resizable = false,
+    });
 
     if (gameController.initGame(true)) {
         rl.setExitKey(.null);
+        rl.setWindowMinSize(400, 225);
         std.os.emscripten.emscripten_set_main_loop(updateFrame, 0, 1);
     }
 }

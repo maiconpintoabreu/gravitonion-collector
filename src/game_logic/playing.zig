@@ -37,7 +37,9 @@ const BLACKHOLE_MASS = 1500.0;
 const GRAVITATIONAL_CONST = 0.1;
 
 // For shader
+var resolutionLoc: i32 = 0;
 var timeLoc: i32 = 0;
+var radiusLoc: i32 = 0;
 var speedLoc: i32 = 0;
 
 var game: *Game = undefined;
@@ -173,9 +175,11 @@ pub fn startGame(currentGame: *Game, isEmscripten: bool) bool {
             return false;
         },
     };
-    timeLoc = rl.getShaderLocation(blackholeShader, "iTime");
+    resolutionLoc = rl.getShaderLocation(blackholeShader, "resolution");
+    timeLoc = rl.getShaderLocation(blackholeShader, "time");
+    radiusLoc = rl.getShaderLocation(blackholeShader, "radius");
     speedLoc = rl.getShaderLocation(blackholeShader, "speed");
-    const blackholeImage = rl.genImageColor(800, 460, .white);
+    const blackholeImage = rl.genImageColor(gameZig.NATIVE_WIDTH, gameZig.NATIVE_HEIGHT, .white);
     blackholeTexture = rl.loadTextureFromImage(blackholeImage) catch |err| switch (err) {
         rl.RaylibError.LoadTexture => {
             std.debug.print("LoadTexture blackhole ERROR", .{});
@@ -186,6 +190,10 @@ pub fn startGame(currentGame: *Game, isEmscripten: bool) bool {
             return false;
         },
     };
+
+    rl.setShaderValue(blackholeShader, resolutionLoc, &game.screen, .vec2);
+    const radius: f32 = 2.0;
+    rl.setShaderValue(blackholeShader, radiusLoc, &radius, .float);
 
     // Start with one asteroid
     spawnAsteroidRandom();
@@ -270,16 +278,16 @@ fn spawnAsteroidRandom() void {
         if (rand.boolean()) {
             game.asteroids[game.asteroidCount].physicsObject.position.x = 0;
         } else {
-            game.asteroids[game.asteroidCount].physicsObject.position.x = @as(f32, @floatFromInt(game.width)) / game.camera.zoom;
+            game.asteroids[game.asteroidCount].physicsObject.position.x = gameZig.NATIVE_WIDTH;
         }
-        game.asteroids[game.asteroidCount].physicsObject.position.y = rand.float(f32) * @as(f32, @floatFromInt(game.height)) / game.camera.zoom;
+        game.asteroids[game.asteroidCount].physicsObject.position.y = rand.float(f32) * gameZig.NATIVE_HEIGHT;
     } else {
         if (rand.boolean()) {
             game.asteroids[game.asteroidCount].physicsObject.position.y = 0;
         } else {
-            game.asteroids[game.asteroidCount].physicsObject.position.y = @as(f32, @floatFromInt(game.height)) / game.camera.zoom;
+            game.asteroids[game.asteroidCount].physicsObject.position.y = gameZig.NATIVE_HEIGHT;
         }
-        game.asteroids[game.asteroidCount].physicsObject.position.x = rand.float(f32) * @as(f32, @floatFromInt(game.width)) / game.camera.zoom;
+        game.asteroids[game.asteroidCount].physicsObject.position.x = rand.float(f32) * gameZig.NATIVE_WIDTH;
     }
     game.asteroids[game.asteroidCount].physicsObject.velocity = rl.Vector2.clampValue(
         game.asteroids[game.asteroidCount].physicsObject.velocity,
@@ -371,7 +379,7 @@ pub fn updateFrame() void {
             const direction = rl.Vector2.subtract(game.nativeSizeScaled, game.player.physicsObject.position).normalize();
             const gravity = (game.blackHole.finalSize / 20) * PHYSICS_TICK_SPEED;
             if (!game.player.physicsObject.isAccelerating) {
-                game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, gravity));
+                game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, gravity / 4));
             }
             game.player.tick();
             if (rl.checkCollisionCircles(
@@ -384,10 +392,10 @@ pub fn updateFrame() void {
                 return;
             }
 
-            game.blackHole.collisionpoints[0] = game.nativeSizeScaled.add(.{ .x = 0, .y = -5 * game.virtualRatio.y });
-            game.blackHole.collisionpoints[1] = game.nativeSizeScaled.add(.{ .x = 0, .y = 5 * game.virtualRatio.y });
-            game.blackHole.collisionpoints[2] = game.nativeSizeScaled.add(.{ .x = 1000 * game.virtualRatio.y, .y = -5 * game.virtualRatio.y });
-            game.blackHole.collisionpoints[3] = game.nativeSizeScaled.add(.{ .x = 1000 * game.virtualRatio.y, .y = 5 * game.virtualRatio.y });
+            game.blackHole.collisionpoints[0] = game.nativeSizeScaled.add(.{ .x = 0, .y = -5 });
+            game.blackHole.collisionpoints[1] = game.nativeSizeScaled.add(.{ .x = 0, .y = 5 });
+            game.blackHole.collisionpoints[2] = game.nativeSizeScaled.add(.{ .x = 1000, .y = -5 });
+            game.blackHole.collisionpoints[3] = game.nativeSizeScaled.add(.{ .x = 1000, .y = 5 });
 
             game.blackHole.collisionpoints[0] = game.nativeSizeScaled.add(game.blackHole.collisionpoints[0].subtract(game.nativeSizeScaled).rotate(
                 math.degreesToRadians(game.blackHole.rotation),
@@ -401,16 +409,15 @@ pub fn updateFrame() void {
             game.blackHole.collisionpoints[3] = game.nativeSizeScaled.add(game.blackHole.collisionpoints[3].subtract(game.nativeSizeScaled).rotate(
                 math.degreesToRadians(game.blackHole.rotation),
             ));
-            var centerPoint = game.nativeSizeScaled.add(.{ .x = 1000 * game.virtualRatio.y, .y = 0 });
+            var centerPoint = game.nativeSizeScaled.add(.{ .x = 1000, .y = 0 });
             centerPoint = game.nativeSizeScaled.add(centerPoint.subtract(game.nativeSizeScaled).rotate(
                 math.degreesToRadians(game.blackHole.rotation),
             ));
-
             game.player.physicsObject.calculateWrap(.{
                 .x = 0,
                 .y = 0,
-                .width = @as(f32, @floatFromInt(game.width)) / game.camera.zoom,
-                .height = @as(f32, @floatFromInt(game.height)) / game.camera.zoom,
+                .width = gameZig.NATIVE_WIDTH,
+                .height = gameZig.NATIVE_HEIGHT,
             });
 
             // phaser against player
@@ -437,11 +444,11 @@ pub fn updateFrame() void {
             for (0..game.projectilesCount) |projectileIndex| {
                 game.projectiles[projectileIndex].tick(PHYSICS_TICK_SPEED);
                 const projectilePosition = game.projectiles[projectileIndex].position;
-                if (projectilePosition.x < 0 or projectilePosition.x > @as(f32, @floatFromInt(game.width))) {
+                if (projectilePosition.x < 0 or projectilePosition.x > gameZig.NATIVE_WIDTH) {
                     removeProjectile(projectileIndex);
                     continue;
                 }
-                if (projectilePosition.y < 0 or projectilePosition.y > @as(f32, @floatFromInt(game.height))) {
+                if (projectilePosition.y < 0 or projectilePosition.y > gameZig.NATIVE_HEIGHT) {
                     removeProjectile(projectileIndex);
                     continue;
                 }
@@ -449,26 +456,21 @@ pub fn updateFrame() void {
                     game.nativeSizeScaled,
                     game.blackHole.finalSize,
                     projectilePosition,
-                    game.projectiles[projectileIndex].size * game.virtualRatio.y,
+                    game.projectiles[projectileIndex].size,
                 )) {
                     removeProjectile(projectileIndex);
                     continue;
                 }
 
-                if (game.blackHole.isPhasing and (rl.checkCollisionCircleLine(
+                if (game.blackHole.isPhasing and (rl.checkCollisionPointTriangle(
                     projectilePosition,
-                    game.projectiles[projectileIndex].size,
-                    game.nativeSizeScaled,
-                    centerPoint,
-                ) or rl.checkCollisionCircleLine(
-                    projectilePosition,
-                    game.projectiles[projectileIndex].size,
                     game.blackHole.collisionpoints[0],
-                    game.blackHole.collisionpoints[2],
-                ) or rl.checkCollisionCircleLine(
-                    projectilePosition,
-                    game.projectiles[projectileIndex].size,
                     game.blackHole.collisionpoints[1],
+                    game.blackHole.collisionpoints[2],
+                ) or rl.checkCollisionPointTriangle(
+                    projectilePosition,
+                    game.blackHole.collisionpoints[3],
+                    game.blackHole.collisionpoints[2],
                     game.blackHole.collisionpoints[1],
                 ))) {
                     removeProjectile(projectileIndex);
@@ -480,7 +482,7 @@ pub fn updateFrame() void {
                         game.asteroids[asteroidIndex].physicsObject.position,
                         game.asteroids[asteroidIndex].physicsObject.collisionSize,
                         projectilePosition,
-                        game.projectiles[projectileIndex].size * game.virtualRatio.y,
+                        game.projectiles[projectileIndex].size,
                     )) {
                         removeProjectile(projectileIndex);
                         removeAsteroid(asteroidIndex);
@@ -549,34 +551,19 @@ pub fn updateFrame() void {
     }
 }
 pub fn drawFrame() void {
-    rl.beginMode2D(game.camera);
-    defer rl.endMode2D();
+    game.camera.begin();
+    defer game.camera.end();
 
     // Use the shader to draw a rectangle that covers the whole screen
 
     rl.beginShaderMode(blackholeShader);
-    const textPosition = game.camera.target.subtract(game.camera.offset);
-    blackholeTexture.draw(@as(i32, @intFromFloat(textPosition.x)), @as(i32, @intFromFloat(textPosition.y)), .white);
+    blackholeTexture.draw(
+        0,
+        0,
+        .white,
+    );
     rl.endShaderMode();
 
-    // const blackHoleTexture = game.blackHole.textures[game.blackHole.currentFrame];
-    // blackHoleTexture.drawPro(
-    //     rl.Rectangle{
-    //         .x = 0,
-    //         .y = 0,
-    //         .width = @as(f32, @floatFromInt(blackHoleTexture.width)),
-    //         .height = @as(f32, @floatFromInt(blackHoleTexture.height)),
-    //     },
-    //     rl.Rectangle{
-    //         .x = game.nativeSizeScaled.x + (2),
-    //         .y = game.nativeSizeScaled.y + (-1),
-    //         .width = @as(f32, @floatFromInt(blackHoleTexture.width)) * game.blackHole.size,
-    //         .height = @as(f32, @floatFromInt(blackHoleTexture.height)) * game.blackHole.size,
-    //     },
-    //     game.blackHole.origin.scale(game.blackHole.size),
-    //     0,
-    //     .white,
-    // );
     if (IS_DEBUG) {
         rl.drawCircleV(game.blackHole.collisionpoints[0], 5, .yellow);
         rl.drawCircleV(game.blackHole.collisionpoints[1], 5, .yellow);
@@ -601,13 +588,13 @@ pub fn drawFrame() void {
             game.blackHole.collisionpoints[0],
             game.blackHole.collisionpoints[2],
             1,
-            .{ .r = 0, .g = 0, .b = 0, .a = 150 },
+            .{ .r = 255, .g = 255, .b = 255, .a = 100 },
         );
         rl.drawLineEx(
             game.blackHole.collisionpoints[3],
             game.blackHole.collisionpoints[1],
             1,
-            .{ .r = 0, .g = 0, .b = 0, .a = 150 },
+            .{ .r = 255, .g = 255, .b = 255, .a = 100 },
         );
     }
 

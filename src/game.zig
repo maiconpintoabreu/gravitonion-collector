@@ -9,6 +9,11 @@ const Asteroid = asteroidZig.Asteroid;
 const projectileZig = @import("game_logic/projectile.zig");
 const Projectile = projectileZig.Projectile;
 
+// Screen consts
+pub const NATIVE_WIDTH = 800;
+pub const NATIVE_HEIGHT = 450;
+pub const NATIVE_CENTER = rl.Vector2{ .x = NATIVE_WIDTH / 2, .y = NATIVE_HEIGHT / 2 };
+
 pub const GameState = enum {
     MainMenu,
     Playing,
@@ -144,8 +149,10 @@ pub const Game = struct {
     gameState: GameState = GameState.MainMenu,
     virtualRatio: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     nativeSizeScaled: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    width: i32 = 800,
-    height: i32 = 460,
+    screen: rl.Vector2 = .{
+        .x = NATIVE_WIDTH,
+        .y = NATIVE_HEIGHT,
+    },
     asteroidSpawnCd: f32 = 0,
     shootingCd: f32 = 0,
     currentTickLength: f32 = 0.0,

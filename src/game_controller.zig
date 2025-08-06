@@ -1,21 +1,15 @@
 const rl = @import("raylib");
-const rg = @import("raygui");
 const gameZig = @import("game.zig");
 const Game = gameZig.Game;
 const playingZig = @import("game_logic/playing.zig");
 const menuZig = @import("menu.zig");
 const GameState = gameZig.GameState;
 
-// Screen consts
-const NATIVE_WIDTH = 480;
-const NATIVE_HEIGHT = 270;
-const NATIVE_CENTER = rl.Vector2{ .x = NATIVE_WIDTH / 2, .y = NATIVE_HEIGHT / 2 };
-
 // Global Variables
 var game: Game = .{};
 
 pub fn initGame(isEmscripten: bool) bool {
-    rl.initWindow(game.width, game.height, "Space Researcher");
+    rl.initWindow(@as(i32, @intFromFloat(game.screen.x)), @as(i32, @intFromFloat(game.screen.y)), "Space Researcher");
     rl.initAudioDevice();
     updateRatio();
     game.gameState = GameState.MainMenu;
@@ -28,18 +22,22 @@ pub fn initGame(isEmscripten: bool) bool {
 
 fn updateRatio() void {
     if (rl.isWindowFullscreen()) {
-        game.width = rl.getMonitorWidth(rl.getCurrentMonitor());
-        game.height = rl.getMonitorHeight(rl.getCurrentMonitor());
+        game.screen.x = @as(f32, @floatFromInt(rl.getMonitorWidth(rl.getCurrentMonitor())));
+        game.screen.y = @as(f32, @floatFromInt(rl.getMonitorHeight(rl.getCurrentMonitor())));
     } else {
-        game.width = rl.getScreenWidth();
-        game.height = rl.getScreenHeight();
+        game.screen.x = @as(f32, @floatFromInt(rl.getScreenWidth()));
+        game.screen.y = @as(f32, @floatFromInt(rl.getScreenHeight()));
     }
     game.virtualRatio = .{
-        .x = @as(f32, @floatFromInt(game.width)) / @as(f32, @floatFromInt(NATIVE_WIDTH)),
-        .y = @as(f32, @floatFromInt(game.height)) / @as(f32, @floatFromInt(NATIVE_HEIGHT)),
+        .x = game.screen.x / @as(f32, @floatFromInt(gameZig.NATIVE_WIDTH)),
+        .y = game.screen.y / @as(f32, @floatFromInt(gameZig.NATIVE_HEIGHT)),
     };
-    game.nativeSizeScaled = NATIVE_CENTER;
-    game.camera.zoom = 1 * game.virtualRatio.y;
+    game.nativeSizeScaled = gameZig.NATIVE_CENTER;
+    if (game.virtualRatio.y < game.virtualRatio.x) {
+        game.camera.zoom = 1 * game.virtualRatio.y;
+    } else {
+        game.camera.zoom = 1 * game.virtualRatio.x;
+    }
     game.camera.offset = .{ .x = game.nativeSizeScaled.x * game.virtualRatio.x, .y = game.nativeSizeScaled.y * game.virtualRatio.y };
 }
 

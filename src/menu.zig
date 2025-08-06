@@ -77,7 +77,7 @@ pub fn drawFrame() void {
             }
         },
         GameState.Pause, GameState.GameOver => {
-            rl.drawRectangle(0, 0, game.width, game.height, rl.Color{
+            rl.drawRectangle(0, 0, @as(i32, @intFromFloat(game.screen.x)), @as(i32, @intFromFloat(game.screen.y)), rl.Color{
                 .r = 0,
                 .g = 0,
                 .b = 0,
@@ -149,7 +149,7 @@ pub fn drawFrame() void {
                 if (uiButtomIcon(
                     .{
                         .x = 40 * game.virtualRatio.y,
-                        .y = @as(f32, @floatFromInt(game.height)) - (50 * game.virtualRatio.y),
+                        .y = game.screen.y - (50 * game.virtualRatio.y),
                     },
                     30 * game.virtualRatio.y,
                     0,
@@ -161,7 +161,7 @@ pub fn drawFrame() void {
                 if (uiButtomIcon(
                     .{
                         .x = (100 + 30) * game.virtualRatio.y,
-                        .y = @as(f32, @floatFromInt(game.height)) - (50 * game.virtualRatio.y),
+                        .y = game.screen.y - (50 * game.virtualRatio.y),
                     },
                     30 * game.virtualRatio.y,
                     1,
@@ -172,8 +172,8 @@ pub fn drawFrame() void {
                 }
                 if (uiButtomIcon(
                     .{
-                        .x = @as(f32, @floatFromInt(game.width)) - ((30 + 30) * game.virtualRatio.y),
-                        .y = @as(f32, @floatFromInt(game.height)) - (50 * game.virtualRatio.y),
+                        .x = game.screen.x - ((30 + 30) * game.virtualRatio.y),
+                        .y = game.screen.y - (50 * game.virtualRatio.y),
                     },
                     30 * game.virtualRatio.y,
                     2,
@@ -184,8 +184,8 @@ pub fn drawFrame() void {
                 }
                 if (uiButtomIcon(
                     .{
-                        .x = @as(f32, @floatFromInt(game.width)) - ((30 + 30) * game.virtualRatio.y),
-                        .y = @as(f32, @floatFromInt(game.height)) - 120 * game.virtualRatio.y,
+                        .x = game.screen.x - ((30 + 30) * game.virtualRatio.y),
+                        .y = game.screen.y - 120 * game.virtualRatio.y,
                     },
                     30 * game.virtualRatio.y,
                     3,
