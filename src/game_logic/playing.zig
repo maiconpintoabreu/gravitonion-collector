@@ -46,7 +46,6 @@ var game: *Game = undefined;
 
 pub fn startGame(currentGame: *Game, isEmscripten: bool) bool {
     game = currentGame;
-    // TODO: check why the trigger does not work well
     isWeb = isEmscripten;
     music = rl.loadMusicStream("resources/ambient.mp3") catch |err| switch (err) {
         rl.RaylibError.LoadAudioStream => {
@@ -207,7 +206,6 @@ pub fn startGame(currentGame: *Game, isEmscripten: bool) bool {
 pub fn restartGame() void {
     game.currentScore = 0;
     gameTime = 0;
-    // TODO: Align names later
     game.asteroidCount = 0;
     game.projectilesCount = 0;
     if (rl.isMusicValid(music)) {
@@ -232,13 +230,13 @@ pub fn closeGame() void {
 
     game.player.unload();
     if (bulletTexture.id > 0) {
-        rl.unloadTexture(bulletTexture);
+        bulletTexture.unload();
     }
     if (blackholeTexture.id > 0) {
-        rl.unloadTexture(blackholeTexture);
+        blackholeTexture.unload();
     }
     if (asteroidTexture.id > 0) {
-        rl.unloadTexture(asteroidTexture);
+        asteroidTexture.unload();
     }
     if (blackholeShader.id > 0) {
         rl.unloadShader(blackholeShader);
@@ -505,16 +503,6 @@ pub fn updateFrame() void {
                     rl.playSound(blackholeincreasing);
                     continue;
                 }
-
-                // if (game.blackHole.isPhasing and rl.checkCollisionCircleLine(
-                //     game.asteroids[asteroidIndex].physicsObject.position,
-                //     game.asteroids[asteroidIndex].physicsObject.collisionSize * 30,
-                //     game.nativeSizeScaled,
-                //     game.nativeSizeScaled.add(blackholePhaserDirection.scale(100)),
-                // )) {
-                //     removeProjectile(asteroidIndex);
-                //     continue;
-                // }
 
                 if (rl.checkCollisionCircles(
                     game.player.physicsObject.position,

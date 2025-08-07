@@ -18,6 +18,11 @@ pub fn main() anyerror!void {
     if (gameController.initGame(false)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(400, 225);
+        const fps = if (rl.getMonitorRefreshRate(rl.getCurrentMonitor()) != 0)
+            rl.getMonitorRefreshRate(rl.getCurrentMonitor())
+        else
+            60;
+        rl.setTargetFPS(fps);
         while (gameController.update()) {}
     }
 }

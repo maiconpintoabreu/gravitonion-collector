@@ -1,18 +1,16 @@
 # space-researcher
 [![CD](https://github.com/maiconpintoabreu/space-researcher/actions/workflows/cd.yml/badge.svg)](https://github.com/maiconpintoabreu/space-researcher/actions/workflows/cd.yml)
 
-[![Itch.io](https://static.itch.io/images/badge-color.svg)](https://maiconspas.itch.io/space-researcher)
+[![Itch.io](https://static.itch.io/images/badge-color.svg)](https://maiconspas.itch.io/space-researcher?password=1gam)
 
 
 Player needs to protect the BackHole from the asteroids so it does not go too big and stay close from it so the scientists are able to collect information of it.
 
 
 ## TODO:
-* When the black hole grows more than some value it will beam later around reducing it size to the minimal.
 * UI to show the power (with power mechanics)
 * UI to toogle UI controller
 * UI to Pause
-* Add Gameover if the player touchs one of the asteroids
 * Add power ups (gun modifier and temp shield dropped by the asteroids) 
 
 ### Maybes:

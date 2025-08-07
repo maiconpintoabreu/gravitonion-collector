@@ -10,8 +10,8 @@ const projectileZig = @import("game_logic/projectile.zig");
 const Projectile = projectileZig.Projectile;
 
 // Screen consts
-pub const NATIVE_WIDTH = 800;
-pub const NATIVE_HEIGHT = 450;
+pub const NATIVE_WIDTH = 640;
+pub const NATIVE_HEIGHT = 360;
 pub const NATIVE_CENTER = rl.Vector2{ .x = NATIVE_WIDTH / 2, .y = NATIVE_HEIGHT / 2 };
 
 pub const GameState = enum {
@@ -150,8 +150,8 @@ pub const Game = struct {
     virtualRatio: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     nativeSizeScaled: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     screen: rl.Vector2 = .{
-        .x = NATIVE_WIDTH,
-        .y = NATIVE_HEIGHT,
+        .x = 800,
+        .y = 450,
     },
     asteroidSpawnCd: f32 = 0,
     shootingCd: f32 = 0,
