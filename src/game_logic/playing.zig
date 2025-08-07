@@ -313,15 +313,15 @@ pub fn updateFrame() void {
         gameTime += @as(f64, delta);
         game.currentScore += 20 / game.player.physicsObject.position.distance(game.nativeSizeScaled) * delta;
         game.asteroidSpawnCd -= delta;
+        game.blackHole.setSize(game.blackHole.size + 0.05 * delta);
         game.shootingCd -= delta;
         game.blackHole.tick(delta);
-        const reducedTime = @as(f32, @floatCast(gameTime / 10));
-        const reducedTime2 = @as(f32, @floatCast(gameTime / 2));
+        const reducedTime = @as(f32, @floatCast(gameTime / 2));
 
-        rl.setShaderValue(blackholeShader, timeLoc, &reducedTime2, .float);
+        rl.setShaderValue(blackholeShader, timeLoc, &reducedTime, .float);
         rl.setShaderValue(blackholeShader, speedLoc, &game.blackHole.size, .float);
         if (game.asteroidSpawnCd < 0) {
-            game.asteroidSpawnCd = rl.math.clamp(DEFAULT_ASTEROID_CD - reducedTime, 0.2, 100);
+            game.asteroidSpawnCd = rl.math.clamp(DEFAULT_ASTEROID_CD - game.blackHole.size, 0.2, 100);
             spawnAsteroidRandom();
         }
         // Input
