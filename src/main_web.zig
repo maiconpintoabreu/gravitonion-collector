@@ -3,7 +3,7 @@ const std = @import("std");
 const gameController = @import("game_controller.zig");
 
 pub fn main() anyerror!void {
-    // rl.setTraceLogLevel(.warning);
+    rl.setTraceLogLevel(.warning);
     rl.traceLog(
         rl.TraceLogLevel.info,
         "Initializing Game!",

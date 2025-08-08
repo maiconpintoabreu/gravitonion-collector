@@ -5,13 +5,10 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const raylib_shared = b.option(bool, "raylib-shared", "Build raylib as shared") orelse false;
-
     const raylib_dep = b.dependency("raylib_zig", .{
         .target = target,
         .optimize = optimize,
         .linux_display_backend = .X11,
-        .shared = raylib_shared,
     });
     const raylib = raylib_dep.module("raylib");
     const raylib_artifact = raylib_dep.artifact("raylib");

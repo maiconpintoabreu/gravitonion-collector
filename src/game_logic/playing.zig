@@ -239,7 +239,7 @@ pub fn closeGame() void {
         asteroidTexture.unload();
     }
     if (blackholeShader.id > 0) {
-        rl.unloadShader(blackholeShader);
+        blackholeShader.unload();
     }
 }
 fn playerShot() void {
