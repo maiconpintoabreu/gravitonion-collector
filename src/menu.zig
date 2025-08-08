@@ -3,10 +3,12 @@ const rl = @import("raylib");
 const gameZig = @import("game.zig");
 const Game = gameZig.Game;
 const GameState = gameZig.GameState;
+const GameControllerType = gameZig.GameControllerType;
 
-const IS_DEBUG_MENU: bool = true;
+const IS_DEBUG_MENU: bool = false;
 const BUTTON_BACKGROUND_NORMAL: rl.Color = .gray;
 const BUTTON_BACKGROUND_HOVER: rl.Color = .light_gray;
+const BUTTON_WIDTH = 140;
 
 var game: *Game = undefined;
 var font: rl.Font = std.mem.zeroes(rl.Font);
@@ -15,10 +17,33 @@ var controlTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
 pub fn initMenu(inGame: *Game) bool {
     game = inGame;
 
-    var controlImage: rl.Image = rl.genImageColor(16 * 4, 16, rl.Color.blank);
-    rl.imageDrawTriangle(&controlImage, rl.Vector2{ .x = 9, .y = 2 }, rl.Vector2{ .x = 9, .y = 12 }, rl.Vector2{ .x = 4, .y = 7 }, rl.Color.white);
-    rl.imageDrawTriangle(&controlImage, rl.Vector2{ .x = 16 + 7, .y = 2 }, rl.Vector2{ .x = 16 + 16 - 4, .y = 7 }, rl.Vector2{ .x = 16 + 7, .y = 12 }, rl.Color.white);
-    rl.imageDrawTriangle(&controlImage, rl.Vector2{ .x = 32 + 8, .y = 5 }, rl.Vector2{ .x = 32 + 13, .y = 10 }, rl.Vector2{ .x = 32 + 3, .y = 10 }, rl.Color.white);
+    // Magic numbers to generate a triangle for the UI (I could add a file instead) TODO: Add the triangle as a file
+    var controlImage: rl.Image = rl.genImageColor(
+        16 * 4,
+        16,
+        rl.Color.blank,
+    );
+    rl.imageDrawTriangle(
+        &controlImage,
+        rl.Vector2{ .x = 9, .y = 2 },
+        rl.Vector2{ .x = 9, .y = 12 },
+        rl.Vector2{ .x = 4, .y = 7 },
+        rl.Color.white,
+    );
+    rl.imageDrawTriangle(
+        &controlImage,
+        rl.Vector2{ .x = 16 + 7, .y = 2 },
+        rl.Vector2{ .x = 16 + 16 - 4, .y = 7 },
+        rl.Vector2{ .x = 16 + 7, .y = 12 },
+        rl.Color.white,
+    );
+    rl.imageDrawTriangle(
+        &controlImage,
+        rl.Vector2{ .x = 32 + 8, .y = 5 },
+        rl.Vector2{ .x = 32 + 13, .y = 10 },
+        rl.Vector2{ .x = 32 + 3, .y = 10 },
+        rl.Color.white,
+    );
     rl.imageDrawText(&controlImage, "x", 48 + 3, -3, 20, rl.Color.white);
     controlTexture = rl.loadTextureFromImage(controlImage) catch |err| switch (err) {
         rl.RaylibError.LoadTexture => {
@@ -54,25 +79,25 @@ pub fn updateFrame() void {
 }
 
 pub fn drawFrame() void {
-    const width = 140 * game.virtualRatio.y;
-    const centerNormalized = game.nativeSizeScaled.scale(game.virtualRatio.y);
-    const xPosition = centerNormalized.x - width / 2;
+    const width = BUTTON_WIDTH;
+    const height = 30;
+    const xPosition = gameZig.NATIVE_CENTER.x - width / 2;
     switch (game.gameState) {
         GameState.MainMenu => {
             if (uiTextButtom(rl.Rectangle{
                 .x = xPosition,
-                .y = centerNormalized.y - (20 * game.virtualRatio.y),
+                .y = gameZig.NATIVE_CENTER.y - height,
                 .width = width,
-                .height = 30 * game.virtualRatio.y,
-            }, "Play", 20 * game.virtualRatio.y, .black)) {
+                .height = height,
+            }, "Play", 20, .black)) {
                 game.gameState = GameState.Playing;
             }
             if (uiTextButtom(rl.Rectangle{
                 .x = xPosition,
-                .y = centerNormalized.y - (-30 * game.virtualRatio.y),
+                .y = gameZig.NATIVE_CENTER.y - -height,
                 .width = width,
-                .height = 30 * game.virtualRatio.y,
-            }, "Quit", 20 * game.virtualRatio.y, .black)) {
+                .height = height,
+            }, "Quit", 20, .black)) {
                 game.gameState = GameState.Quit;
             }
         },
@@ -86,119 +111,130 @@ pub fn drawFrame() void {
             if (game.highestScore > 0) {
                 uiText(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (80 * game.virtualRatio.y),
+                    .y = gameZig.NATIVE_CENTER.y - (80),
                     .width = width,
-                    .height = 30 * game.virtualRatio.y,
-                }, rl.textFormat("Highest Score: %3.2f", .{game.highestScore}), 10 * game.virtualRatio.y, .white);
+                    .height = height,
+                }, rl.textFormat("Highest Score: %3.2f", .{game.highestScore}), 10, .white);
             }
             if (game.gameState == GameState.Pause) {
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (40 * game.virtualRatio.y),
+                    .y = gameZig.NATIVE_CENTER.y - (40),
                     .width = width,
-                    .height = 30 * game.virtualRatio.y,
-                }, "Continue", 20 * game.virtualRatio.y, .black)) {
+                    .height = height,
+                }, "Continue", 20, .black)) {
                     game.gameState = GameState.Playing;
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (0 * game.virtualRatio.y),
+                    .y = gameZig.NATIVE_CENTER.y - (0),
                     .width = width,
-                    .height = 30 * game.virtualRatio.y,
-                }, "Main Menu", 20 * game.virtualRatio.y, .black)) {
+                    .height = height,
+                }, "Main Menu", 20, .black)) {
                     game.gameState = GameState.MainMenu;
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (-40 * game.virtualRatio.y),
+                    .y = gameZig.NATIVE_CENTER.y - (-40),
                     .width = width,
-                    .height = 30 * game.virtualRatio.y,
-                }, "Quit", 20 * game.virtualRatio.y, .black)) {
+                    .height = height,
+                }, "Quit", 20, .black)) {
                     game.gameState = GameState.Quit;
                 }
             } else if (game.gameState == GameState.GameOver) {
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (40 * game.virtualRatio.y),
+                    .y = gameZig.NATIVE_CENTER.y - (40),
                     .width = width,
-                    .height = 30 * game.virtualRatio.y,
-                }, "Restart", 20 * game.virtualRatio.y, .black)) {
+                    .height = height,
+                }, "Restart", 20, .black)) {
                     game.gameState = GameState.Playing;
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (0 * game.virtualRatio.y),
+                    .y = gameZig.NATIVE_CENTER.y - (0),
                     .width = width,
-                    .height = 30 * game.virtualRatio.y,
-                }, "Main Menu", 20 * game.virtualRatio.y, .black)) {
+                    .height = height,
+                }, "Main Menu", 20, .black)) {
                     game.gameState = GameState.MainMenu;
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = centerNormalized.y - (-40 * game.virtualRatio.y),
+                    .y = gameZig.NATIVE_CENTER.y - (-40),
                     .width = width,
-                    .height = 30 * game.virtualRatio.y,
-                }, "Quit", 20 * game.virtualRatio.y, .black)) {
+                    .height = height,
+                }, "Quit", 20, .black)) {
                     game.gameState = GameState.Quit;
                 }
             }
         },
         GameState.Playing => {
             // UI
+            // Set Joystick if one and it is absolute
             if (!rl.isGamepadAvailable(0)) {
-                if (uiButtomIcon(
-                    .{
-                        .x = 40 * game.virtualRatio.y,
-                        .y = game.screen.y - (80 * game.virtualRatio.y),
-                    },
-                    30 * game.virtualRatio.y,
-                    0,
-                )) {
-                    game.isTouchLeft = true;
-                } else {
-                    game.isTouchLeft = false;
+                if (rl.getTouchPointCount() > 0 and rl.getTouchPosition(0).x > 0) {
+                    game.gameControllerType = GameControllerType.TouchScreen;
+                    if (!game.isPlaying) {
+                        game.isPlaying = true;
+                    }
                 }
-                if (uiButtomIcon(
-                    .{
-                        .x = (100 + 30) * game.virtualRatio.y,
-                        .y = game.screen.y - (80 * game.virtualRatio.y),
-                    },
-                    30 * game.virtualRatio.y,
-                    1,
-                )) {
-                    game.isTouchRight = true;
-                } else {
-                    game.isTouchRight = false;
+                if (game.gameControllerType == GameControllerType.TouchScreen) {
+                    if (uiButtomIcon(
+                        .{
+                            .x = 40,
+                            .y = gameZig.NATIVE_HEIGHT - 80,
+                        },
+                        30,
+                        0,
+                    )) {
+                        game.isTouchLeft = true;
+                    } else {
+                        game.isTouchLeft = false;
+                    }
+                    if (uiButtomIcon(
+                        .{
+                            .x = (100 + 30),
+                            .y = gameZig.NATIVE_HEIGHT - 80,
+                        },
+                        30,
+                        1,
+                    )) {
+                        game.isTouchRight = true;
+                    } else {
+                        game.isTouchRight = false;
+                    }
+                    if (uiButtomIcon(
+                        .{
+                            .x = gameZig.NATIVE_WIDTH - 60,
+                            .y = gameZig.NATIVE_HEIGHT - 80,
+                        },
+                        30,
+                        2,
+                    )) {
+                        game.isTouchUp = true;
+                    } else {
+                        game.isTouchUp = false;
+                    }
+                    if (uiButtomIcon(
+                        .{
+                            .x = gameZig.NATIVE_WIDTH - 60,
+                            .y = gameZig.NATIVE_HEIGHT - 150,
+                        },
+                        30,
+                        3,
+                    )) {
+                        game.isShooting = true;
+                    } else {
+                        game.isShooting = false;
+                    }
                 }
-                if (uiButtomIcon(
-                    .{
-                        .x = game.screen.x - ((30 + 30) * game.virtualRatio.y),
-                        .y = game.screen.y - (80 * game.virtualRatio.y),
-                    },
-                    30 * game.virtualRatio.y,
-                    2,
-                )) {
-                    game.isTouchUp = true;
-                } else {
-                    game.isTouchUp = false;
-                }
-                if (uiButtomIcon(
-                    .{
-                        .x = game.screen.x - ((30 + 30) * game.virtualRatio.y),
-                        .y = game.screen.y - 150 * game.virtualRatio.y,
-                    },
-                    30 * game.virtualRatio.y,
-                    3,
-                )) {
-                    game.isShooting = true;
-                } else {
-                    game.isShooting = false;
-                }
+            } else if (game.gameControllerType != GameControllerType.Joystick) {
+                game.gameControllerType = GameControllerType.Joystick;
             }
-            const fontSize = 15 * @as(i32, @intFromFloat(game.virtualRatio.y));
+            const fontSize = 15;
             rl.drawText(
                 rl.textFormat("Score: %3.2f", .{game.currentScore}),
-                @as(i32, @intFromFloat(xPosition + (40 * game.virtualRatio.y))),
+                @as(i32, @intFromFloat(xPosition + 40)),
                 fontSize,
                 fontSize,
                 .white,
@@ -219,9 +255,16 @@ pub fn drawFrame() void {
 }
 
 fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
-    rl.drawCircleV(buttom, buttomSize, rl.Color.gray);
+    rl.drawCircleV(buttom, buttomSize, .{ .r = 200, .g = 200, .b = 200, .a = 100 });
     const buttomEdge = rl.Vector2{ .x = buttom.x - buttomSize / 2, .y = buttom.y - buttomSize / 2 };
-    rl.drawTexturePro(controlTexture, rl.Rectangle{ .x = 16 * icon, .y = 0, .width = 16, .height = 16 }, .{ .x = buttomEdge.x, .y = buttomEdge.y, .width = buttomSize, .height = buttomSize }, rl.Vector2.zero(), 0, rl.Color.white);
+    rl.drawTexturePro(
+        controlTexture,
+        rl.Rectangle{ .x = 16 * icon, .y = 0, .width = 16, .height = 16 },
+        .{ .x = buttomEdge.x, .y = buttomEdge.y, .width = buttomSize, .height = buttomSize },
+        rl.Vector2.zero(),
+        0,
+        rl.Color.white,
+    );
     if (rl.isMouseButtonDown(.left) and rl.checkCollisionPointCircle(rl.getMousePosition(), buttom, buttomSize)) {
         return true;
     }

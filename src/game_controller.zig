@@ -16,7 +16,7 @@ pub fn initGame(isEmscripten: bool) bool {
     updateRatio();
     game.gameState = GameState.MainMenu;
     const menuReady = menuZig.initMenu(&game);
-    game.camera.target = game.nativeSizeScaled;
+    game.camera.target = gameZig.NATIVE_CENTER;
     // TODO: if needed start game only after the menu when player pressed `Play`
     const gameReady = playingZig.startGame(&game, isEmscripten);
     return menuReady and gameReady;
@@ -41,13 +41,13 @@ fn updateRatio() void {
         .x = game.screen.x / @as(f32, @floatFromInt(gameZig.NATIVE_WIDTH)),
         .y = game.screen.y / @as(f32, @floatFromInt(gameZig.NATIVE_HEIGHT)),
     };
-    game.nativeSizeScaled = gameZig.NATIVE_CENTER;
     if (game.virtualRatio.y < game.virtualRatio.x) {
         game.camera.zoom = 1 * game.virtualRatio.y;
     } else {
         game.camera.zoom = 1 * game.virtualRatio.x;
     }
-    game.camera.offset = .{ .x = game.nativeSizeScaled.x * game.virtualRatio.x, .y = game.nativeSizeScaled.y * game.virtualRatio.y };
+    game.camera.offset = .{ .x = gameZig.NATIVE_CENTER.x * game.virtualRatio.x, .y = gameZig.NATIVE_CENTER.y * game.virtualRatio.y };
+    rl.setMouseScale(1 / game.virtualRatio.x, 1 / game.virtualRatio.y);
 }
 
 pub fn update() bool {
@@ -65,8 +65,12 @@ pub fn update() bool {
             menuZig.updateFrame();
             rl.beginDrawing();
             defer rl.endDrawing();
-            rl.clearBackground(rl.Color.init(20, 20, 20, 255));
-            menuZig.drawFrame();
+            {
+                game.camera.begin();
+                defer game.camera.end();
+                rl.clearBackground(rl.Color.init(20, 20, 20, 255));
+                menuZig.drawFrame();
+            }
             if (game.gameState == GameState.Playing) {
                 playingZig.restartGame();
             }
@@ -76,14 +80,22 @@ pub fn update() bool {
             rl.beginDrawing();
             defer rl.endDrawing();
             rl.clearBackground(rl.Color.init(20, 20, 20, 255));
-            playingZig.drawFrame();
-            menuZig.drawFrame();
+            {
+                game.camera.begin();
+                defer game.camera.end();
+                playingZig.drawFrame();
+                menuZig.drawFrame();
+            }
         },
         GameState.GameOver => {
             rl.beginDrawing();
             defer rl.endDrawing();
             rl.clearBackground(rl.Color.init(20, 20, 20, 255));
-            menuZig.drawFrame();
+            {
+                game.camera.begin();
+                defer game.camera.end();
+                menuZig.drawFrame();
+            }
             if (game.gameState == GameState.Playing) {
                 playingZig.restartGame();
             }
@@ -97,9 +109,14 @@ pub fn update() bool {
             playingZig.updateFrame();
             rl.beginDrawing();
             defer rl.endDrawing();
-            rl.clearBackground(rl.Color.init(20, 20, 20, 255));
-            playingZig.drawFrame();
-            menuZig.drawFrame();
+
+            {
+                game.camera.begin();
+                defer game.camera.end();
+                rl.clearBackground(rl.Color.init(20, 20, 20, 255));
+                playingZig.drawFrame();
+                menuZig.drawFrame();
+            }
         },
         else => {
             return false;

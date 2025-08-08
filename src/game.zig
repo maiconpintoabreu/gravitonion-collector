@@ -22,6 +22,12 @@ pub const GameState = enum {
     Quit,
 };
 
+pub const GameControllerType = enum {
+    Keyboard,
+    Joystick,
+    TouchScreen,
+};
+
 // Game consts
 pub const MAX_PROJECTILES = 200;
 pub const MAX_ASTEROIDS = 50;
@@ -147,6 +153,7 @@ pub const Game = struct {
     player: Player = .{},
     blackHole: BlackHole = .{},
     gameState: GameState = GameState.MainMenu,
+    gameControllerType: GameControllerType = GameControllerType.TouchScreen,
     virtualRatio: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     nativeSizeScaled: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     screen: rl.Vector2 = .{
@@ -164,4 +171,5 @@ pub const Game = struct {
     highestScore: f32 = 0,
     asteroidCount: usize = 0,
     projectilesCount: usize = 0,
+    isPlaying: bool = false,
 };

@@ -10,6 +10,7 @@ const Asteroid = asteroidZig.Asteroid;
 const gameZig = @import("../game.zig");
 const Game = gameZig.Game;
 const GameState = gameZig.GameState;
+const GameControllerType = gameZig.GameControllerType;
 const rand = std.crypto.random;
 const IS_DEBUG = false;
 
@@ -228,10 +229,15 @@ pub fn restartGame() void {
 
     game.blackHole.setSize(0.6);
     game.blackHole.isPhasing = false;
+    game.blackHole.rotation = 0;
+    game.isPlaying = false;
 
     game.player.physicsObject = .{
         .rotationSpeed = 200,
-        .position = rl.Vector2{ .x = 20, .y = 20 },
+        .position = rl.Vector2{
+            .x = 50,
+            .y = gameZig.NATIVE_HEIGHT / 2, // Put the player beside the blackhole
+        },
         .speed = 0.1,
     };
 }
@@ -319,12 +325,22 @@ pub fn updateFrame() void {
         game.gameState = GameState.Pause;
     }
     rl.updateMusicStream(music);
+    // Only change to keyboard if Touchscreen
+    if (game.gameControllerType == GameControllerType.TouchScreen and rl.getKeyPressed() != .null) {
+        game.gameControllerType = GameControllerType.Keyboard;
+        if (!game.isPlaying) {
+            game.isPlaying = true;
+        }
+    }
+    if (!game.isPlaying and rl.getKeyPressed() != .null) {
+        game.isPlaying = true;
+    }
 
-    if (game.gameState == GameState.Playing) {
+    if (game.gameState == GameState.Playing and game.isPlaying) {
         // Tick
         const delta = rl.getFrameTime();
         gameTime += @as(f64, delta);
-        game.currentScore += 20 / game.player.physicsObject.position.distance(game.nativeSizeScaled) * delta;
+        game.currentScore += 20 / game.player.physicsObject.position.distance(gameZig.NATIVE_CENTER) * game.blackHole.size * delta;
         game.asteroidSpawnCd -= delta;
         game.blackHole.setSize(game.blackHole.size + 0.05 * delta);
         game.shootingCd -= delta;
@@ -387,7 +403,7 @@ pub fn updateFrame() void {
         game.currentTickLength += delta;
         while (game.currentTickLength > PHYSICS_TICK_SPEED) {
             game.currentTickLength -= PHYSICS_TICK_SPEED;
-            const direction = rl.Vector2.subtract(game.nativeSizeScaled, game.player.physicsObject.position).normalize();
+            const direction = rl.Vector2.subtract(gameZig.NATIVE_CENTER, game.player.physicsObject.position).normalize();
             const gravity = (game.blackHole.finalSize / 20) * PHYSICS_TICK_SPEED;
             if (!game.player.physicsObject.isAccelerating) {
                 game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, gravity / 4));
@@ -396,32 +412,32 @@ pub fn updateFrame() void {
             if (rl.checkCollisionCircles(
                 game.player.physicsObject.position,
                 game.player.physicsObject.collisionSize,
-                game.nativeSizeScaled,
+                gameZig.NATIVE_CENTER,
                 game.blackHole.finalSize,
             )) {
                 gameOver();
                 return;
             }
 
-            game.blackHole.collisionpoints[0] = game.nativeSizeScaled.add(.{ .x = 0, .y = -5 });
-            game.blackHole.collisionpoints[1] = game.nativeSizeScaled.add(.{ .x = 0, .y = 5 });
-            game.blackHole.collisionpoints[2] = game.nativeSizeScaled.add(.{ .x = 1000, .y = -5 });
-            game.blackHole.collisionpoints[3] = game.nativeSizeScaled.add(.{ .x = 1000, .y = 5 });
+            game.blackHole.collisionpoints[0] = gameZig.NATIVE_CENTER.add(.{ .x = 0, .y = -5 });
+            game.blackHole.collisionpoints[1] = gameZig.NATIVE_CENTER.add(.{ .x = 0, .y = 5 });
+            game.blackHole.collisionpoints[2] = gameZig.NATIVE_CENTER.add(.{ .x = 1000, .y = -5 });
+            game.blackHole.collisionpoints[3] = gameZig.NATIVE_CENTER.add(.{ .x = 1000, .y = 5 });
 
-            game.blackHole.collisionpoints[0] = game.nativeSizeScaled.add(game.blackHole.collisionpoints[0].subtract(game.nativeSizeScaled).rotate(
+            game.blackHole.collisionpoints[0] = gameZig.NATIVE_CENTER.add(game.blackHole.collisionpoints[0].subtract(gameZig.NATIVE_CENTER).rotate(
                 math.degreesToRadians(game.blackHole.rotation),
             ));
-            game.blackHole.collisionpoints[1] = game.nativeSizeScaled.add(game.blackHole.collisionpoints[1].subtract(game.nativeSizeScaled).rotate(
+            game.blackHole.collisionpoints[1] = gameZig.NATIVE_CENTER.add(game.blackHole.collisionpoints[1].subtract(gameZig.NATIVE_CENTER).rotate(
                 math.degreesToRadians(game.blackHole.rotation),
             ));
-            game.blackHole.collisionpoints[2] = game.nativeSizeScaled.add(game.blackHole.collisionpoints[2].subtract(game.nativeSizeScaled).rotate(
+            game.blackHole.collisionpoints[2] = gameZig.NATIVE_CENTER.add(game.blackHole.collisionpoints[2].subtract(gameZig.NATIVE_CENTER).rotate(
                 math.degreesToRadians(game.blackHole.rotation),
             ));
-            game.blackHole.collisionpoints[3] = game.nativeSizeScaled.add(game.blackHole.collisionpoints[3].subtract(game.nativeSizeScaled).rotate(
+            game.blackHole.collisionpoints[3] = gameZig.NATIVE_CENTER.add(game.blackHole.collisionpoints[3].subtract(gameZig.NATIVE_CENTER).rotate(
                 math.degreesToRadians(game.blackHole.rotation),
             ));
-            var centerPoint = game.nativeSizeScaled.add(.{ .x = 1000, .y = 0 });
-            centerPoint = game.nativeSizeScaled.add(centerPoint.subtract(game.nativeSizeScaled).rotate(
+            var centerPoint = gameZig.NATIVE_CENTER.add(.{ .x = 1000, .y = 0 });
+            centerPoint = gameZig.NATIVE_CENTER.add(centerPoint.subtract(gameZig.NATIVE_CENTER).rotate(
                 math.degreesToRadians(game.blackHole.rotation),
             ));
             game.player.physicsObject.calculateWrap(.{
@@ -435,7 +451,7 @@ pub fn updateFrame() void {
             if (game.blackHole.isPhasing and (rl.checkCollisionCircleLine(
                 game.player.physicsObject.position,
                 game.player.physicsObject.collisionSize,
-                game.nativeSizeScaled,
+                gameZig.NATIVE_CENTER,
                 centerPoint,
             ) or rl.checkCollisionCircleLine(
                 game.player.physicsObject.position,
@@ -464,11 +480,12 @@ pub fn updateFrame() void {
                     continue;
                 }
                 if (rl.checkCollisionCircles(
-                    game.nativeSizeScaled,
+                    gameZig.NATIVE_CENTER,
                     game.blackHole.finalSize,
                     projectilePosition,
                     game.projectiles[projectileIndex].size,
                 )) {
+                    game.blackHole.setSize(game.blackHole.size + 0.03);
                     removeProjectile(projectileIndex);
                     continue;
                 }
@@ -502,11 +519,11 @@ pub fn updateFrame() void {
                 }
             }
             for (0..game.asteroidCount) |asteroidIndex| {
-                const asteroidDirection = rl.Vector2.subtract(game.nativeSizeScaled, game.asteroids[asteroidIndex].physicsObject.position).normalize();
+                const asteroidDirection = rl.Vector2.subtract(gameZig.NATIVE_CENTER, game.asteroids[asteroidIndex].physicsObject.position).normalize();
                 game.asteroids[asteroidIndex].physicsObject.applyDirectedForce(rl.Vector2.scale(asteroidDirection, gravity));
                 game.asteroids[asteroidIndex].tick();
                 if (rl.checkCollisionCircles(
-                    game.nativeSizeScaled,
+                    gameZig.NATIVE_CENTER,
                     game.blackHole.finalSize,
                     game.asteroids[asteroidIndex].physicsObject.position,
                     game.asteroids[asteroidIndex].physicsObject.collisionSize,
@@ -531,7 +548,7 @@ pub fn updateFrame() void {
                 if (game.blackHole.isPhasing and (rl.checkCollisionCircleLine(
                     game.asteroids[asteroidIndex].physicsObject.position,
                     game.asteroids[asteroidIndex].physicsObject.collisionSize,
-                    game.nativeSizeScaled,
+                    gameZig.NATIVE_CENTER,
                     centerPoint,
                 ) or rl.checkCollisionCircleLine(
                     game.asteroids[asteroidIndex].physicsObject.position,
@@ -552,9 +569,6 @@ pub fn updateFrame() void {
     }
 }
 pub fn drawFrame() void {
-    game.camera.begin();
-    defer game.camera.end();
-
     // Use the shader to draw a rectangle that covers the whole screen
     {
         blackholeShader.activate();
@@ -589,35 +603,25 @@ pub fn drawFrame() void {
             game.blackHole.rotation,
             .white,
         );
-        // rl.drawTriangle(
-        //     game.blackHole.collisionpoints[0],
-        //     game.blackHole.collisionpoints[1],
-        //     game.blackHole.collisionpoints[2],
-        //     .white,
-        // );
-        // rl.drawTriangle(
-        //     game.blackHole.collisionpoints[3],
-        //     game.blackHole.collisionpoints[2],
-        //     game.blackHole.collisionpoints[1],
-        //     .white,
-        // );
     } else {
-        rl.drawLineEx(
-            game.blackHole.collisionpoints[0],
-            game.blackHole.collisionpoints[2],
-            1,
-            .{ .r = 255, .g = 255, .b = 255, .a = 100 },
-        );
-        rl.drawLineEx(
-            game.blackHole.collisionpoints[3],
-            game.blackHole.collisionpoints[1],
-            1,
-            .{ .r = 255, .g = 255, .b = 255, .a = 100 },
-        );
+        if (game.isPlaying) {
+            rl.drawLineEx(
+                game.blackHole.collisionpoints[0],
+                game.blackHole.collisionpoints[2],
+                1,
+                .{ .r = 255, .g = 255, .b = 255, .a = 100 },
+            );
+            rl.drawLineEx(
+                game.blackHole.collisionpoints[3],
+                game.blackHole.collisionpoints[1],
+                1,
+                .{ .r = 255, .g = 255, .b = 255, .a = 100 },
+            );
+        }
     }
 
     rl.drawCircleV(
-        game.nativeSizeScaled,
+        gameZig.NATIVE_CENTER,
         game.blackHole.finalSize,
         .black,
     );
@@ -667,4 +671,13 @@ pub fn drawFrame() void {
         game.asteroids[asteroidIndex].draw();
     }
     game.player.draw();
+    if (!game.isPlaying) {
+        rl.drawText(
+            "Press any key to start",
+            0,
+            0,
+            10,
+            .white,
+        );
+    }
 }

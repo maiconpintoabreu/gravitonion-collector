@@ -8,8 +8,6 @@ Player needs to protect the BackHole from the asteroids so it does not go too bi
 
 
 ## TODO:
-* Move the start position to the middle left to avoid straigth dying from the asteroids
-* Start game only when player gives the first instruction
 * Phaser shader to ondulate it
 * UI to show the power (with power mechanics)
 * UI to toogle UI controller
@@ -22,7 +20,5 @@ Player needs to protect the BackHole from the asteroids so it does not go too bi
 
 ### Maybes:
 * Blackhole could do some random pulses to increase the gravity
-* Start menu
-* Frendly fire when player shoots the blackhole it increases in size as well
 * local multiplayer (half score and increase in difficult)
 
