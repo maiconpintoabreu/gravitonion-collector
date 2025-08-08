@@ -21,6 +21,7 @@ var shoot: rl.Sound = std.mem.zeroes(rl.Sound);
 var destruction: rl.Sound = std.mem.zeroes(rl.Sound);
 var blackholeincreasing: rl.Sound = std.mem.zeroes(rl.Sound);
 var blackholeShader: rl.Shader = std.mem.zeroes(rl.Shader);
+var blackholePhaserShader: rl.Shader = std.mem.zeroes(rl.Shader);
 var blackholeTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
 
 // Textures
@@ -31,16 +32,15 @@ var bulletTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
 const DEFAULT_ASTEROID_CD = 5;
 const DEFAULT_SHOOTING_CD = 0.1;
 const PHYSICS_TICK_SPEED = 0.02;
-const MAX_PARTICLES = 2048;
-
-const BLACKHOLE_MASS = 1500.0;
-const GRAVITATIONAL_CONST = 0.1;
 
 // For shader
 var resolutionLoc: i32 = 0;
 var timeLoc: i32 = 0;
 var radiusLoc: i32 = 0;
 var speedLoc: i32 = 0;
+
+// For Phaser Shader
+var timePhaserLoc: i32 = 0;
 
 var game: *Game = undefined;
 
@@ -174,6 +174,19 @@ pub fn startGame(currentGame: *Game, isEmscripten: bool) bool {
             return false;
         },
     };
+    // blackholePhaserShader = rl.loadShader(
+    //     null,
+    //     rl.textFormat("resources/shaders%s/phaser.fs", .{shaderVersion}),
+    // ) catch |err| switch (err) {
+    //     rl.RaylibError.LoadShader => {
+    //         std.debug.print("LoadShader phaser.fs ERROR", .{});
+    //         return false;
+    //     },
+    //     else => {
+    //         std.debug.print("ERROR", .{});
+    //         return false;
+    //     },
+    // };
     resolutionLoc = rl.getShaderLocation(blackholeShader, "resolution");
     timeLoc = rl.getShaderLocation(blackholeShader, "time");
     radiusLoc = rl.getShaderLocation(blackholeShader, "radius");
@@ -196,7 +209,7 @@ pub fn startGame(currentGame: *Game, isEmscripten: bool) bool {
 
     // Start with one asteroid
     spawnAsteroidRandom();
-    if (!game.blackHole.initTexture()) {
+    if (!game.blackHole.init()) {
         return false;
     }
     restartGame();
@@ -223,10 +236,10 @@ pub fn restartGame() void {
     };
 }
 pub fn closeGame() void {
-    if (rl.isMusicValid(music)) rl.unloadMusicStream(music);
-    if (rl.isSoundValid(shoot)) rl.unloadSound(shoot);
-    if (rl.isSoundValid(destruction)) rl.unloadSound(destruction);
-    if (rl.isSoundValid(blackholeincreasing)) rl.unloadSound(blackholeincreasing);
+    if (rl.isMusicValid(music)) music.unload();
+    if (rl.isSoundValid(shoot)) shoot.unload();
+    if (rl.isSoundValid(destruction)) destruction.unload();
+    if (rl.isSoundValid(blackholeincreasing)) blackholeincreasing.unload();
 
     game.player.unload();
     if (bulletTexture.id > 0) {
@@ -250,7 +263,7 @@ fn playerShot() void {
         .x = math.sin(math.degreesToRadians(game.player.physicsObject.rotation)),
         .y = -math.cos(math.degreesToRadians(game.player.physicsObject.rotation)),
     };
-    const norm_vector: rl.Vector2 = rl.Vector2.normalize(direction);
+    const norm_vector: rl.Vector2 = direction.normalize();
     game.projectiles[game.projectilesCount].position = game.player.physicsObject.position;
     game.projectiles[game.projectilesCount].rotation = game.player.physicsObject.rotation;
     game.projectiles[game.projectilesCount].direction = norm_vector;
@@ -319,9 +332,10 @@ pub fn updateFrame() void {
         const reducedTime = @as(f32, @floatCast(gameTime / 2));
 
         rl.setShaderValue(blackholeShader, timeLoc, &reducedTime, .float);
-        rl.setShaderValue(blackholeShader, speedLoc, &game.blackHole.size, .float);
+        const rotationSpeed: f32 = if (game.blackHole.isRotatingRight) game.blackHole.size * -1 else game.blackHole.size;
+        rl.setShaderValue(blackholeShader, speedLoc, &rotationSpeed, .float);
         if (game.asteroidSpawnCd < 0) {
-            game.asteroidSpawnCd = rl.math.clamp(DEFAULT_ASTEROID_CD - game.blackHole.size, 0.2, 100);
+            game.asteroidSpawnCd = rl.math.clamp(DEFAULT_ASTEROID_CD - game.blackHole.size * 1.2, 0.2, 100);
             spawnAsteroidRandom();
         }
         // Input
@@ -356,7 +370,6 @@ pub fn updateFrame() void {
         }
 
         const gamepadAceleration = rl.getGamepadAxisMovement(0, .right_trigger);
-        // TODO: check this if web
         if (rl.isGamepadButtonDown(0, .right_trigger_2)) {
             game.player.physicsObject.isAccelerating = true;
             if (isWeb) {
@@ -543,15 +556,15 @@ pub fn drawFrame() void {
     defer game.camera.end();
 
     // Use the shader to draw a rectangle that covers the whole screen
-
-    rl.beginShaderMode(blackholeShader);
-    blackholeTexture.draw(
-        0,
-        0,
-        .white,
-    );
-    rl.endShaderMode();
-
+    {
+        blackholeShader.activate();
+        defer blackholeShader.deactivate();
+        blackholeTexture.draw(
+            0,
+            0,
+            .white,
+        );
+    }
     if (IS_DEBUG) {
         rl.drawCircleV(game.blackHole.collisionpoints[0], 5, .yellow);
         rl.drawCircleV(game.blackHole.collisionpoints[1], 5, .yellow);
@@ -559,18 +572,35 @@ pub fn drawFrame() void {
         rl.drawCircleV(game.blackHole.collisionpoints[3], 5, .yellow);
     }
     if (game.blackHole.isPhasing) {
-        rl.drawTriangle(
-            game.blackHole.collisionpoints[0],
-            game.blackHole.collisionpoints[1],
-            game.blackHole.collisionpoints[2],
+        game.blackHole.phaserTexture.drawPro(
+            .{
+                .x = 0,
+                .y = 0,
+                .width = @as(f32, @floatFromInt(game.blackHole.phaserTexture.width)),
+                .height = @as(f32, @floatFromInt(game.blackHole.phaserTexture.height)),
+            },
+            .{
+                .x = game.blackHole.collisionpoints[0].x,
+                .y = game.blackHole.collisionpoints[0].y,
+                .width = @as(f32, @floatFromInt(game.blackHole.phaserTexture.width)),
+                .height = @as(f32, @floatFromInt(game.blackHole.phaserTexture.height)),
+            },
+            .{ .x = 0, .y = 0 },
+            game.blackHole.rotation,
             .white,
         );
-        rl.drawTriangle(
-            game.blackHole.collisionpoints[3],
-            game.blackHole.collisionpoints[2],
-            game.blackHole.collisionpoints[1],
-            .white,
-        );
+        // rl.drawTriangle(
+        //     game.blackHole.collisionpoints[0],
+        //     game.blackHole.collisionpoints[1],
+        //     game.blackHole.collisionpoints[2],
+        //     .white,
+        // );
+        // rl.drawTriangle(
+        //     game.blackHole.collisionpoints[3],
+        //     game.blackHole.collisionpoints[2],
+        //     game.blackHole.collisionpoints[1],
+        //     .white,
+        // );
     } else {
         rl.drawLineEx(
             game.blackHole.collisionpoints[0],

@@ -89,7 +89,7 @@ const BlackHole = struct {
             }
         }
     }
-    pub fn initTexture(self: *BlackHole) bool {
+    pub fn init(self: *BlackHole) bool {
         if (self.textures[0].id > 0) {
             return true;
         }
@@ -118,14 +118,14 @@ const BlackHole = struct {
             .y = @as(f32, @floatFromInt(self.textures[0].height)) / 2,
         };
         // Init Phaser
-        const phaserImage = rl.genImageColor(256, 20, .white);
+        const phaserImage = rl.Image.genColor(256 * 2, 10, .white);
         self.phaserTexture = phaserImage.toTexture() catch |err| switch (err) {
             else => {
                 std.debug.print("ERROR", .{});
                 return false;
             },
         };
-        rl.unloadImage(phaserImage);
+        phaserImage.unload();
 
         return true;
     }
