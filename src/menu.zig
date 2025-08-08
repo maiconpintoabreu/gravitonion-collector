@@ -265,12 +265,17 @@ fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
         0,
         rl.Color.white,
     );
+
     if (rl.isMouseButtonDown(.left) and rl.checkCollisionPointCircle(rl.getMousePosition(), buttom, buttomSize)) {
         return true;
     }
     const touchCount = @as(usize, @intCast(rl.getTouchPointCount()));
     for (0..touchCount) |touchIndex| {
-        if (rl.checkCollisionPointCircle(rl.getTouchPosition(@intCast(touchIndex)), buttom, buttomSize)) {
+        if (rl.checkCollisionPointCircle(
+            rl.getScreenToWorld2D(rl.getTouchPosition(@intCast(touchIndex)), game.camera),
+            buttom,
+            buttomSize,
+        )) {
             return true;
         }
     }
