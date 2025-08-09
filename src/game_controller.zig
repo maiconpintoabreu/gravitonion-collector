@@ -28,8 +28,8 @@ pub fn initGame(isEmscripten: bool, isFullscreen: bool) bool {
 fn updateRatio() void {
     if (rl.isWindowFullscreen()) {
         if (isWeb) {
-            game.screen.x = @as(f32, @floatFromInt(rl.getRenderWidth()));
-            game.screen.y = @as(f32, @floatFromInt(rl.getRenderHeight()));
+            game.screen.x = @as(f32, @floatFromInt(rl.getScreenWidth()));
+            game.screen.y = @as(f32, @floatFromInt(rl.getScreenHeight()));
         } else {
             game.screen.x = @as(f32, @floatFromInt(rl.getRenderWidth()));
             game.screen.y = @as(f32, @floatFromInt(rl.getRenderHeight()));

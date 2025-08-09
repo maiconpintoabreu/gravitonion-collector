@@ -12,7 +12,7 @@ pub fn main() anyerror!void {
     defer rl.closeWindow(); // Close window and OpenGL context
     defer gameController.closeGame();
     rl.setConfigFlags(rl.ConfigFlags{
-        .window_resizable = true,
+        .window_resizable = false,
     });
 
     if (gameController.initGame(true, false)) {
