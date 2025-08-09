@@ -16,9 +16,10 @@ pub fn main() anyerror!void {
     const isBorderlessWindowed = buildin.mode != std.builtin.OptimizeMode.Debug;
     rl.setConfigFlags(rl.ConfigFlags{
         .window_resizable = isFullScreen or isBorderlessWindowed,
+        .window_highdpi = true,
     });
 
-    if (gameController.initGame(false)) {
+    if (gameController.initGame(false, isFullScreen)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(400, 225);
         if (isFullScreen) {

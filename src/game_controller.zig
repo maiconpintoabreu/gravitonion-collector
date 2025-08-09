@@ -9,8 +9,11 @@ const GameState = gameZig.GameState;
 var game: Game = .{};
 var isWeb = false;
 
-pub fn initGame(isEmscripten: bool) bool {
+pub fn initGame(isEmscripten: bool, isFullscreen: bool) bool {
     isWeb = isEmscripten;
+    if (isFullscreen) {
+        game.screen = rl.Vector2.zero();
+    }
     rl.initWindow(@as(i32, @intFromFloat(game.screen.x)), @as(i32, @intFromFloat(game.screen.y)), "Space Researcher");
     rl.initAudioDevice();
     updateRatio();
