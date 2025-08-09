@@ -124,7 +124,7 @@ const BlackHole = struct {
             .y = @as(f32, @floatFromInt(self.textures[0].height)) / 2,
         };
         // Init Phaser
-        const phaserImage = rl.Image.genColor(256 * 2, 10, .white);
+        const phaserImage = rl.Image.genColor(256 * 2, 10, .blank);
         self.phaserTexture = phaserImage.toTexture() catch |err| switch (err) {
             else => {
                 std.debug.print("ERROR", .{});

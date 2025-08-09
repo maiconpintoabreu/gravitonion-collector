@@ -69,7 +69,7 @@ void main()
 
     // --- 4. Black Hole and Color ---
     // Smooth transition to the black center (event horizon)
-    float blackHole = 1.0;
+    float blackHole = 0.5;
     float rInverted = 1.0 / r / 4.0;
     float edge = 0.5;
     float alpha = smoothstep(radius, radius - edge, r);

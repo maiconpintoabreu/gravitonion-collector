@@ -62,12 +62,12 @@ void main()
     // Create the ring shape and add turbulent noise
     float ring = smoothstep(0.4, 0.45, length(diskUv));
     ring *= 1.0 - smoothstep(0.2, 0.25, length(diskUv));
-    ring += noise(diskUv * 15.0 + time * 0.8) * 0.1;
+    ring += noise(diskUv * 15.0 + time * 0.8) * 0.5;
     ring += noise(diskUv * 5.0 + time * 0.2) * 0.05;
 
     // --- 4. Black Hole and Color ---
     // Smooth transition to the black center (event horizon)
-    float blackHole = 1.0;
+    float blackHole = 0.5;
     float rInverted = 1.0 / r / 4.0;
     float edge = 0.5;
     float alpha = smoothstep(radius, radius - edge, r);

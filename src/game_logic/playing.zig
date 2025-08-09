@@ -175,23 +175,24 @@ pub fn startGame(currentGame: *Game, isEmscripten: bool) bool {
             return false;
         },
     };
-    // blackholePhaserShader = rl.loadShader(
-    //     null,
-    //     rl.textFormat("resources/shaders%s/phaser.fs", .{shaderVersion}),
-    // ) catch |err| switch (err) {
-    //     rl.RaylibError.LoadShader => {
-    //         std.debug.print("LoadShader phaser.fs ERROR", .{});
-    //         return false;
-    //     },
-    //     else => {
-    //         std.debug.print("ERROR", .{});
-    //         return false;
-    //     },
-    // };
+    blackholePhaserShader = rl.loadShader(
+        null,
+        rl.textFormat("resources/shaders%s/phaser.fs", .{shaderVersion}),
+    ) catch |err| switch (err) {
+        rl.RaylibError.LoadShader => {
+            std.debug.print("LoadShader phaser.fs ERROR", .{});
+            return false;
+        },
+        else => {
+            std.debug.print("ERROR", .{});
+            return false;
+        },
+    };
     resolutionLoc = rl.getShaderLocation(blackholeShader, "resolution");
     timeLoc = rl.getShaderLocation(blackholeShader, "time");
     radiusLoc = rl.getShaderLocation(blackholeShader, "radius");
     speedLoc = rl.getShaderLocation(blackholeShader, "speed");
+    timePhaserLoc = rl.getShaderLocation(blackholePhaserShader, "time");
     const blackholeImage = rl.genImageColor(gameZig.NATIVE_WIDTH, gameZig.NATIVE_HEIGHT, .white);
     blackholeTexture = rl.loadTextureFromImage(blackholeImage) catch |err| switch (err) {
         rl.RaylibError.LoadTexture => {
@@ -240,6 +241,7 @@ pub fn restartGame() void {
         },
         .speed = 0.1,
     };
+    game.player.tick();
 }
 pub fn closeGame() void {
     if (rl.isMusicValid(music)) music.unload();
@@ -260,6 +262,9 @@ pub fn closeGame() void {
     if (blackholeShader.id > 0) {
         blackholeShader.unload();
     }
+    if (blackholePhaserShader.id > 0) {
+        blackholePhaserShader.unload();
+    }
 }
 fn playerShot() void {
     if (game.projectilesCount + 1 == gameZig.MAX_PROJECTILES) {
@@ -270,10 +275,10 @@ fn playerShot() void {
         .y = -math.cos(math.degreesToRadians(game.player.physicsObject.rotation)),
     };
     const norm_vector: rl.Vector2 = direction.normalize();
-    game.projectiles[game.projectilesCount].position = game.player.physicsObject.position;
+    game.projectiles[game.projectilesCount].position = game.player.gunSlot;
     game.projectiles[game.projectilesCount].rotation = game.player.physicsObject.rotation;
     game.projectiles[game.projectilesCount].direction = norm_vector;
-    game.projectiles[game.projectilesCount].speed = 20;
+    game.projectiles[game.projectilesCount].speed = 5;
     game.projectiles[game.projectilesCount].size = 3;
     game.projectilesCount += 1;
     rl.playSound(shoot);
@@ -348,6 +353,8 @@ pub fn updateFrame() void {
         const reducedTime = @as(f32, @floatCast(gameTime / 2));
 
         rl.setShaderValue(blackholeShader, timeLoc, &reducedTime, .float);
+        rl.setShaderValue(blackholePhaserShader, timePhaserLoc, &reducedTime, .float);
+
         const rotationSpeed: f32 = if (game.blackHole.isRotatingRight) game.blackHole.size * -1 else game.blackHole.size;
         rl.setShaderValue(blackholeShader, speedLoc, &rotationSpeed, .float);
         if (game.asteroidSpawnCd < 0) {
@@ -586,23 +593,27 @@ pub fn drawFrame() void {
         rl.drawCircleV(game.blackHole.collisionpoints[3], 5, .yellow);
     }
     if (game.blackHole.isPhasing) {
-        game.blackHole.phaserTexture.drawPro(
-            .{
-                .x = 0,
-                .y = 0,
-                .width = @as(f32, @floatFromInt(game.blackHole.phaserTexture.width)),
-                .height = @as(f32, @floatFromInt(game.blackHole.phaserTexture.height)),
-            },
-            .{
-                .x = game.blackHole.collisionpoints[0].x,
-                .y = game.blackHole.collisionpoints[0].y,
-                .width = @as(f32, @floatFromInt(game.blackHole.phaserTexture.width)),
-                .height = @as(f32, @floatFromInt(game.blackHole.phaserTexture.height)),
-            },
-            .{ .x = 0, .y = 0 },
-            game.blackHole.rotation,
-            .white,
-        );
+        {
+            blackholePhaserShader.activate();
+            defer blackholePhaserShader.deactivate();
+            game.blackHole.phaserTexture.drawPro(
+                .{
+                    .x = 0,
+                    .y = 0,
+                    .width = @as(f32, @floatFromInt(game.blackHole.phaserTexture.width)),
+                    .height = @as(f32, @floatFromInt(game.blackHole.phaserTexture.height)),
+                },
+                .{
+                    .x = game.blackHole.collisionpoints[0].x,
+                    .y = game.blackHole.collisionpoints[0].y,
+                    .width = @as(f32, @floatFromInt(game.blackHole.phaserTexture.width)),
+                    .height = @as(f32, @floatFromInt(game.blackHole.phaserTexture.height)),
+                },
+                .{ .x = 0, .y = 0 },
+                game.blackHole.rotation,
+                .white,
+            );
+        }
     } else {
         if (game.isPlaying) {
             rl.drawLineEx(

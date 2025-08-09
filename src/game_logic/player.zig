@@ -15,9 +15,15 @@ pub const Player = struct {
     texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
     health: f32 = MAX_HEALTH,
     power: f32 = MAX_POWER,
+    gunSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     pub fn tick(self: *Player) void {
-        self.physicsObject.velocity = rl.Vector2.clampValue(self.physicsObject.velocity, 0, 1.8);
+        self.physicsObject.velocity = rl.Vector2.clampValue(
+            self.physicsObject.velocity,
+            0,
+            1.8,
+        );
         self.physicsObject.tick();
+        self.gunSlot = self.physicsObject.position.add(self.physicsObject.direction.scale(10));
     }
     pub fn draw(self: *Player) void {
         if (self.texture.id == 0) {

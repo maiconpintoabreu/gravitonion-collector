@@ -1,15 +1,17 @@
-#version 330
+#version 100
+
+precision mediump float;
 
 // Input vertex attributes (from vertex shader)
-in vec2 fragTexCoord;
-in vec4 fragColor;
+varying vec2 fragTexCoord;
+varying vec4 fragColor;
 
 // Input uniform values
 uniform sampler2D texture0;
 uniform vec4 colDiffuse;
 
 // Output fragment color
-out vec4 finalColor;
+varying vec4 finalColor;
 
 uniform float time;
 
@@ -30,19 +32,19 @@ void main() {
 
     // Texel color fetching from texture sampler
     vec2 st = fragTexCoord;
-    vec2 grid = vec2(100.0,50.);
+    vec2 grid = vec2(100.0,50.0);
     st *= grid;
 
     vec2 ipos = floor(st);  // integer
     vec2 fpos = fract(st);  // fraction
 
     vec2 vel = vec2(time*2.*max(grid.x,grid.y)); // time
-    vel *= vec2(-1.,0.0) * random(1.0+ipos.y); // direction
+    vel *= vec2(-1.0,0.0) * random(1.0+ipos.y); // direction
 
     // Assign a random value base on the integer coord
-    vec2 offset = vec2(0.1,0.);
+    vec2 offset = vec2(0.1,0.0);
 
-    vec3 color = vec3(0.);
+    vec3 color = vec3(0.0);
     color.r = pattern(st+offset,vel,0.5);
     color.g = pattern(st,vel,0.5);
     color.b = pattern(st-offset,vel,0.5);
@@ -51,5 +53,5 @@ void main() {
     color *= step(0.2,fpos.y);
 
     // Calculate final fragment color
-    finalColor = vec4(0.5-color,1.0);
+    gl_FragColor = vec4(0.5-color,1.0);
 }
