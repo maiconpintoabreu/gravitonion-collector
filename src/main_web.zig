@@ -15,7 +15,7 @@ pub fn main() anyerror!void {
         .window_resizable = true,
     });
 
-    if (gameController.initGame(true)) {
+    if (gameController.initGame(true, true)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(400, 225);
         std.os.emscripten.emscripten_set_main_loop(updateFrame, 0, 1);
