@@ -28,10 +28,9 @@ fn updateRatio() void {
             game.screen.x = @as(f32, @floatFromInt(rl.getRenderWidth()));
             game.screen.y = @as(f32, @floatFromInt(rl.getRenderHeight()));
         } else {
-            game.screen.x = @as(f32, @floatFromInt(rl.getMonitorWidth(rl.getCurrentMonitor())));
-            game.screen.y = @as(f32, @floatFromInt(rl.getMonitorHeight(rl.getCurrentMonitor())));
+            game.screen.x = @as(f32, @floatFromInt(rl.getRenderWidth()));
+            game.screen.y = @as(f32, @floatFromInt(rl.getRenderHeight()));
         }
-        rl.traceLog(.info, "FullScreen Window: %f x %f", .{ game.screen.x, game.screen.y });
     } else {
         game.screen.x = @as(f32, @floatFromInt(rl.getScreenWidth()));
         game.screen.y = @as(f32, @floatFromInt(rl.getScreenHeight()));
@@ -59,6 +58,9 @@ pub fn update() bool {
     }
     if (!rl.isWindowFocused() and game.gameState == GameState.Playing) {
         game.gameState = GameState.Pause;
+    }
+    if (rl.isWindowFullscreen()) {
+        updateRatio();
     }
     switch (game.gameState) {
         GameState.MainMenu => {

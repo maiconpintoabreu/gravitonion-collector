@@ -672,12 +672,22 @@ pub fn drawFrame() void {
     }
     game.player.draw();
     if (!game.isPlaying) {
-        rl.drawText(
-            "Press any key to start",
-            0,
-            0,
-            10,
-            .white,
-        );
+        if (game.gameControllerType == GameControllerType.TouchScreen) {
+            rl.drawText(
+                "Press any where to start",
+                0,
+                @as(i32, @intFromFloat(game.player.physicsObject.position.y)) - 30,
+                10,
+                .white,
+            );
+        } else {
+            rl.drawText(
+                "Press any thing to start",
+                0,
+                @as(i32, @intFromFloat(game.player.physicsObject.position.y)) - 30,
+                10,
+                .white,
+            );
+        }
     }
 }

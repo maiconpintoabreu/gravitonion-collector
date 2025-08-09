@@ -255,8 +255,15 @@ pub fn drawFrame() void {
 }
 
 fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
-    rl.drawCircleV(buttom, buttomSize, .{ .r = 200, .g = 200, .b = 200, .a = 100 });
     const buttomEdge = rl.Vector2{ .x = buttom.x - buttomSize / 2, .y = buttom.y - buttomSize / 2 };
+    const isHouvering = rl.checkCollisionPointCircle(rl.getMousePosition(), buttom, buttomSize);
+
+    rl.drawCircleV(buttom, buttomSize, .{
+        .r = BUTTON_BACKGROUND_NORMAL.r,
+        .g = BUTTON_BACKGROUND_NORMAL.g,
+        .b = BUTTON_BACKGROUND_NORMAL.b,
+        .a = if (isHouvering) 100 else 200,
+    });
     rl.drawTexturePro(
         controlTexture,
         rl.Rectangle{ .x = 16 * icon, .y = 0, .width = 16, .height = 16 },
@@ -266,7 +273,7 @@ fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
         rl.Color.white,
     );
 
-    if (rl.isMouseButtonDown(.left) and rl.checkCollisionPointCircle(rl.getMousePosition(), buttom, buttomSize)) {
+    if (rl.isMouseButtonDown(.left) and isHouvering) {
         return true;
     }
     const touchCount = @as(usize, @intCast(rl.getTouchPointCount()));
