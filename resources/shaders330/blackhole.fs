@@ -45,18 +45,19 @@ void main()
     centeredUv.x *= resolution.x / resolution.y;
 
     float r = length(centeredUv); // Distance from the center
+    float rInverted = 1.0 / r / 4.0;
 
     float lensFactor = 1.0 / (r * r + 0.05); 
     vec2 warpedUv = uv + centeredUv * lensFactor * 5.0;
 
     // --- 2. Starfield Background ---
-    vec2 starfieldUv = warpedUv * 10.0;
+    vec2 starfieldUv = warpedUv * 15.0;
     float starfieldNoise = noise(starfieldUv + time * 1.0);
     float stars = smoothstep(0.1, 1.0, starfieldNoise);
-    vec3 backgroundColor = vec3(stars * 0.5);
+    vec3 backgroundColor = vec3(r / radius * 0.3);
 
     // Make the rotation speed depend on the radius (r).
-    float rotationSpeed = 4.0 * speed * (1.0 + 0.5 / (r + 0.1)) ;
+    float rotationSpeed = 4.0 * speed * (1.0 + 0.5 / (r + 0.1));
     vec2 diskUv = rotate2d(rotationSpeed) * centeredUv; // Swirl the coordinates
     
     // Create the ring shape and add turbulent noise
@@ -68,11 +69,9 @@ void main()
     // --- 4. Black Hole and Color ---
     // Smooth transition to the black center (event horizon)
     float blackHole = 0.5;
-    float rInverted = 1.0 / r / 4.0;
-    float edge = 0.5;
-    float alpha = smoothstep(radius, radius - edge, r);
+    
     // Combine the background and disk, then apply the black hole mask
     vec3 finalColor = mix(backgroundColor, vec3(rInverted), ring);
     finalColor *= blackHole;
-    fragColor = vec4(finalColor, alpha);
+    fragColor = vec4(finalColor, 1.0);
 }

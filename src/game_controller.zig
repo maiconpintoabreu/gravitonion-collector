@@ -5,6 +5,7 @@ const playingZig = @import("game_logic/playing.zig");
 const menuZig = @import("menu.zig");
 const GameState = gameZig.GameState;
 
+const BACKGROUND_COLOR = rl.Color.init(20, 20, 20, 255);
 // Global Variables
 var game: Game = .{};
 var isWeb = false;
@@ -73,7 +74,7 @@ pub fn update() bool {
             {
                 game.camera.begin();
                 defer game.camera.end();
-                rl.clearBackground(rl.Color.init(20, 20, 20, 255));
+                rl.clearBackground(BACKGROUND_COLOR);
                 menuZig.drawFrame();
             }
             if (game.gameState == GameState.Playing) {
@@ -84,7 +85,7 @@ pub fn update() bool {
             playingZig.updateFrame();
             rl.beginDrawing();
             defer rl.endDrawing();
-            rl.clearBackground(rl.Color.init(20, 20, 20, 255));
+            rl.clearBackground(BACKGROUND_COLOR);
             {
                 game.camera.begin();
                 defer game.camera.end();
@@ -95,7 +96,7 @@ pub fn update() bool {
         GameState.GameOver => {
             rl.beginDrawing();
             defer rl.endDrawing();
-            rl.clearBackground(rl.Color.init(20, 20, 20, 255));
+            rl.clearBackground(BACKGROUND_COLOR);
             {
                 game.camera.begin();
                 defer game.camera.end();
@@ -118,7 +119,7 @@ pub fn update() bool {
             {
                 game.camera.begin();
                 defer game.camera.end();
-                rl.clearBackground(rl.Color.init(20, 20, 20, 255));
+                rl.clearBackground(BACKGROUND_COLOR);
                 playingZig.drawFrame();
                 menuZig.drawFrame();
             }

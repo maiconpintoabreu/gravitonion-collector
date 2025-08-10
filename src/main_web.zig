@@ -1,9 +1,10 @@
 const rl = @import("raylib");
 const std = @import("std");
+const buildin = @import("builtin");
 const gameController = @import("game_controller.zig");
 
 pub fn main() anyerror!void {
-    rl.setTraceLogLevel(.warning);
+    rl.setTraceLogLevel(if (buildin.mode == .Debug) .all else .err);
     rl.traceLog(
         rl.TraceLogLevel.info,
         "Initializing Game!",

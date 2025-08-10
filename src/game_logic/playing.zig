@@ -14,7 +14,7 @@ const GameControllerType = gameZig.GameControllerType;
 const rand = std.crypto.random;
 const IS_DEBUG = false;
 
-var gameTime: f64 = 0;
+var gameTime: f64 = 0.1;
 var isWeb: bool = false;
 // Audios
 var music: rl.Music = std.mem.zeroes(rl.Music);
@@ -414,7 +414,9 @@ pub fn updateFrame() void {
         while (game.currentTickLength > PHYSICS_TICK_SPEED) {
             game.currentTickLength -= PHYSICS_TICK_SPEED;
             const direction = rl.Vector2.subtract(gameZig.NATIVE_CENTER, game.player.physicsObject.position).normalize();
-            const gravity = (game.blackHole.finalSize / 20) * PHYSICS_TICK_SPEED;
+            const gravityScale: f32 = if (game.blackHole.isDisturbed) 5.0 else 1.0;
+            game.blackHole.isDisturbed = false;
+            const gravity = (game.blackHole.finalSize / 20) * gravityScale * PHYSICS_TICK_SPEED;
             if (!game.player.physicsObject.isAccelerating) {
                 game.player.physicsObject.applyDirectedForce(rl.Vector2.scale(direction, gravity / 4));
             }
@@ -539,7 +541,8 @@ pub fn updateFrame() void {
                     game.asteroids[asteroidIndex].physicsObject.collisionSize,
                 )) {
                     removeAsteroid(asteroidIndex);
-                    game.blackHole.setSize(game.blackHole.size + 0.1);
+                    game.blackHole.setSize(game.blackHole.size + 0.5);
+                    game.blackHole.isDisturbed = true;
                     rl.playSound(blackholeincreasing);
                     continue;
                 }
@@ -637,7 +640,7 @@ pub fn drawFrame() void {
     rl.drawCircleV(
         gameZig.NATIVE_CENTER,
         game.blackHole.finalSize,
-        .black,
+        if (game.blackHole.isDisturbed) .red else .black,
     );
     {
         rl.beginBlendMode(.additive);

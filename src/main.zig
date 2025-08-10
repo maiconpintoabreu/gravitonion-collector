@@ -3,8 +3,11 @@ const std = @import("std");
 const buildin = @import("builtin");
 const gameController = @import("game_controller.zig");
 
+const MIN_WINDOW_SIZE_WIDTH = 400;
+const MIN_WINDOW_SIZE_HEIGHT = 225;
+
 pub fn main() anyerror!void {
-    // rl.setTraceLogLevel(.warning);
+    rl.setTraceLogLevel(if (buildin.mode == .Debug) .all else .err);
     rl.traceLog(
         rl.TraceLogLevel.info,
         "Initializing Game!",
@@ -21,7 +24,7 @@ pub fn main() anyerror!void {
 
     if (gameController.initGame(false, isFullScreen)) {
         rl.setExitKey(.null);
-        rl.setWindowMinSize(400, 225);
+        rl.setWindowMinSize(MIN_WINDOW_SIZE_WIDTH, MIN_WINDOW_SIZE_HEIGHT);
         if (isFullScreen) {
             rl.toggleFullscreen();
         } else if (isBorderlessWindowed) {

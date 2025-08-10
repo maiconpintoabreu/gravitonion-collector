@@ -35,15 +35,19 @@ const BLACK_HOLE_PHASER_CD: f32 = 15;
 const BLACK_HOLE_PHASER_MIN_DURATION: f32 = 1;
 const BLACK_HOLE_COLLISION_POINTS = 4;
 
+const BLACK_DEFAULT_SIZE = 0.6;
 const BLACK_HOLE_SCALE = 20;
 const BLACK_HOLE_PHASER_ROTATION_SPEED: f32 = 20;
+const BLACK_HOLE_PHASER_MAX_ROTATION: f32 = 360.0;
 
 const BlackHole = struct {
-    size: f32 = 0.6,
-    finalSize: f32 = 0.6 * BLACK_HOLE_SCALE,
+    size: f32 = BLACK_DEFAULT_SIZE,
+    finalSize: f32 = BLACK_DEFAULT_SIZE * BLACK_HOLE_SCALE,
+    speed: f32 = BLACK_DEFAULT_SIZE,
     phasersCD: f32 = BLACK_HOLE_PHASER_CD,
     phasersMinDuration: f32 = BLACK_HOLE_PHASER_MIN_DURATION,
     isPhasing: bool = false,
+    isDisturbed: bool = false,
     rotation: f32 = 0,
     isRotatingRight: bool = false,
     phaserTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
@@ -56,15 +60,15 @@ const BlackHole = struct {
             self.rotation += BLACK_HOLE_PHASER_ROTATION_SPEED * delta;
         }
         if (self.rotation < 0) {
-            self.rotation += 360;
-        } else if (self.rotation > 360) {
-            self.rotation -= 360;
+            self.rotation += BLACK_HOLE_PHASER_MAX_ROTATION;
+        } else if (self.rotation > BLACK_HOLE_PHASER_MAX_ROTATION) {
+            self.rotation -= BLACK_HOLE_PHASER_MAX_ROTATION;
         }
         if (self.isPhasing) {
             if (self.phasersMinDuration < 0) {
                 const tempSize = self.size - delta;
-                if (tempSize < 0.6) {
-                    self.setSize(0.6);
+                if (tempSize < BLACK_DEFAULT_SIZE) {
+                    self.setSize(BLACK_DEFAULT_SIZE);
                     self.isPhasing = false;
                 } else {
                     self.setSize(self.size - (0.1 * delta));
@@ -106,9 +110,9 @@ pub const Game = struct {
     asteroids: [MAX_ASTEROIDS]Asteroid = std.mem.zeroes([MAX_ASTEROIDS]Asteroid),
     projectiles: [MAX_PROJECTILES]Projectile = std.mem.zeroes([MAX_PROJECTILES]Projectile),
     camera: rl.Camera2D = .{
-        .offset = .{ .x = 0, .y = 0 },
+        .offset = std.mem.zeroes(rl.Vector2),
         .rotation = 0,
-        .target = .{ .x = 0, .y = 0 },
+        .target = std.mem.zeroes(rl.Vector2),
         .zoom = 1,
     },
     player: Player = .{},
@@ -118,8 +122,8 @@ pub const Game = struct {
     virtualRatio: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     nativeSizeScaled: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     screen: rl.Vector2 = .{
-        .x = 800,
-        .y = 450,
+        .x = NATIVE_WIDTH,
+        .y = NATIVE_HEIGHT,
     },
     asteroidSpawnCd: f32 = 0,
     shootingCd: f32 = 0,
