@@ -36,8 +36,6 @@ const BLACK_HOLE_PHASER_MIN_DURATION: f32 = 1;
 const BLACK_HOLE_COLLISION_POINTS = 4;
 
 const BLACK_HOLE_SCALE = 20;
-const BLACK_HOLE_SPRINTE_COUNT = 11;
-const BLACK_HOLE_FRAME_SPEED: f32 = 0.3;
 const BLACK_HOLE_PHASER_ROTATION_SPEED: f32 = 20;
 
 const BlackHole = struct {
@@ -49,13 +47,8 @@ const BlackHole = struct {
     rotation: f32 = 0,
     isRotatingRight: bool = false,
     phaserTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
-    frameTimer: f32 = BLACK_HOLE_FRAME_SPEED,
-    currentFrame: usize = 0,
-    textures: [BLACK_HOLE_SPRINTE_COUNT]rl.Texture2D = std.mem.zeroes([BLACK_HOLE_SPRINTE_COUNT]rl.Texture2D),
     collisionpoints: [BLACK_HOLE_COLLISION_POINTS]rl.Vector2 = std.mem.zeroes([BLACK_HOLE_COLLISION_POINTS]rl.Vector2),
-    origin: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     pub fn tick(self: *BlackHole, delta: f32) void {
-        self.frameTimer -= delta;
         self.phasersCD -= delta;
         if (self.isRotatingRight) {
             self.rotation -= BLACK_HOLE_PHASER_ROTATION_SPEED * delta;
@@ -86,43 +79,11 @@ const BlackHole = struct {
             self.isPhasing = true;
             self.isRotatingRight = rand.boolean();
         }
-
-        if (self.frameTimer <= 0) {
-            self.currentFrame += 1;
-            self.frameTimer = BLACK_HOLE_FRAME_SPEED;
-            if (self.currentFrame == BLACK_HOLE_SPRINTE_COUNT) {
-                self.currentFrame = 0;
-            }
-        }
     }
     pub fn init(self: *BlackHole) bool {
-        if (self.textures[0].id > 0) {
+        if (self.phaserTexture.id > 0) {
             return true;
         }
-        for (0..BLACK_HOLE_SPRINTE_COUNT) |blackholeIndex| {
-            const indexPlus: usize = blackholeIndex + 1;
-            self.textures[blackholeIndex] = rl.loadTexture(rl.textFormat(
-                "resources/blackhole/black_hole%i.png",
-                .{indexPlus},
-            )) catch |err| switch (err) {
-                rl.RaylibError.LoadTexture => {
-                    std.debug.print(
-                        "LoadTexture blackhole ERROR",
-                        .{},
-                    );
-                    return false;
-                },
-                else => {
-                    std.debug.print("ERROR", .{});
-                    return false;
-                },
-            };
-        }
-        // Set orgin of blackhole
-        self.origin = rl.Vector2{
-            .x = @as(f32, @floatFromInt(self.textures[0].width)) / 2,
-            .y = @as(f32, @floatFromInt(self.textures[0].height)) / 2,
-        };
         // Init Phaser
         const phaserImage = rl.Image.genColor(256 * 2, 10, .blank);
         self.phaserTexture = phaserImage.toTexture() catch |err| switch (err) {
