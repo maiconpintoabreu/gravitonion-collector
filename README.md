@@ -14,10 +14,6 @@ Player needs to protect the BlackHole from the asteroids so it does not go too b
 * UI to Pause
 * Add power ups (gun modifier and temp shield dropped by the asteroids) 
 
-## Known bugs
-* Some bullets are passing the phaser
-* Some bullets are not hitting the asteroid even when they pass on the top
-
 ### Maybes:
 * Blackhole could do some random pulses to increase the gravity
 * local multiplayer (half score and increase in difficult)
