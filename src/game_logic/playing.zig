@@ -194,7 +194,7 @@ pub fn startGame(currentGame: *Game, isEmscripten: bool) bool {
     speedLoc = rl.getShaderLocation(blackholeShader, "speed");
     timePhaserLoc = rl.getShaderLocation(blackholePhaserShader, "time");
     const blackholeImage = rl.genImageColor(gameZig.NATIVE_WIDTH, gameZig.NATIVE_HEIGHT, .white);
-    blackholeTexture = rl.loadTextureFromImage(blackholeImage) catch |err| switch (err) {
+    blackholeTexture = blackholeImage.toTexture() catch |err| switch (err) {
         rl.RaylibError.LoadTexture => {
             std.debug.print("LoadTexture blackhole ERROR", .{});
             return false;
@@ -255,6 +255,9 @@ pub fn closeGame() void {
     }
     if (blackholeTexture.id > 0) {
         blackholeTexture.unload();
+    }
+    if (game.blackHole.phaserTexture.id > 0) {
+        game.blackHole.phaserTexture.unload();
     }
     if (asteroidTexture.id > 0) {
         asteroidTexture.unload();

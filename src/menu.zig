@@ -45,7 +45,7 @@ pub fn initMenu(inGame: *Game) bool {
         rl.Color.white,
     );
     rl.imageDrawText(&controlImage, "x", 48 + 3, -3, 20, rl.Color.white);
-    controlTexture = rl.loadTextureFromImage(controlImage) catch |err| switch (err) {
+    controlTexture = controlImage.toTexture() catch |err| switch (err) {
         rl.RaylibError.LoadTexture => {
             std.debug.print("LoadTexture controller ERROR", .{});
             return false;
@@ -55,7 +55,7 @@ pub fn initMenu(inGame: *Game) bool {
             return false;
         },
     };
-    rl.unloadImage(controlImage);
+    controlImage.unload();
 
     font = rl.getFontDefault() catch |err| switch (err) {
         else => {
@@ -66,10 +66,10 @@ pub fn initMenu(inGame: *Game) bool {
 }
 pub fn closeMenu() void {
     if (font.isReady()) {
-        rl.unloadFont(font);
+        font.unload();
     }
     if (controlTexture.id > 0) {
-        rl.unloadTexture(controlTexture);
+        controlTexture.unload();
     }
 }
 pub fn updateFrame() void {

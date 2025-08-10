@@ -22,7 +22,7 @@ pub const Projectile = struct {
 
     pub fn unload(self: *Projectile) void {
         if (self.texture.id > 0) {
-            rl.unloadTexture(self.texture);
+            self.texture.unload();
         }
     }
 };

@@ -28,7 +28,7 @@ pub const Asteroid = struct {
     }
     pub fn unload(self: *Asteroid) void {
         if (self.texture.id > 0) {
-            rl.unloadTexture(self.texture);
+            self.texture.unload();
         }
     }
 };

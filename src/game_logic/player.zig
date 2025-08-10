@@ -47,7 +47,7 @@ pub const Player = struct {
     }
     pub fn unload(self: *Player) void {
         if (self.texture.id > 0) {
-            rl.unloadTexture(self.texture);
+            self.texture.unload();
         }
     }
 };

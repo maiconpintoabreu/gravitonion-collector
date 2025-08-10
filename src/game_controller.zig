@@ -133,9 +133,6 @@ pub fn update() bool {
 
 pub fn closeGame() void {
     rl.closeAudioDevice();
-    if (game.blackHole.phaserTexture.id > 0) {
-        game.blackHole.phaserTexture.unload();
-    }
     playingZig.closeGame();
     menuZig.closeMenu();
 }
