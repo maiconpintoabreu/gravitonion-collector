@@ -34,6 +34,7 @@ pub const MAX_ASTEROIDS = 50;
 const BLACK_HOLE_PHASER_CD: f32 = 15;
 const BLACK_HOLE_PHASER_MIN_DURATION: f32 = 1;
 const BLACK_HOLE_COLLISION_POINTS = 4;
+const BLACK_HOLE_SIZE_PHASER_ACTIVE = 1.5;
 
 const BLACK_DEFAULT_SIZE = 0.6;
 const BLACK_HOLE_SCALE = 20;
@@ -65,24 +66,25 @@ const BlackHole = struct {
             self.rotation -= BLACK_HOLE_PHASER_MAX_ROTATION;
         }
         if (self.isPhasing) {
-            if (self.phasersMinDuration < 0) {
-                const tempSize = self.size - delta;
-                if (tempSize < BLACK_DEFAULT_SIZE) {
-                    self.setSize(BLACK_DEFAULT_SIZE);
-                    self.isPhasing = false;
-                } else {
-                    self.setSize(self.size - (0.1 * delta));
-                }
+            const tempSize = self.size - delta;
+            if (tempSize < BLACK_DEFAULT_SIZE) {
+                self.setSize(BLACK_DEFAULT_SIZE);
+                self.isPhasing = false;
             } else {
-                self.phasersMinDuration -= delta;
+                self.setSize(self.size - (0.1 / (BLACK_DEFAULT_SIZE / self.size) * delta));
             }
         }
-        if ((self.size > 1 or self.phasersCD < 0) and !self.isPhasing) {
+        if ((self.size > BLACK_HOLE_SIZE_PHASER_ACTIVE) and !self.isPhasing) {
             self.phasersCD = BLACK_HOLE_PHASER_CD;
             self.phasersMinDuration = BLACK_HOLE_PHASER_MIN_DURATION;
             self.isPhasing = true;
             self.isRotatingRight = rand.boolean();
         }
+        self.speed = rl.math.lerp(
+            self.speed,
+            if (self.isRotatingRight) self.size * -1 else self.size,
+            0.5,
+        );
     }
     pub fn init(self: *BlackHole) bool {
         if (self.phaserTexture.id > 0) {

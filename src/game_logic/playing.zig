@@ -358,10 +358,10 @@ pub fn updateFrame() void {
         rl.setShaderValue(blackholeShader, timeLoc, &reducedTime, .float);
         rl.setShaderValue(blackholePhaserShader, timePhaserLoc, &reducedTime, .float);
 
-        const rotationSpeed: f32 = if (game.blackHole.isRotatingRight) game.blackHole.size * -1 else game.blackHole.size;
+        const rotationSpeed: f32 = game.blackHole.speed;
         rl.setShaderValue(blackholeShader, speedLoc, &rotationSpeed, .float);
         if (game.asteroidSpawnCd < 0) {
-            game.asteroidSpawnCd = rl.math.clamp(DEFAULT_ASTEROID_CD - game.blackHole.size * 1.2, 0.2, 100);
+            game.asteroidSpawnCd = rl.math.clamp(DEFAULT_ASTEROID_CD - game.blackHole.size * 2.0, 0.2, 100);
             spawnAsteroidRandom();
         }
         // Input

@@ -110,7 +110,7 @@ pub fn drawFrame() void {
             });
             if (game.highestScore > 0) {
                 uiText(rl.Rectangle{
-                    .x = xPosition,
+                    .x = xPosition - 20, // -20 to make it centered
                     .y = gameZig.NATIVE_CENTER.y - (80),
                     .width = width,
                     .height = height,
@@ -242,9 +242,20 @@ pub fn drawFrame() void {
             rl.drawFPS(10, 10);
             // Start Debug
             if (IS_DEBUG_MENU) {
-                rl.drawText(rl.textFormat("--------------DEBUG--------------", .{}), 10, 40 + fontSize, fontSize, .white);
-                rl.drawText(rl.textFormat("game.Projectiles: %i", .{game.projectilesCount}), 10, 40 + fontSize * 2, fontSize, .white);
-                rl.drawText(rl.textFormat("game.ASteroids: %i", .{game.asteroidCount}), 10, 40 + fontSize * 3, fontSize, .white);
+                rl.drawText(
+                    rl.textFormat("--------------DEBUG--------------", .{}),
+                    10,
+                    40 + fontSize,
+                    fontSize,
+                    .white,
+                );
+                rl.drawText(
+                    rl.textFormat("game.blackhole.size: %3.3f", .{game.blackHole.size}),
+                    10,
+                    40 + fontSize * 2,
+                    fontSize,
+                    .white,
+                );
             }
         },
         else => {
