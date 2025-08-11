@@ -25,6 +25,10 @@ pub const PhysicsObject = struct {
             self.rotation += 360.0;
         }
         self.position = rl.Vector2.add(self.position, self.velocity);
+        self.direction = rl.Vector2{
+            .x = math.sin(math.degreesToRadians(self.rotation)),
+            .y = -math.cos(math.degreesToRadians(self.rotation)),
+        };
     }
     pub fn applyForce(self: *PhysicsObject, force: f32) void {
         const norm_vector: rl.Vector2 = rl.Vector2.normalize(self.direction);
@@ -50,9 +54,5 @@ pub const PhysicsObject = struct {
     }
     pub fn applyTorque(self: *PhysicsObject, torque: f32) void {
         self.rotation += torque * self.rotationSpeed;
-        self.direction = rl.Vector2{
-            .x = math.sin(math.degreesToRadians(self.rotation)),
-            .y = -math.cos(math.degreesToRadians(self.rotation)),
-        };
     }
 };

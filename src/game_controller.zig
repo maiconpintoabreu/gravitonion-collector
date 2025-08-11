@@ -1,4 +1,6 @@
 const rl = @import("raylib");
+
+const constantsZig = @import("game_logic/constants.zig");
 const gameZig = @import("game.zig");
 const Game = gameZig.Game;
 const playingZig = @import("game_logic/playing.zig");
@@ -20,7 +22,7 @@ pub fn initGame(isEmscripten: bool, isFullscreen: bool) bool {
     updateRatio();
     game.gameState = GameState.MainMenu;
     const menuReady = menuZig.initMenu(&game);
-    game.camera.target = gameZig.NATIVE_CENTER;
+    game.camera.target = constantsZig.NATIVE_CENTER;
     // TODO: if needed start game only after the menu when player pressed `Play`
     const gameReady = playingZig.startGame(&game, isEmscripten);
     return menuReady and gameReady;
@@ -41,15 +43,15 @@ fn updateRatio() void {
         rl.traceLog(.info, "Window: %f x %f", .{ game.screen.x, game.screen.y });
     }
     game.virtualRatio = .{
-        .x = game.screen.x / @as(f32, @floatFromInt(gameZig.NATIVE_WIDTH)),
-        .y = game.screen.y / @as(f32, @floatFromInt(gameZig.NATIVE_HEIGHT)),
+        .x = game.screen.x / @as(f32, @floatFromInt(constantsZig.NATIVE_WIDTH)),
+        .y = game.screen.y / @as(f32, @floatFromInt(constantsZig.NATIVE_HEIGHT)),
     };
     if (game.virtualRatio.y < game.virtualRatio.x) {
         game.camera.zoom = 1 * game.virtualRatio.y;
     } else {
         game.camera.zoom = 1 * game.virtualRatio.x;
     }
-    game.camera.offset = .{ .x = gameZig.NATIVE_CENTER.x * game.virtualRatio.x, .y = gameZig.NATIVE_CENTER.y * game.virtualRatio.y };
+    game.camera.offset = .{ .x = constantsZig.NATIVE_CENTER.x * game.virtualRatio.x, .y = constantsZig.NATIVE_CENTER.y * game.virtualRatio.y };
     rl.setMouseScale(1 / game.virtualRatio.x, 1 / game.virtualRatio.y);
 }
 

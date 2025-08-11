@@ -2,17 +2,13 @@ const std = @import("std");
 const rl = @import("raylib");
 const rand = std.crypto.random;
 
+const constantsZig = @import("game_logic/constants.zig");
 const playerZig = @import("game_logic/player.zig");
 const Player = playerZig.Player;
 const asteroidZig = @import("game_logic/asteroid.zig");
 const Asteroid = asteroidZig.Asteroid;
 const projectileZig = @import("game_logic/projectile.zig");
 const Projectile = projectileZig.Projectile;
-
-// Screen consts
-pub const NATIVE_WIDTH = 640;
-pub const NATIVE_HEIGHT = 360;
-pub const NATIVE_CENTER = rl.Vector2{ .x = NATIVE_WIDTH / 2, .y = NATIVE_HEIGHT / 2 };
 
 pub const GameState = enum {
     MainMenu,
@@ -124,8 +120,8 @@ pub const Game = struct {
     virtualRatio: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     nativeSizeScaled: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     screen: rl.Vector2 = .{
-        .x = NATIVE_WIDTH,
-        .y = NATIVE_HEIGHT,
+        .x = constantsZig.NATIVE_WIDTH,
+        .y = constantsZig.NATIVE_HEIGHT,
     },
     asteroidSpawnCd: f32 = 0,
     shootingCd: f32 = 0,

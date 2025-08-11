@@ -1,5 +1,7 @@
 const std = @import("std");
 const rl = @import("raylib");
+
+const constantsZig = @import("game_logic/constants.zig");
 const gameZig = @import("game.zig");
 const Game = gameZig.Game;
 const GameState = gameZig.GameState;
@@ -81,12 +83,12 @@ pub fn updateFrame() void {
 pub fn drawFrame() void {
     const width = BUTTON_WIDTH;
     const height = 30;
-    const xPosition = gameZig.NATIVE_CENTER.x - width / 2;
+    const xPosition = constantsZig.NATIVE_CENTER.x - width / 2;
     switch (game.gameState) {
         GameState.MainMenu => {
             if (uiTextButtom(rl.Rectangle{
                 .x = xPosition,
-                .y = gameZig.NATIVE_CENTER.y - height,
+                .y = constantsZig.NATIVE_CENTER.y - height,
                 .width = width,
                 .height = height,
             }, "Play", 20, .black)) {
@@ -94,7 +96,7 @@ pub fn drawFrame() void {
             }
             if (uiTextButtom(rl.Rectangle{
                 .x = xPosition,
-                .y = gameZig.NATIVE_CENTER.y - -height,
+                .y = constantsZig.NATIVE_CENTER.y - -height,
                 .width = width,
                 .height = height,
             }, "Quit", 20, .black)) {
@@ -111,7 +113,7 @@ pub fn drawFrame() void {
             if (game.highestScore > 0) {
                 uiText(rl.Rectangle{
                     .x = xPosition - 20, // -20 to make it centered
-                    .y = gameZig.NATIVE_CENTER.y - (80),
+                    .y = constantsZig.NATIVE_CENTER.y - (80),
                     .width = width,
                     .height = height,
                 }, rl.textFormat("Highest Score: %3.2f", .{game.highestScore}), 10, .white);
@@ -119,7 +121,7 @@ pub fn drawFrame() void {
             if (game.gameState == GameState.Pause) {
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = gameZig.NATIVE_CENTER.y - (40),
+                    .y = constantsZig.NATIVE_CENTER.y - (40),
                     .width = width,
                     .height = height,
                 }, "Continue", 20, .black)) {
@@ -127,7 +129,7 @@ pub fn drawFrame() void {
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = gameZig.NATIVE_CENTER.y - (0),
+                    .y = constantsZig.NATIVE_CENTER.y - (0),
                     .width = width,
                     .height = height,
                 }, "Main Menu", 20, .black)) {
@@ -135,7 +137,7 @@ pub fn drawFrame() void {
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = gameZig.NATIVE_CENTER.y - (-40),
+                    .y = constantsZig.NATIVE_CENTER.y - (-40),
                     .width = width,
                     .height = height,
                 }, "Quit", 20, .black)) {
@@ -144,7 +146,7 @@ pub fn drawFrame() void {
             } else if (game.gameState == GameState.GameOver) {
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = gameZig.NATIVE_CENTER.y - (40),
+                    .y = constantsZig.NATIVE_CENTER.y - (40),
                     .width = width,
                     .height = height,
                 }, "Restart", 20, .black)) {
@@ -152,7 +154,7 @@ pub fn drawFrame() void {
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = gameZig.NATIVE_CENTER.y - (0),
+                    .y = constantsZig.NATIVE_CENTER.y - (0),
                     .width = width,
                     .height = height,
                 }, "Main Menu", 20, .black)) {
@@ -160,7 +162,7 @@ pub fn drawFrame() void {
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = gameZig.NATIVE_CENTER.y - (-40),
+                    .y = constantsZig.NATIVE_CENTER.y - (-40),
                     .width = width,
                     .height = height,
                 }, "Quit", 20, .black)) {
@@ -182,7 +184,7 @@ pub fn drawFrame() void {
                     if (uiButtomIcon(
                         .{
                             .x = 40,
-                            .y = gameZig.NATIVE_HEIGHT - 80,
+                            .y = constantsZig.NATIVE_HEIGHT - 80,
                         },
                         30,
                         0,
@@ -194,7 +196,7 @@ pub fn drawFrame() void {
                     if (uiButtomIcon(
                         .{
                             .x = (100 + 30),
-                            .y = gameZig.NATIVE_HEIGHT - 80,
+                            .y = constantsZig.NATIVE_HEIGHT - 80,
                         },
                         30,
                         1,
@@ -205,8 +207,8 @@ pub fn drawFrame() void {
                     }
                     if (uiButtomIcon(
                         .{
-                            .x = gameZig.NATIVE_WIDTH - 60,
-                            .y = gameZig.NATIVE_HEIGHT - 80,
+                            .x = constantsZig.NATIVE_WIDTH - 60,
+                            .y = constantsZig.NATIVE_HEIGHT - 80,
                         },
                         30,
                         2,
@@ -217,8 +219,8 @@ pub fn drawFrame() void {
                     }
                     if (uiButtomIcon(
                         .{
-                            .x = gameZig.NATIVE_WIDTH - 60,
-                            .y = gameZig.NATIVE_HEIGHT - 150,
+                            .x = constantsZig.NATIVE_WIDTH - 60,
+                            .y = constantsZig.NATIVE_HEIGHT - 150,
                         },
                         30,
                         3,
@@ -284,9 +286,7 @@ fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
         rl.Color.white,
     );
 
-    if (rl.isMouseButtonDown(.left) and isHouvering) {
-        return true;
-    }
+    // remove mouse to use only touch values
     const touchCount = @as(usize, @intCast(rl.getTouchPointCount()));
     for (0..touchCount) |touchIndex| {
         if (rl.checkCollisionPointCircle(
