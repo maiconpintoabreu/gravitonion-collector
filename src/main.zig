@@ -22,7 +22,7 @@ pub fn main() anyerror!void {
         .window_highdpi = true,
     });
 
-    if (gameController.initGame(false, isFullScreen)) {
+    if (gameController.initGame(isFullScreen)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(MIN_WINDOW_SIZE_WIDTH, MIN_WINDOW_SIZE_HEIGHT);
         if (isFullScreen) {

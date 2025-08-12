@@ -1,14 +1,17 @@
 const std = @import("std");
 const math = std.math;
 const rl = @import("raylib");
-
-const constantsZig = @import("constants.zig");
+const configZig = @import("../config.zig");
 const physicsZig = @import("physics_object.zig");
 const PhysicsObject = physicsZig.PhysicsObject;
+const projectileZig = @import("projectile.zig");
+const Projectile = projectileZig.Projectile;
+
 const MAX_HEALTH = 100;
 const MAX_POWER = 100;
 
 pub const Player = struct {
+    bullets: [configZig.MAX_PROJECTILES]Projectile = std.mem.zeroes([configZig.MAX_PROJECTILES]Projectile),
     physicsObject: PhysicsObject = .{
         .rotationSpeed = 200,
     },
@@ -20,6 +23,40 @@ pub const Player = struct {
     gunSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     rightTurbineSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     leftTurbineSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
+    shootingCd: f32 = 0,
+    bulletsCount: usize = 0,
+    shoot: rl.Sound = std.mem.zeroes(rl.Sound),
+    pub fn init(self: *Player) rl.RaylibError!void {
+        const playerTexture = try rl.loadTexture("resources/ship.png");
+        const playerTextureCenter = rl.Vector2{
+            .x = @as(f32, @floatFromInt(playerTexture.width)) / 2,
+            .y = @as(f32, @floatFromInt(playerTexture.height)) / 2 + 2,
+        };
+        const playerTextureRec = rl.Rectangle{
+            .x = 0,
+            .y = 0,
+            .width = @as(f32, @floatFromInt(playerTexture.width)),
+            .height = @as(f32, @floatFromInt(playerTexture.height)),
+        };
+        self.textureCenter = playerTextureCenter;
+        self.texture = playerTexture;
+        self.textureRec = playerTextureRec;
+
+        const bulletTexture = try rl.loadTexture("resources/bullet.png");
+        const bulletTextureRec = rl.Rectangle{
+            .x = 0,
+            .y = 0,
+            .width = @as(f32, @floatFromInt(bulletTexture.width)),
+            .height = @as(f32, @floatFromInt(bulletTexture.height)),
+        };
+        for (&self.bullets) |*bullet| {
+            bullet.texture = bulletTexture;
+            bullet.textureRec = bulletTextureRec;
+        }
+        self.shoot = try rl.loadSound("resources/shoot.wav");
+        rl.setSoundVolume(self.shoot, 0.1);
+        rl.traceLog(.info, "Player init Completed", .{});
+    }
     pub fn tick(self: *Player) void {
         self.physicsObject.velocity = rl.Vector2.clampValue(
             self.physicsObject.velocity,
@@ -68,9 +105,38 @@ pub const Player = struct {
             .white,
         );
     }
+
+    pub fn shotBullet(self: *Player) void {
+        if (self.bulletsCount + 1 == configZig.MAX_PROJECTILES) {
+            return;
+        }
+        const direction: rl.Vector2 = .{
+            .x = math.sin(math.degreesToRadians(self.physicsObject.rotation)),
+            .y = -math.cos(math.degreesToRadians(self.physicsObject.rotation)),
+        };
+        const norm_vector: rl.Vector2 = direction.normalize();
+        self.bullets[self.bulletsCount].position = self.gunSlot;
+        self.bullets[self.bulletsCount].rotation = self.physicsObject.rotation;
+        self.bullets[self.bulletsCount].direction = norm_vector;
+        self.bullets[self.bulletsCount].speed = 5;
+        self.bullets[self.bulletsCount].size = 3;
+        self.bulletsCount += 1;
+        rl.playSound(self.shoot);
+    }
+    pub fn removeBullet(self: *Player, index: usize) void {
+        if (self.bulletsCount == 0) return;
+        self.bullets[index] = self.bullets[self.bulletsCount - 1];
+        self.bulletsCount -= 1;
+    }
+
     pub fn unload(self: *Player) void {
         if (self.texture.id > 0) {
             self.texture.unload();
         }
+        // remove only first as they are all the same
+        if (self.bullets[0].texture.id > 0) {
+            self.bullets[0].texture.unload();
+        }
+        if (rl.isSoundValid(self.shoot)) self.shoot.unload();
     }
 };

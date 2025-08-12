@@ -26,9 +26,4 @@ pub const Asteroid = struct {
             .height = currentHeight,
         }, .{ .x = currentWidth / 2, .y = currentHeight / 2 }, self.physicsObject.rotation, .white);
     }
-    pub fn unload(self: *Asteroid) void {
-        if (self.texture.id > 0) {
-            self.texture.unload();
-        }
-    }
 };

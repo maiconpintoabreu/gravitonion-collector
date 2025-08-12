@@ -17,3 +17,7 @@ Player needs to protect the BlackHole from the asteroids so it does not go too b
 ### Maybes:
 * local multiplayer (half score and increase in difficult)
 
+## Entity map
+Game - Blackhole
+Game - Asteroids
+Game - Player - Bullets

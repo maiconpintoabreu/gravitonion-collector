@@ -1,13 +1,12 @@
 const std = @import("std");
 const rl = @import("raylib");
 
-const constantsZig = @import("game_logic/constants.zig");
-const gameZig = @import("game.zig");
+const configZig = @import("../config.zig");
+const gameZig = @import("../game.zig");
 const Game = gameZig.Game;
 const GameState = gameZig.GameState;
 const GameControllerType = gameZig.GameControllerType;
 
-const IS_DEBUG_MENU: bool = false;
 const BUTTON_BACKGROUND_NORMAL: rl.Color = .gray;
 const BUTTON_BACKGROUND_HOVER: rl.Color = .light_gray;
 const BUTTON_WIDTH = 140;
@@ -83,12 +82,12 @@ pub fn updateFrame() void {
 pub fn drawFrame() void {
     const width = BUTTON_WIDTH;
     const height = 30;
-    const xPosition = constantsZig.NATIVE_CENTER.x - width / 2;
+    const xPosition = configZig.NATIVE_CENTER.x - width / 2;
     switch (game.gameState) {
         GameState.MainMenu => {
             if (uiTextButtom(rl.Rectangle{
                 .x = xPosition,
-                .y = constantsZig.NATIVE_CENTER.y - height,
+                .y = configZig.NATIVE_CENTER.y - height,
                 .width = width,
                 .height = height,
             }, "Play", 20, .black)) {
@@ -96,7 +95,7 @@ pub fn drawFrame() void {
             }
             if (uiTextButtom(rl.Rectangle{
                 .x = xPosition,
-                .y = constantsZig.NATIVE_CENTER.y - -height,
+                .y = configZig.NATIVE_CENTER.y - -height,
                 .width = width,
                 .height = height,
             }, "Quit", 20, .black)) {
@@ -113,7 +112,7 @@ pub fn drawFrame() void {
             if (game.highestScore > 0) {
                 uiText(rl.Rectangle{
                     .x = xPosition - 20, // -20 to make it centered
-                    .y = constantsZig.NATIVE_CENTER.y - (80),
+                    .y = configZig.NATIVE_CENTER.y - (80),
                     .width = width,
                     .height = height,
                 }, rl.textFormat("Highest Score: %3.2f", .{game.highestScore}), 10, .white);
@@ -121,7 +120,7 @@ pub fn drawFrame() void {
             if (game.gameState == GameState.Pause) {
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = constantsZig.NATIVE_CENTER.y - (40),
+                    .y = configZig.NATIVE_CENTER.y - (40),
                     .width = width,
                     .height = height,
                 }, "Continue", 20, .black)) {
@@ -129,7 +128,7 @@ pub fn drawFrame() void {
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = constantsZig.NATIVE_CENTER.y - (0),
+                    .y = configZig.NATIVE_CENTER.y - (0),
                     .width = width,
                     .height = height,
                 }, "Main Menu", 20, .black)) {
@@ -137,7 +136,7 @@ pub fn drawFrame() void {
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = constantsZig.NATIVE_CENTER.y - (-40),
+                    .y = configZig.NATIVE_CENTER.y - (-40),
                     .width = width,
                     .height = height,
                 }, "Quit", 20, .black)) {
@@ -146,7 +145,7 @@ pub fn drawFrame() void {
             } else if (game.gameState == GameState.GameOver) {
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = constantsZig.NATIVE_CENTER.y - (40),
+                    .y = configZig.NATIVE_CENTER.y - (40),
                     .width = width,
                     .height = height,
                 }, "Restart", 20, .black)) {
@@ -154,7 +153,7 @@ pub fn drawFrame() void {
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = constantsZig.NATIVE_CENTER.y - (0),
+                    .y = configZig.NATIVE_CENTER.y - (0),
                     .width = width,
                     .height = height,
                 }, "Main Menu", 20, .black)) {
@@ -162,7 +161,7 @@ pub fn drawFrame() void {
                 }
                 if (uiTextButtom(rl.Rectangle{
                     .x = xPosition,
-                    .y = constantsZig.NATIVE_CENTER.y - (-40),
+                    .y = configZig.NATIVE_CENTER.y - (-40),
                     .width = width,
                     .height = height,
                 }, "Quit", 20, .black)) {
@@ -184,7 +183,7 @@ pub fn drawFrame() void {
                     if (uiButtomIcon(
                         .{
                             .x = 40,
-                            .y = constantsZig.NATIVE_HEIGHT - 80,
+                            .y = configZig.NATIVE_HEIGHT - 80,
                         },
                         30,
                         0,
@@ -196,7 +195,7 @@ pub fn drawFrame() void {
                     if (uiButtomIcon(
                         .{
                             .x = (100 + 30),
-                            .y = constantsZig.NATIVE_HEIGHT - 80,
+                            .y = configZig.NATIVE_HEIGHT - 80,
                         },
                         30,
                         1,
@@ -207,8 +206,8 @@ pub fn drawFrame() void {
                     }
                     if (uiButtomIcon(
                         .{
-                            .x = constantsZig.NATIVE_WIDTH - 60,
-                            .y = constantsZig.NATIVE_HEIGHT - 80,
+                            .x = configZig.NATIVE_WIDTH - 60,
+                            .y = configZig.NATIVE_HEIGHT - 80,
                         },
                         30,
                         2,
@@ -219,8 +218,8 @@ pub fn drawFrame() void {
                     }
                     if (uiButtomIcon(
                         .{
-                            .x = constantsZig.NATIVE_WIDTH - 60,
-                            .y = constantsZig.NATIVE_HEIGHT - 150,
+                            .x = configZig.NATIVE_WIDTH - 60,
+                            .y = configZig.NATIVE_HEIGHT - 150,
                         },
                         30,
                         3,
@@ -234,6 +233,25 @@ pub fn drawFrame() void {
                 game.gameControllerType = GameControllerType.Joystick;
             }
             const fontSize = 15;
+            if (!game.isPlaying) {
+                if (game.gameControllerType == GameControllerType.TouchScreen) {
+                    rl.drawText(
+                        "Press any where to start",
+                        0,
+                        @as(i32, @intFromFloat(game.player.physicsObject.position.y)) - 35,
+                        fontSize,
+                        .white,
+                    );
+                } else {
+                    rl.drawText(
+                        "Press any thing to start",
+                        0,
+                        @as(i32, @intFromFloat(game.player.physicsObject.position.y)) - 35,
+                        fontSize,
+                        .white,
+                    );
+                }
+            }
             rl.drawText(
                 rl.textFormat("Score: %3.2f", .{game.currentScore}),
                 @as(i32, @intFromFloat(xPosition + 40)),
@@ -243,7 +261,7 @@ pub fn drawFrame() void {
             );
             rl.drawFPS(10, 10);
             // Start Debug
-            if (IS_DEBUG_MENU) {
+            if (configZig.IS_DEBUG_MENU) {
                 rl.drawText(
                     rl.textFormat("--------------DEBUG--------------", .{}),
                     10,

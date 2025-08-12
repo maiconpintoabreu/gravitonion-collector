@@ -1,19 +1,18 @@
 const rl = @import("raylib");
+const std = @import("std");
+const builtin = @import("builtin");
 
-const constantsZig = @import("game_logic/constants.zig");
+const configZig = @import("config.zig");
 const gameZig = @import("game.zig");
 const Game = gameZig.Game;
 const playingZig = @import("game_logic/playing.zig");
-const menuZig = @import("menu.zig");
+const menuZig = @import("game_logic/game_menu.zig");
 const GameState = gameZig.GameState;
 
-const BACKGROUND_COLOR = rl.Color.init(20, 20, 20, 255);
 // Global Variables
 var game: Game = .{};
-var isWeb = false;
 
-pub fn initGame(isEmscripten: bool, isFullscreen: bool) bool {
-    isWeb = isEmscripten;
+pub fn initGame(isFullscreen: bool) bool {
     if (isFullscreen) {
         game.screen = rl.Vector2.zero();
     }
@@ -22,15 +21,32 @@ pub fn initGame(isEmscripten: bool, isFullscreen: bool) bool {
     updateRatio();
     game.gameState = GameState.MainMenu;
     const menuReady = menuZig.initMenu(&game);
-    game.camera.target = constantsZig.NATIVE_CENTER;
+    game.camera.target = configZig.NATIVE_CENTER;
     // TODO: if needed start game only after the menu when player pressed `Play`
-    const gameReady = playingZig.startGame(&game, isEmscripten);
+    const gameReady = playingZig.startGame(&game) catch |err| switch (err) {
+        rl.RaylibError.LoadShader => {
+            std.debug.print("LoadShader blackhole.fs ERROR", .{});
+            return false;
+        },
+        rl.RaylibError.LoadAudioStream => {
+            std.debug.print("LoadAudioStream ERROR", .{});
+            return false;
+        },
+        rl.RaylibError.LoadSound => {
+            std.debug.print("LoadSound destruction ERROR", .{});
+            return false;
+        },
+        else => {
+            std.debug.print("ERROR", .{});
+            return false;
+        },
+    };
     return menuReady and gameReady;
 }
 
 fn updateRatio() void {
     if (rl.isWindowFullscreen()) {
-        if (isWeb) {
+        if (builtin.cpu.arch.isWasm()) {
             game.screen.x = @as(f32, @floatFromInt(rl.getScreenWidth()));
             game.screen.y = @as(f32, @floatFromInt(rl.getScreenHeight()));
         } else {
@@ -43,15 +59,15 @@ fn updateRatio() void {
         rl.traceLog(.info, "Window: %f x %f", .{ game.screen.x, game.screen.y });
     }
     game.virtualRatio = .{
-        .x = game.screen.x / @as(f32, @floatFromInt(constantsZig.NATIVE_WIDTH)),
-        .y = game.screen.y / @as(f32, @floatFromInt(constantsZig.NATIVE_HEIGHT)),
+        .x = game.screen.x / @as(f32, @floatFromInt(configZig.NATIVE_WIDTH)),
+        .y = game.screen.y / @as(f32, @floatFromInt(configZig.NATIVE_HEIGHT)),
     };
     if (game.virtualRatio.y < game.virtualRatio.x) {
         game.camera.zoom = 1 * game.virtualRatio.y;
     } else {
         game.camera.zoom = 1 * game.virtualRatio.x;
     }
-    game.camera.offset = .{ .x = constantsZig.NATIVE_CENTER.x * game.virtualRatio.x, .y = constantsZig.NATIVE_CENTER.y * game.virtualRatio.y };
+    game.camera.offset = .{ .x = configZig.NATIVE_CENTER.x * game.virtualRatio.x, .y = configZig.NATIVE_CENTER.y * game.virtualRatio.y };
     rl.setMouseScale(1 / game.virtualRatio.x, 1 / game.virtualRatio.y);
 }
 
@@ -76,7 +92,7 @@ pub fn update() bool {
             {
                 game.camera.begin();
                 defer game.camera.end();
-                rl.clearBackground(BACKGROUND_COLOR);
+                rl.clearBackground(configZig.BACKGROUND_COLOR);
                 menuZig.drawFrame();
             }
             if (game.gameState == GameState.Playing) {
@@ -87,7 +103,7 @@ pub fn update() bool {
             playingZig.updateFrame();
             rl.beginDrawing();
             defer rl.endDrawing();
-            rl.clearBackground(BACKGROUND_COLOR);
+            rl.clearBackground(configZig.BACKGROUND_COLOR);
             {
                 game.camera.begin();
                 defer game.camera.end();
@@ -98,7 +114,7 @@ pub fn update() bool {
         GameState.GameOver => {
             rl.beginDrawing();
             defer rl.endDrawing();
-            rl.clearBackground(BACKGROUND_COLOR);
+            rl.clearBackground(configZig.BACKGROUND_COLOR);
             {
                 game.camera.begin();
                 defer game.camera.end();
@@ -121,7 +137,7 @@ pub fn update() bool {
             {
                 game.camera.begin();
                 defer game.camera.end();
-                rl.clearBackground(BACKGROUND_COLOR);
+                rl.clearBackground(configZig.BACKGROUND_COLOR);
                 playingZig.drawFrame();
                 menuZig.drawFrame();
             }
