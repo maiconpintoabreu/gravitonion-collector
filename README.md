@@ -8,10 +8,7 @@ Player needs to protect the BlackHole from the asteroids so it does not go too b
 
 
 ## TODO:
-* Phaser shader to ondulate it
 * UI to show the power (with power mechanics)
-* UI to toogle UI controller
-* UI to Pause
 * Add power ups (gun modifier and temp shield dropped by the asteroids) 
 
 ### Maybes:

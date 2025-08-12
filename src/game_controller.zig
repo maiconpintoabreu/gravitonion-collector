@@ -100,6 +100,7 @@ pub fn update() bool {
             }
         },
         GameState.Playing => {
+            menuZig.updateFrame();
             playingZig.updateFrame();
             rl.beginDrawing();
             defer rl.endDrawing();

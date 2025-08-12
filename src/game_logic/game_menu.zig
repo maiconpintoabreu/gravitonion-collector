@@ -77,6 +77,54 @@ pub fn updateFrame() void {
     if (rl.isKeyReleased(.escape) and game.gameState == GameState.Pause) {
         game.gameState = GameState.Playing;
     }
+
+    // TODO: Needs improvement (too repetitive)
+    if (game.gameControllerType == GameControllerType.TouchScreen) {
+        if (actionButtom(
+            .{
+                .x = 40,
+                .y = configZig.NATIVE_HEIGHT - 80,
+            },
+            30,
+        )) {
+            game.isTouchLeft = true;
+        } else {
+            game.isTouchLeft = false;
+        }
+        if (actionButtom(
+            .{
+                .x = (100 + 30),
+                .y = configZig.NATIVE_HEIGHT - 80,
+            },
+            30,
+        )) {
+            game.isTouchRight = true;
+        } else {
+            game.isTouchRight = false;
+        }
+        if (actionButtom(
+            .{
+                .x = configZig.NATIVE_WIDTH - 60,
+                .y = configZig.NATIVE_HEIGHT - 80,
+            },
+            30,
+        )) {
+            game.isTouchUp = true;
+        } else {
+            game.isTouchUp = false;
+        }
+        if (actionButtom(
+            .{
+                .x = configZig.NATIVE_WIDTH - 60,
+                .y = configZig.NATIVE_HEIGHT - 150,
+            },
+            30,
+        )) {
+            game.isShooting = true;
+        } else {
+            game.isShooting = false;
+        }
+    }
 }
 
 pub fn drawFrame() void {
@@ -180,54 +228,38 @@ pub fn drawFrame() void {
                     }
                 }
                 if (game.gameControllerType == GameControllerType.TouchScreen) {
-                    if (uiButtomIcon(
+                    uiButtomIcon(
                         .{
                             .x = 40,
                             .y = configZig.NATIVE_HEIGHT - 80,
                         },
                         30,
                         0,
-                    )) {
-                        game.isTouchLeft = true;
-                    } else {
-                        game.isTouchLeft = false;
-                    }
-                    if (uiButtomIcon(
+                    );
+                    uiButtomIcon(
                         .{
                             .x = (100 + 30),
                             .y = configZig.NATIVE_HEIGHT - 80,
                         },
                         30,
                         1,
-                    )) {
-                        game.isTouchRight = true;
-                    } else {
-                        game.isTouchRight = false;
-                    }
-                    if (uiButtomIcon(
+                    );
+                    uiButtomIcon(
                         .{
                             .x = configZig.NATIVE_WIDTH - 60,
                             .y = configZig.NATIVE_HEIGHT - 80,
                         },
                         30,
                         2,
-                    )) {
-                        game.isTouchUp = true;
-                    } else {
-                        game.isTouchUp = false;
-                    }
-                    if (uiButtomIcon(
+                    );
+                    uiButtomIcon(
                         .{
                             .x = configZig.NATIVE_WIDTH - 60,
                             .y = configZig.NATIVE_HEIGHT - 150,
                         },
                         30,
                         3,
-                    )) {
-                        game.isShooting = true;
-                    } else {
-                        game.isShooting = false;
-                    }
+                    );
                 }
             } else if (game.gameControllerType != GameControllerType.Joystick) {
                 game.gameControllerType = GameControllerType.Joystick;
@@ -285,25 +317,7 @@ pub fn drawFrame() void {
     }
 }
 
-fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
-    const buttomEdge = rl.Vector2{ .x = buttom.x - buttomSize / 2, .y = buttom.y - buttomSize / 2 };
-    const isHouvering = rl.checkCollisionPointCircle(rl.getMousePosition(), buttom, buttomSize);
-
-    rl.drawCircleV(buttom, buttomSize, .{
-        .r = BUTTON_BACKGROUND_NORMAL.r,
-        .g = BUTTON_BACKGROUND_NORMAL.g,
-        .b = BUTTON_BACKGROUND_NORMAL.b,
-        .a = if (isHouvering) 100 else 200,
-    });
-    rl.drawTexturePro(
-        controlTexture,
-        rl.Rectangle{ .x = 16 * icon, .y = 0, .width = 16, .height = 16 },
-        .{ .x = buttomEdge.x, .y = buttomEdge.y, .width = buttomSize, .height = buttomSize },
-        rl.Vector2.zero(),
-        0,
-        rl.Color.white,
-    );
-
+fn actionButtom(buttom: rl.Vector2, buttomSize: f32) bool {
     // remove mouse to use only touch values
     const touchCount = @as(usize, @intCast(rl.getTouchPointCount()));
     for (0..touchCount) |touchIndex| {
@@ -317,6 +331,25 @@ fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) bool {
     }
 
     return false;
+}
+
+fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) void {
+    const buttomEdge = rl.Vector2{ .x = buttom.x - buttomSize / 2, .y = buttom.y - buttomSize / 2 };
+
+    rl.drawCircleV(buttom, buttomSize, .{
+        .r = BUTTON_BACKGROUND_NORMAL.r,
+        .g = BUTTON_BACKGROUND_NORMAL.g,
+        .b = BUTTON_BACKGROUND_NORMAL.b,
+        .a = 200,
+    });
+    rl.drawTexturePro(
+        controlTexture,
+        rl.Rectangle{ .x = 16 * icon, .y = 0, .width = 16, .height = 16 },
+        .{ .x = buttomEdge.x, .y = buttomEdge.y, .width = buttomSize, .height = buttomSize },
+        rl.Vector2.zero(),
+        0,
+        rl.Color.white,
+    );
 }
 
 fn uiTextButtom(buttom: rl.Rectangle, text: [:0]const u8, fontSize: f32, color: rl.Color) bool {
