@@ -51,8 +51,8 @@ jobs:
           sudo snap install zig --classic --beta
         shell: bash
 
-      # - name: Unit Test
-      #   run: zig build test --summary new --cache-dir .zig-test-cache
+      - name: Unit Test
+        run: zig build test --summary new -Doptimize=ReleaseSafe
   
       - name: Setup emsdk
         run: |
@@ -67,11 +67,11 @@ jobs:
           
       - name: Build Linux Project
         run: |
-          zig build -Doptimize=ReleaseSmall --prefix zig-out/linux --prefix-exe-dir ""
+          zig build -Doptimize=ReleaseSafe --prefix zig-out/linux --prefix-exe-dir ""
           
       - name: Build Windows Project
         run: |
-          zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSmall --prefix zig-out/windows --prefix-exe-dir ""
+          zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSafe --prefix zig-out/windows --prefix-exe-dir ""
 
       - name: Generate Artifacts
         run: |

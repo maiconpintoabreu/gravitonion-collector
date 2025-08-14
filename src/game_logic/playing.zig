@@ -4,6 +4,7 @@ const math = std.math;
 const rl = @import("raylib");
 
 const configZig = @import("../config.zig");
+const PhysicsSystem = @import("physics.zig").PhysicsSystem;
 const playerZig = @import("player.zig");
 const Player = playerZig.Player;
 const projectileZig = @import("projectile.zig");
@@ -37,6 +38,7 @@ var speedLoc: i32 = 0;
 var timePhaserLoc: i32 = 0;
 
 var game: *Game = undefined;
+var physiscsSystem: PhysicsSystem = .{};
 
 pub fn startGame(currentGame: *Game) rl.RaylibError!bool {
     game = currentGame;
@@ -76,6 +78,7 @@ pub fn restartGame() void {
     game.currentScore = 0;
     gameTime = 0;
     game.asteroidCount = 0;
+    physiscsSystem.physicsBodyCount = 10;
     if (rl.isMusicValid(music)) {
         rl.stopMusicStream(music);
         rl.playMusicStream(music);
@@ -138,6 +141,7 @@ pub fn updateFrame() void {
     if (game.gameState == GameState.Playing and game.isPlaying) {
         // Tick
         const delta = rl.getFrameTime();
+        physiscsSystem.tick(delta, configZig.NATIVE_CENTER);
         gameTime += @as(f64, delta);
         game.currentScore += 20 / game.player.physicsObject.position.distance(configZig.NATIVE_CENTER) * game.blackHole.size * delta;
         game.asteroidSpawnCd -= delta;

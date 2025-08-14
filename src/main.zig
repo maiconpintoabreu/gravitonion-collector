@@ -2,12 +2,14 @@ const rl = @import("raylib");
 const std = @import("std");
 const buildin = @import("builtin");
 const gameController = @import("game_controller.zig");
+const configZig = @import("config.zig");
 
 const MIN_WINDOW_SIZE_WIDTH = 400;
 const MIN_WINDOW_SIZE_HEIGHT = 225;
 
 pub fn main() anyerror!void {
     rl.setTraceLogLevel(if (buildin.mode == .Debug) .all else .err);
+    configZig.IS_TESTING = false;
     rl.traceLog(
         rl.TraceLogLevel.info,
         "Initializing Game!",

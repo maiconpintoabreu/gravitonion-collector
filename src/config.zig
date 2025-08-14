@@ -11,6 +11,8 @@ pub const BACKGROUND_COLOR = rl.Color.init(20, 20, 20, 255);
 // Game consts
 pub const MAX_PROJECTILES = 200;
 pub const MAX_ASTEROIDS = 50;
+pub const MAX_PHYSICS_OBJECTS: comptime_int = MAX_PROJECTILES + MAX_ASTEROIDS + 1;
+pub const MAX_PHYSICS_POLYGON_POINTS = 4;
 pub const DEFAULT_ASTEROID_CD = 5;
 pub const DEFAULT_SHOOTING_CD = 0.1;
 pub const PHYSICS_TICK_SPEED = 0.02;
@@ -18,3 +20,5 @@ pub const PHYSICS_TICK_SPEED = 0.02;
 // Debug
 pub const IS_DEBUG = false;
 pub const IS_DEBUG_MENU: bool = false;
+
+pub var IS_TESTING = false;

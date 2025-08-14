@@ -1,3 +1,8 @@
 {
-    "zig.zls.enabled": "on"
+    "zig.zls.enabled": "on",
+    "zig.testArgs": [
+        "build",
+        "test",
+        "-Dtest-filter=\"${filter}\""
+    ]
 }

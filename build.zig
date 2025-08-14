@@ -58,8 +58,10 @@ pub fn build(b: *std.Build) !void {
             },
         ),
     });
+    const test_filters = b.option([]const u8, "test-filter", "Skip tests that do not match any filter") orelse null;
     const test_step = b.addTest(.{
         .name = "space_researcher",
+        .filter = test_filters,
         .root_module = b.createModule(
             .{
                 .root_source_file = b.path("src/main_test.zig"),

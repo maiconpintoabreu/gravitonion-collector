@@ -18,3 +18,10 @@ Player needs to protect the BlackHole from the asteroids so it does not go too b
 Game - Blackhole
 Game - Asteroids
 Game - Player - Bullets
+
+## Physics
+
+Blackhole collides to everyone
+Player collides to everyone
+asteroids collide to everyone
+bullets collide to everyone but player

@@ -6,6 +6,9 @@ const physicsZig = @import("physics_object.zig");
 const PhysicsObject = physicsZig.PhysicsObject;
 const projectileZig = @import("projectile.zig");
 const Projectile = projectileZig.Projectile;
+const PhysicsZig = @import("../game_logic/physics.zig");
+const PhysicsSystem = PhysicsZig.PhysicsSystem;
+const PhysicsBody = PhysicsZig.PhysicsBody;
 
 const MAX_HEALTH = 100;
 const MAX_POWER = 100;
@@ -15,6 +18,7 @@ pub const Player = struct {
     physicsObject: PhysicsObject = .{
         .rotationSpeed = 200,
     },
+    physicsBody: ?*PhysicsBody = null,
     textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
@@ -27,6 +31,14 @@ pub const Player = struct {
     bulletsCount: usize = 0,
     shoot: rl.Sound = std.mem.zeroes(rl.Sound),
     pub fn init(self: *Player) rl.RaylibError!void {
+        const id = PhysicsZig.physicsSystem.createCircularBody(
+            .{ .x = 0, .y = 0 },
+            5,
+            10,
+        );
+        self.physicsBody = PhysicsZig.physicsSystem.getBody(id);
+        // Avoid opengl calls while testing
+        if (configZig.IS_TESTING) return;
         const playerTexture = try rl.loadTexture("resources/ship.png");
         const playerTextureCenter = rl.Vector2{
             .x = @as(f32, @floatFromInt(playerTexture.width)) / 2,
