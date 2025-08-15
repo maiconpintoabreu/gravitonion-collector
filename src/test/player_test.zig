@@ -10,12 +10,12 @@ test "PlayerZig bulletsCount should be 0 from start" {
 
 test "PlayerZig init" {
     var player: Player = .{};
-    try player.init();
+    try player.init(.{ .x = 0, .y = 0 });
 }
 
 test "PlayerZig Physics Body init" {
     var player: Player = .{};
     try testing.expect(player.physicsBody == null);
-    try player.init();
+    try player.init(.{ .x = 0, .y = 0 });
     try testing.expect(player.physicsBody.?.id != -1);
 }

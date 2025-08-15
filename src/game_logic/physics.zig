@@ -16,6 +16,14 @@ pub const PhysicsShapeUnion = union(enum) {
     Circular: PhysicsShapeCircular,
     Polygon: PhysicsShapePolygon,
 };
+pub const PhysicsBodyInitiator = struct {
+    position: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Physics body shape pivot
+    velocity: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Current linear velocity applied to position
+    shape: ?PhysicsShapeUnion = null, // optional for now. TODO: make it not optional if possible
+    useGravity: bool = false, // Apply gravity force to dynamics
+    mass: f32 = 0.0, // Physics body mass
+    enabled: bool = false,
+};
 pub const PhysicsBody = struct {
     id: i32 = -1,
     position: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Physics body shape pivot
@@ -37,6 +45,7 @@ pub const PhysicsBody = struct {
     isColliding: bool = false,
     collidingWith: ?*PhysicsBody = null,
     shape: ?PhysicsShapeUnion = null,
+    enabled: bool = false,
 };
 pub const PhysicsSystem = struct {
     physicsBodyCount: usize = 0,
@@ -44,43 +53,25 @@ pub const PhysicsSystem = struct {
     physicsBodies: [configZig.MAX_PHYSICS_OBJECTS]PhysicsBody = std.mem.zeroes([configZig.MAX_PHYSICS_OBJECTS]PhysicsBody),
 
     pub fn getBody(self: *PhysicsSystem, id: i32) ?*PhysicsBody {
-        for (0..self.physicsBodyCount) |i| {
-            if (self.physicsBodies[i].id == id) {
-                return &self.physicsBodies[i];
+        for (&self.physicsBodies) |*body| {
+            if (body.id == id) {
+                return body;
             }
         }
         return null;
     }
 
-    pub fn createCircularBody(self: *PhysicsSystem, position: rl.Vector2, radius: f32, mass: f32) i32 {
-        self.physicsBodies[self.physicsBodyCount] = PhysicsBody{
-            .id = self.currentId,
-            .position = position,
-            .mass = mass,
-            .shape = PhysicsShapeUnion{ .Circular = .{ .radius = radius } },
-        };
-        self.physicsBodyCount += 1;
-        self.currentId += 1;
-        return self.currentId - 1;
-    }
-
-    pub fn createPolygonBody(
-        self: *PhysicsSystem,
-        position: rl.Vector2,
-        points: [configZig.MAX_PHYSICS_POLYGON_POINTS]rl.Vector2,
-        pointCount: usize,
-        mass: f32,
-    ) i32 {
-        self.physicsBodies[self.physicsBodyCount] = PhysicsBody{
-            .id = self.currentId,
-            .position = position,
-            .mass = mass,
-            .shape = PhysicsShapeUnion{ .Polygon = .{
-                .points = points,
-                .pointCount = pointCount,
-            } },
-        };
-        self.physicsBodyCount += 1;
+    pub fn createBody(self: *PhysicsSystem, physicsBodyInit: PhysicsBodyInitiator) i32 {
+        if (physicsBodyInit.enabled) {
+            self.physicsBodies[self.physicsBodyCount] = PhysicsBody{
+                .id = self.currentId,
+                .position = physicsBodyInit.position,
+                .mass = physicsBodyInit.mass,
+                .shape = physicsBodyInit.shape,
+                .enabled = physicsBodyInit.enabled,
+            };
+            self.physicsBodyCount += 1;
+        }
         self.currentId += 1;
         return self.currentId - 1;
     }
@@ -88,10 +79,9 @@ pub const PhysicsSystem = struct {
     pub fn tick(self: *PhysicsSystem, delta: f32, gravity: rl.Vector2) void {
         //TODO: calculate gravity
         rl.traceLog(.info, "Tick: %i", .{self.physicsBodyCount});
-        var leftIndex = self.physicsBodyCount;
-        while (leftIndex > 0) {
-            leftIndex -= 1;
-            rl.traceLog(.info, "Physics Index: %i", .{leftIndex});
+        for (&self.physicsBodies) |*body| {
+            if (body.enabled) continue;
+            rl.traceLog(.info, "PhysicsBody Enable id: %i", .{body.id});
         }
 
         //TODO: check collision

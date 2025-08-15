@@ -5,39 +5,29 @@ const testing = std.testing;
 const PhysicsZig = @import("../game_logic/physics.zig");
 const PhysicsSystem = PhysicsZig.PhysicsSystem;
 const PhysicsBody = PhysicsZig.PhysicsBody;
+const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
 
 test "PhysicsSystem physicsBodyCount should be 0 from start" {
     try testing.expectEqual(0, PhysicsZig.physicsSystem.physicsBodyCount);
 }
 
-test "PhysicsSystem Create Circular Body" {
-    const id0 = PhysicsZig.physicsSystem.createCircularBody(.{
-        .x = 0,
-        .y = 0,
-    }, 5, 10.0);
-    const id1 = PhysicsZig.physicsSystem.createCircularBody(.{
-        .x = 0,
-        .y = 0,
-    }, 5, 10.0);
-    const id2 = PhysicsZig.physicsSystem.createCircularBody(.{
-        .x = 0,
-        .y = 0,
-    }, 5, 10.0);
-
-    try testing.expectEqual(0, id0);
-    try testing.expectEqual(1, id1);
-    try testing.expectEqual(2, id2);
-}
-
-test "PhysicsSystem Get Circular Body" {
-    const id = PhysicsZig.physicsSystem.createCircularBody(
-        .{
+test "PhysicsSystem Create/Get Circular Body" {
+    const physicsBodyInit: PhysicsBodyInitiator = .{
+        .position = .{
             .x = 0,
             .y = 0,
         },
-        5,
-        10.0,
-    );
+        .mass = 10,
+        .useGravity = true,
+        .velocity = .{ .x = 0, .y = 0 },
+        .shape = .{
+            .Circular = .{
+                .radius = 5,
+            },
+        },
+    };
+    const id = PhysicsZig.physicsSystem.createBody(physicsBodyInit);
+
     const body = PhysicsZig.physicsSystem.getBody(id);
     if (body == null) {
         try testing.expect(false);
@@ -48,8 +38,8 @@ test "PhysicsSystem Get Circular Body" {
         return;
     }
     switch (body.?.shape.?) {
-        .Circular => {
-            try testing.expectEqual(5, body.?.shape.?.Circular.radius);
+        .Circular => |shape| {
+            try testing.expectEqual(5, shape.radius);
         },
         else => {
             try testing.expect(false);
@@ -59,26 +49,43 @@ test "PhysicsSystem Get Circular Body" {
     try testing.expectEqual(10, body.?.mass);
 }
 
-test "PhysicsSystem Get Polygon Body" {
-    const pointCount = 2;
+test "PhysicsSystem Create/Get Polygon Body" {
     var points: [configZig.MAX_PHYSICS_POLYGON_POINTS]rl.Vector2 = std.mem.zeroes([configZig.MAX_PHYSICS_POLYGON_POINTS]rl.Vector2);
     points[0].x = 10;
     points[1].y = 10;
-    for (0..20) |_| {
-        _ = PhysicsZig.physicsSystem.createCircularBody(.{
-            .x = 0,
-            .y = 0,
-        }, 5, 10.0);
-    }
-    const id = PhysicsZig.physicsSystem.createPolygonBody(
-        .{
+    const physicsCircularBodyInit: PhysicsBodyInitiator = .{
+        .position = .{
             .x = 0,
             .y = 0,
         },
-        points,
-        pointCount,
-        10,
-    );
+        .mass = 10,
+        .useGravity = true,
+        .velocity = .{ .x = 0, .y = 0 },
+        .shape = .{
+            .Circular = .{
+                .radius = 10,
+            },
+        },
+    };
+    for (0..20) |_| {
+        _ = PhysicsZig.physicsSystem.createBody(physicsCircularBodyInit);
+    }
+    const physicsBodyInit: PhysicsBodyInitiator = .{
+        .position = .{
+            .x = 0,
+            .y = 0,
+        },
+        .mass = 10,
+        .useGravity = true,
+        .velocity = .{ .x = 0, .y = 0 },
+        .shape = .{
+            .Polygon = .{
+                .pointCount = 2,
+                .points = points,
+            },
+        },
+    };
+    const id = PhysicsZig.physicsSystem.createBody(physicsBodyInit);
     const body = PhysicsZig.physicsSystem.getBody(id);
     if (body == null) {
         try testing.expect(false);
@@ -87,8 +94,8 @@ test "PhysicsSystem Get Polygon Body" {
         try testing.expect(false);
     }
     switch (body.?.shape.?) {
-        .Polygon => {
-            try testing.expectEqual(2, body.?.shape.?.Polygon.pointCount);
+        .Polygon => |shape| {
+            try testing.expectEqual(2, shape.pointCount);
         },
         else => {
             try testing.expect(false);

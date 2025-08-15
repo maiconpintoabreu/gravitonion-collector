@@ -145,7 +145,7 @@ pub const Game = struct {
             asteroid.textureRec = asteroidTextureRec;
         }
         try self.blackHole.init();
-        try self.player.init();
+        try self.player.init(std.mem.zeroes(rl.Vector2));
         rl.traceLog(.info, "Game init Completed", .{});
     }
 

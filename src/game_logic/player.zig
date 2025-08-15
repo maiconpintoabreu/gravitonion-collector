@@ -9,6 +9,7 @@ const Projectile = projectileZig.Projectile;
 const PhysicsZig = @import("../game_logic/physics.zig");
 const PhysicsSystem = PhysicsZig.PhysicsSystem;
 const PhysicsBody = PhysicsZig.PhysicsBody;
+const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
 
 const MAX_HEALTH = 100;
 const MAX_POWER = 100;
@@ -30,12 +31,20 @@ pub const Player = struct {
     shootingCd: f32 = 0,
     bulletsCount: usize = 0,
     shoot: rl.Sound = std.mem.zeroes(rl.Sound),
-    pub fn init(self: *Player) rl.RaylibError!void {
-        const id = PhysicsZig.physicsSystem.createCircularBody(
-            .{ .x = 0, .y = 0 },
-            5,
-            10,
-        );
+    pub fn init(self: *Player, initPosition: rl.Vector2) rl.RaylibError!void {
+        const physicsBodyInit: PhysicsBodyInitiator = .{
+            .position = initPosition,
+            .mass = 10,
+            .useGravity = true,
+            .velocity = .{ .x = 0, .y = 0 },
+            .shape = .{
+                .Circular = .{
+                    .radius = 10,
+                },
+            },
+            .enabled = true,
+        };
+        const id = PhysicsZig.physicsSystem.createBody(physicsBodyInit);
         self.physicsBody = PhysicsZig.physicsSystem.getBody(id);
         // Avoid opengl calls while testing
         if (configZig.IS_TESTING) return;
@@ -64,6 +73,7 @@ pub const Player = struct {
         for (&self.bullets) |*bullet| {
             bullet.texture = bulletTexture;
             bullet.textureRec = bulletTextureRec;
+            try bullet.init();
         }
         self.shoot = try rl.loadSound("resources/shoot.wav");
         rl.setSoundVolume(self.shoot, 0.1);

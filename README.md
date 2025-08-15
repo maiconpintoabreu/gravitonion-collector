@@ -1,6 +1,9 @@
 # space-researcher
 [![CD](https://github.com/maiconpintoabreu/space-researcher/actions/workflows/cd.yml/badge.svg)](https://github.com/maiconpintoabreu/space-researcher/actions/workflows/cd.yml)
 
+## Notice
+*This project uses `https://github.com/maiconpintoabreu/raylib-zig` instead of `https://github.com/raylib-zig/raylib-zig` until it updates Raylib version*
+
 [![Itch.io](https://static.itch.io/images/badge-color.svg)](https://maiconspas.itch.io/space-researcher?password=1gam)
 
 
