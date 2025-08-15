@@ -9,7 +9,7 @@ const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
 
 pub const Projectile = struct {
     position: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    physicsBody: ?*PhysicsBody = null,
+    physicsId: i32 = -1,
     previousPosition: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     size: f32 = 3,
     speed: f32 = 20,
@@ -32,9 +32,9 @@ pub const Projectile = struct {
             },
             .enabled = false,
         };
-        const id = PhysicsZig.physicsSystem.createBody(physicsBodyInit);
-        self.physicsBody = PhysicsZig.physicsSystem.getBody(id);
+        self.physicsId = PhysicsZig.physicsSystem.createBody(physicsBodyInit);
     }
+
     pub fn tick(self: *Projectile, delta: f32) void {
         self.speed += self.speed * delta;
         self.previousPosition = self.position;

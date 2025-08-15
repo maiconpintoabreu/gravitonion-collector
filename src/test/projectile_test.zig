@@ -10,7 +10,7 @@ test "projectileZig init" {
 
 test "projectileZig Physics Body init" {
     var projectile: Projectile = .{};
-    try testing.expect(projectile.physicsBody == null);
+    try testing.expect(projectile.physicsId == -1);
     try projectile.init();
-    try testing.expect(projectile.physicsBody.?.id != -1);
+    try testing.expect(projectile.physicsId > -1);
 }

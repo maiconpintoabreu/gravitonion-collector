@@ -15,7 +15,7 @@ test "PlayerZig init" {
 
 test "PlayerZig Physics Body init" {
     var player: Player = .{};
-    try testing.expect(player.physicsBody == null);
+    try testing.expect(player.physicsId == -1);
     try player.init(.{ .x = 0, .y = 0 });
-    try testing.expect(player.physicsBody.?.id != -1);
+    try testing.expect(player.physicsId > -1);
 }

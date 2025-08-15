@@ -25,6 +25,7 @@ test "PhysicsSystem Create/Get Circular Body" {
                 .radius = 5,
             },
         },
+        .enabled = true,
     };
     const id = PhysicsZig.physicsSystem.createBody(physicsBodyInit);
 
@@ -66,6 +67,7 @@ test "PhysicsSystem Create/Get Polygon Body" {
                 .radius = 10,
             },
         },
+        .enabled = true,
     };
     for (0..20) |_| {
         _ = PhysicsZig.physicsSystem.createBody(physicsCircularBodyInit);
@@ -84,6 +86,7 @@ test "PhysicsSystem Create/Get Polygon Body" {
                 .points = points,
             },
         },
+        .enabled = true,
     };
     const id = PhysicsZig.physicsSystem.createBody(physicsBodyInit);
     const body = PhysicsZig.physicsSystem.getBody(id);

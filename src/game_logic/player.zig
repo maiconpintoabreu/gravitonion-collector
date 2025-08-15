@@ -19,7 +19,7 @@ pub const Player = struct {
     physicsObject: PhysicsObject = .{
         .rotationSpeed = 200,
     },
-    physicsBody: ?*PhysicsBody = null,
+    physicsId: i32 = -1,
     textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
@@ -44,8 +44,8 @@ pub const Player = struct {
             },
             .enabled = true,
         };
-        const id = PhysicsZig.physicsSystem.createBody(physicsBodyInit);
-        self.physicsBody = PhysicsZig.physicsSystem.getBody(id);
+        self.physicsId = PhysicsZig.physicsSystem.createBody(physicsBodyInit);
+
         // Avoid opengl calls while testing
         if (configZig.IS_TESTING) return;
         const playerTexture = try rl.loadTexture("resources/ship.png");
