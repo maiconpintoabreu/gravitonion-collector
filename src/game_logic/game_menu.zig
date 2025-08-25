@@ -270,7 +270,7 @@ pub fn drawFrame() void {
                     rl.drawText(
                         "Press any where to start",
                         0,
-                        @as(i32, @intFromFloat(game.player.physicsObject.position.y)) - 35,
+                        @as(i32, @intFromFloat(configZig.NATIVE_CENTER.y)) - 35,
                         fontSize,
                         .white,
                     );
@@ -278,7 +278,7 @@ pub fn drawFrame() void {
                     rl.drawText(
                         "Press any thing to start",
                         0,
-                        @as(i32, @intFromFloat(game.player.physicsObject.position.y)) - 35,
+                        @as(i32, @intFromFloat(configZig.NATIVE_CENTER.y)) - 35,
                         fontSize,
                         .white,
                     );

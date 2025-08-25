@@ -2,13 +2,12 @@ const std = @import("std");
 const math = std.math;
 const rl = @import("raylib");
 const configZig = @import("../config.zig");
-const physicsZig = @import("physics_object.zig");
-const PhysicsObject = physicsZig.PhysicsObject;
 const projectileZig = @import("projectile.zig");
 const Projectile = projectileZig.Projectile;
 const PhysicsZig = @import("../game_logic/physics.zig");
 const PhysicsSystem = PhysicsZig.PhysicsSystem;
 const PhysicsBody = PhysicsZig.PhysicsBody;
+const Collidable = PhysicsZig.Collidable;
 const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
 
 const MAX_HEALTH = 100;
@@ -16,9 +15,13 @@ const MAX_POWER = 100;
 
 pub const Player = struct {
     bullets: [configZig.MAX_PROJECTILES]Projectile = std.mem.zeroes([configZig.MAX_PROJECTILES]Projectile),
-    physicsObject: PhysicsObject = .{
-        .rotationSpeed = 200,
-    },
+    // physicsObject: PhysicsObject = .{
+    //     .rotationSpeed = 200,
+    // },
+    isAlive: bool = true,
+    isTurningLeft: bool = false,
+    isTurningRight: bool = false,
+    isAccelerating: bool = false,
     physicsId: i32 = -1,
     textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
@@ -29,22 +32,59 @@ pub const Player = struct {
     rightTurbineSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     leftTurbineSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     shootingCd: f32 = 0,
-    bulletsCount: usize = 0,
     shoot: rl.Sound = std.mem.zeroes(rl.Sound),
+    collider: ?Collidable = null,
+
+    fn colliding(ptr: *anyopaque, data: *PhysicsBody) void {
+        const self: *Player = @ptrCast(@alignCast(ptr));
+        if (data.tag != .Player) {
+            self.health = -1.0;
+            self.isAlive = false;
+        }
+        switch (data.tag) {
+            .Asteroid => {
+                rl.traceLog(.info, "Player Colliding with Asteroid", .{});
+            },
+            .Player => {
+                rl.traceLog(.info, "Player Colliding with Player", .{});
+            },
+            .Blackhole => {
+                rl.traceLog(.info, "Player Colliding with Blackhole", .{});
+            },
+            .PlayerBullet => {
+                rl.traceLog(.info, "Player Colliding with Bullet", .{});
+            },
+            .Phaser => {
+                rl.traceLog(.info, "Player Colliding with Phaser", .{});
+            },
+        }
+    }
+
+    pub fn create(self: *Player) Collidable {
+        return Collidable{
+            .ptr = self,
+            .impl = &.{ .collidingWith = colliding },
+        };
+    }
+
     pub fn init(self: *Player, initPosition: rl.Vector2) rl.RaylibError!void {
+        self.collider = self.create();
         const physicsBodyInit: PhysicsBodyInitiator = .{
+            .owner = &self.collider.?,
             .position = initPosition,
-            .mass = 10,
+            .mass = 1,
             .useGravity = true,
             .velocity = .{ .x = 0, .y = 0 },
             .shape = .{
                 .Circular = .{
-                    .radius = 10,
+                    .radius = 5,
                 },
             },
             .enabled = true,
+            .isWrapable = true,
+            .tag = PhysicsZig.PhysicsBodyTagEnum.Player,
         };
-        self.physicsId = PhysicsZig.physicsSystem.createBody(physicsBodyInit);
+        self.physicsId = PhysicsZig.getPhysicsSystem().createBody(physicsBodyInit);
 
         // Avoid opengl calls while testing
         if (configZig.IS_TESTING) return;
@@ -72,6 +112,7 @@ pub const Player = struct {
         };
         for (&self.bullets) |*bullet| {
             bullet.texture = bulletTexture;
+            bullet.size = 3;
             bullet.textureRec = bulletTextureRec;
             try bullet.init();
         }
@@ -80,75 +121,95 @@ pub const Player = struct {
         rl.traceLog(.info, "Player init Completed", .{});
     }
     pub fn tick(self: *Player) void {
-        self.physicsObject.velocity = rl.Vector2.clampValue(
-            self.physicsObject.velocity,
-            0,
-            1.8,
-        );
-        self.physicsObject.tick();
-        self.updateSlots();
+        const body = PhysicsZig.getPhysicsSystem().getBody(self.physicsId);
+        self.updateSlots(body);
+        // kill if not visible
+        for (&self.bullets) |*bullet| {
+            if (!bullet.isAlive) return;
+
+            const bulletBody = PhysicsZig.getPhysicsSystem().getBody(bullet.physicsId);
+            if (!bulletBody.isVisible) {
+                bullet.isAlive = false;
+            }
+        }
     }
-    pub fn updateSlots(self: *Player) void {
-        self.gunSlot = self.physicsObject.position.add(self.physicsObject.direction.scale(10));
-        const back = self.physicsObject.position.add(.{ .x = 0, .y = 8 });
+    pub fn updateSlots(self: *Player, body: PhysicsBody) void {
+        const direction = rl.Vector2{
+            .x = math.sin(body.orient),
+            .y = -math.cos(body.orient),
+        };
+        self.gunSlot = body.position.add(direction.scale(10));
+        const back = body.position.add(.{ .x = 0, .y = 8 });
 
-        self.rightTurbineSlot = self.physicsObject.position.add(back.subtract(self.physicsObject.position).rotate(
-            math.degreesToRadians(self.physicsObject.rotation - 25),
+        self.rightTurbineSlot = body.position.add(back.subtract(body.position).rotate(
+            body.orient - 0.2, // TODO: needs Adjust
         ));
 
-        self.leftTurbineSlot = self.physicsObject.position.add(back.subtract(self.physicsObject.position).rotate(
-            math.degreesToRadians(self.physicsObject.rotation + 25),
+        self.leftTurbineSlot = body.position.add(back.subtract(body.position).rotate(
+            body.orient + 0.2, // TODO: needs Adjust
         ));
+    }
+    pub fn teleport(self: *Player, position: rl.Vector2, orient: f32) void {
+        PhysicsZig.getPhysicsSystem().moveBody(self.physicsId, position, orient);
+    }
+    pub fn getPosition(self: Player) rl.Vector2 {
+        return PhysicsZig.getPhysicsSystem().getBody(self.physicsId).position;
+    }
+    pub fn accelerate(self: *Player, delta: f32) void {
+        PhysicsZig.getPhysicsSystem().applyForceToBody(self.physicsId, 1 * delta);
+    }
+    pub fn turnLeft(self: *Player, delta: f32) void {
+        PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.physicsId, -200 * delta);
+    }
+    pub fn turnRight(self: *Player, delta: f32) void {
+        PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.physicsId, 200 * delta);
     }
     pub fn draw(self: *Player) void {
+        if (self.physicsId < 0) return;
+        const body = PhysicsZig.getPhysicsSystem().getBody(self.physicsId);
+        if (!body.enabled) return;
         if (self.texture.id == 0) {
             return;
         }
+
         const currentWidth = self.textureRec.width;
         const currentHeight = self.textureRec.height;
 
         // inverted
-        if (self.physicsObject.isTurningRight or self.physicsObject.isAccelerating) {
+        if (self.isTurningRight or self.isAccelerating) {
             rl.drawCircleV(self.leftTurbineSlot, 1, .yellow);
         }
-        if (self.physicsObject.isTurningLeft or self.physicsObject.isAccelerating) {
+        if (self.isTurningLeft or self.isAccelerating) {
             rl.drawCircleV(self.rightTurbineSlot, 1, .yellow);
         }
+
         self.texture.drawPro(
             self.textureRec,
             .{
-                .x = self.physicsObject.position.x,
-                .y = self.physicsObject.position.y,
+                .x = body.position.x,
+                .y = body.position.y,
                 .width = currentWidth,
                 .height = currentHeight,
             },
             .{ .x = currentWidth / 2, .y = currentHeight / 2 },
-            self.physicsObject.rotation,
+            math.radiansToDegrees(body.orient),
             .white,
         );
     }
 
     pub fn shotBullet(self: *Player) void {
-        if (self.bulletsCount + 1 == configZig.MAX_PROJECTILES) {
-            return;
+        for (&self.bullets) |*bullet| {
+            if (!bullet.isAlive) {
+                bullet.isAlive = true;
+                const body = PhysicsZig.getPhysicsSystem().getBody(self.physicsId);
+                bullet.teleport(self.gunSlot, body.orient);
+
+                PhysicsZig.getPhysicsSystem().applyForceToBody(bullet.physicsId, 5.0);
+                PhysicsZig.getPhysicsSystem().enableBody(bullet.physicsId);
+                rl.playSound(self.shoot);
+                return;
+            }
         }
-        const direction: rl.Vector2 = .{
-            .x = math.sin(math.degreesToRadians(self.physicsObject.rotation)),
-            .y = -math.cos(math.degreesToRadians(self.physicsObject.rotation)),
-        };
-        const norm_vector: rl.Vector2 = direction.normalize();
-        self.bullets[self.bulletsCount].position = self.gunSlot;
-        self.bullets[self.bulletsCount].rotation = self.physicsObject.rotation;
-        self.bullets[self.bulletsCount].direction = norm_vector;
-        self.bullets[self.bulletsCount].speed = 5;
-        self.bullets[self.bulletsCount].size = 3;
-        self.bulletsCount += 1;
-        rl.playSound(self.shoot);
-    }
-    pub fn removeBullet(self: *Player, index: usize) void {
-        if (self.bulletsCount == 0) return;
-        self.bullets[index] = self.bullets[self.bulletsCount - 1];
-        self.bulletsCount -= 1;
     }
 
     pub fn unload(self: *Player) void {

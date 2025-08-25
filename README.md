@@ -2,7 +2,7 @@
 [![CD](https://github.com/maiconpintoabreu/space-researcher/actions/workflows/cd.yml/badge.svg)](https://github.com/maiconpintoabreu/space-researcher/actions/workflows/cd.yml)
 
 ## Notice
-*This project uses `https://github.com/maiconpintoabreu/raylib-zig` instead of `https://github.com/raylib-zig/raylib-zig` until it updates Raylib version*
+*This project uses `https://github.com/maiconpintoabreu/raylib-zig` instead of `https://github.com/raylib-zig/raylib-zig`*
 
 [![Itch.io](https://static.itch.io/images/badge-color.svg)](https://maiconspas.itch.io/space-researcher?password=1gam)
 
@@ -18,13 +18,19 @@ Player needs to protect the BlackHole from the asteroids so it does not go too b
 * local multiplayer (half score and increase in difficult)
 
 ## Entity map
+
 Game - Blackhole
+
 Game - Asteroids
+
 Game - Player - Bullets
 
 ## Physics
 
-Blackhole collides to everyone
+Blackhole and Phaser collides to everyone
+
 Player collides to everyone
-asteroids collide to everyone
-bullets collide to everyone but player
+
+Asteroids collide to everyone
+
+Bullets collide to everyone but player

@@ -6,7 +6,12 @@ const configZig = @import("../config.zig");
 
 test "GameZig asteroidCount should be 0 from start" {
     const game: gameZig.Game = .{};
-    try testing.expect(game.asteroidCount == 0);
+
+    for (game.asteroids) |asteroid| {
+        if (asteroid.isAlive) {
+            try testing.expect(false);
+        }
+    }
 }
 
 test "Game Debug should be false when Releasing" {
