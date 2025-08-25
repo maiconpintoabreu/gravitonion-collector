@@ -223,7 +223,7 @@ pub const PhysicsSystem = struct {
             body.force.y = 0;
             body.torque = 0;
         }
-        checkCollisions(self.*);
+        checkCollisions(self);
     }
     pub fn debug(self: PhysicsSystem) void {
         if (configZig.IS_DEBUG) {
@@ -331,7 +331,7 @@ pub const PhysicsSystem = struct {
             }
         }
     }
-    fn setCollision(bodyFrom: PhysicsBody, bodyTo: *PhysicsBody) void {
+    fn setCollision(bodyFrom: *PhysicsBody, bodyTo: *PhysicsBody) void {
         const owner: *Collidable = @as(*Collidable, @ptrCast(@alignCast(bodyFrom.owner)));
         owner.collidingWith(bodyTo);
         const otherOwner: *Collidable = @as(*Collidable, @ptrCast(@alignCast(bodyTo.owner)));
