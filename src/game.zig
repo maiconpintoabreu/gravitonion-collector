@@ -55,6 +55,7 @@ const BlackHole = struct {
 
     fn colliding(ptr: *anyopaque, data: *PhysicsBody) void {
         const self: *BlackHole = @ptrCast(@alignCast(ptr));
+        if (data.collidingWithTag == .Phaser) return;
         if (data.tag == .Asteroid) {
             self.setSize(self.size + 0.1);
         } else if (data.tag == .PlayerBullet) {

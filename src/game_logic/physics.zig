@@ -62,16 +62,8 @@ pub const PhysicsBody = struct {
     angularVelocity: f32 = 0.0, // Current angular velocity applied to orient
     torque: f32 = 0.0, // Current angular force (reset to 0 every step)
     orient: f32 = 0.0, // Rotation in radians
-    inertia: f32 = 0.0, // Moment of inertia
-    inverseInertia: f32 = 0.0, // Inverse value of inertia
     mass: f32 = 0.0, // Physics body mass
-    inverseMass: f32 = 0.0, // Inverse value of mass
-    staticFriction: f32 = 0.0, // Friction when the body has not movement (0 to 1)
-    dynamicFriction: f32 = 0.0, // Friction when the body has movement (0 to 1)
-    restitution: f32 = 0.0, // Restitution coefficient of the body (0 to 1)
     useGravity: bool = false, // Apply gravity force to dynamics
-    freezeOrient: bool = false, // Physics rotation constraint
-    collidesWIthPlayer: bool = false,
     isColliding: bool = false,
     collidingWith: ?*anyopaque = null,
     collidingWithTag: ?PhysicsBodyTagEnum = null,
@@ -316,6 +308,47 @@ pub const PhysicsSystem = struct {
                                     points,
                                 )) {
                                     setCollision(&self.physicsBodies[i], &self.physicsBodies[j]);
+                                    continue;
+                                }
+                                if (rl.checkCollisionPointPoly(
+                                    self.physicsBodies[i].position.add(.{
+                                        .x = leftShape.radius / 2,
+                                        .y = 0,
+                                    }),
+                                    points,
+                                )) {
+                                    setCollision(&self.physicsBodies[i], &self.physicsBodies[j]);
+                                    continue;
+                                }
+                                if (rl.checkCollisionPointPoly(
+                                    self.physicsBodies[i].position.add(.{
+                                        .x = -leftShape.radius / 2,
+                                        .y = 0,
+                                    }),
+                                    points,
+                                )) {
+                                    setCollision(&self.physicsBodies[i], &self.physicsBodies[j]);
+                                    continue;
+                                }
+                                if (rl.checkCollisionPointPoly(
+                                    self.physicsBodies[i].position.add(.{
+                                        .x = 0,
+                                        .y = leftShape.radius / 2,
+                                    }),
+                                    points,
+                                )) {
+                                    setCollision(&self.physicsBodies[i], &self.physicsBodies[j]);
+                                    continue;
+                                }
+                                if (rl.checkCollisionPointPoly(
+                                    self.physicsBodies[i].position.add(.{
+                                        .x = 0,
+                                        .y = -leftShape.radius / 2,
+                                    }),
+                                    points,
+                                )) {
+                                    setCollision(&self.physicsBodies[i], &self.physicsBodies[j]);
+                                    continue;
                                 }
                             },
                         }
@@ -332,6 +365,8 @@ pub const PhysicsSystem = struct {
         }
     }
     fn setCollision(bodyFrom: *PhysicsBody, bodyTo: *PhysicsBody) void {
+        bodyFrom.collidingWithTag = bodyTo.tag;
+        bodyTo.collidingWithTag = bodyFrom.tag;
         const owner: *Collidable = @as(*Collidable, @ptrCast(@alignCast(bodyFrom.owner)));
         owner.collidingWith(bodyTo);
         const otherOwner: *Collidable = @as(*Collidable, @ptrCast(@alignCast(bodyTo.owner)));

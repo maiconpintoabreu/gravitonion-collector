@@ -103,6 +103,7 @@ pub fn restartGame() void {
     for (&game.player.bullets) |*bullets| {
         bullets.isAlive = false;
     }
+    PhysicsZig.getPhysicsSystem().disableBody(game.blackHole.phaserPhysicsId);
     const playerBody = PhysicsZig.getPhysicsSystem().getBody(game.player.physicsId);
     game.player.updateSlots(playerBody);
 }
