@@ -47,12 +47,16 @@ jobs:
       - name: Setup Environment
         run: | 
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends python3 libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libwayland-dev libxkbcommon-dev cmake
-          sudo snap install zig --classic --beta
+          sudo apt-get install -y --no-install-recommends python3 libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libwayland-dev libxkbcommon-dev cmake wget
+          wget https://ziglang.org/download/0.14.1/zig-x86_64-linux-0.14.1.tar.xz
+          mkdir -p zig-folder
+          tar xf zig-x86_64-linux-0.14.1.tar.xz -C ./zig-folder  --strip-components=1
+          rm ./zig-x86_64-linux-0.14.1.tar.xz
+          chmod +x
         shell: bash
 
       - name: Unit Test
-        run: zig build test --summary new -Doptimize=ReleaseSmall
+        run: ./zig-folder/zig build test --summary new -Doptimize=ReleaseSmall
   
       - name: Setup emsdk
         run: |
@@ -63,15 +67,15 @@ jobs:
 
       - name: Build Web Project
         run: |
-          zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall --sysroot emsdk/upstream/emscripten
+          ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall --sysroot emsdk/upstream/emscripten
           
       - name: Build Linux Project
         run: |
-          zig build -Doptimize=ReleaseSmall --prefix zig-out/linux --prefix-exe-dir ""
+          ./zig-folder/zig build -Doptimize=ReleaseSmall --prefix zig-out/linux --prefix-exe-dir ""
           
       - name: Build Windows Project
         run: |
-          zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSmall --prefix zig-out/windows --prefix-exe-dir ""
+          ./zig-folder/zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSmall --prefix zig-out/windows --prefix-exe-dir ""
 
       - name: Generate Artifacts
         run: |
