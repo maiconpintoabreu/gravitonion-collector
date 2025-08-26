@@ -40,10 +40,12 @@ const BLACK_HOLE_PHASER_MAX_ROTATION: f32 = 360.0;
 
 const BlackHole = struct {
     physicsId: i32 = -1,
+    body: PhysicsBody = std.mem.zeroes(PhysicsBody),
     size: f32 = BLACK_DEFAULT_SIZE,
     finalSize: f32 = BLACK_DEFAULT_SIZE * BLACK_HOLE_SCALE,
     speed: f32 = BLACK_DEFAULT_SIZE,
     phaserPhysicsId: i32 = -1,
+    phaserBody: PhysicsBody = std.mem.zeroes(PhysicsBody),
     phasersCD: f32 = BLACK_HOLE_PHASER_CD,
     phasersMinDuration: f32 = BLACK_HOLE_PHASER_MIN_DURATION,
     isPhasing: bool = false,
@@ -51,11 +53,8 @@ const BlackHole = struct {
     isRotatingRight: bool = false,
     phaserTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
     collisionpoints: [BLACK_HOLE_COLLISION_POINTS]rl.Vector2 = std.mem.zeroes([BLACK_HOLE_COLLISION_POINTS]rl.Vector2),
-    collider: ?Collidable = null,
 
-    fn colliding(ptr: *anyopaque, data: *PhysicsBody) void {
-        const self: *BlackHole = @ptrCast(@alignCast(ptr));
-        if (data.collidingWithTag == .Phaser) return;
+    fn colliding(self: *BlackHole, data: *PhysicsBody) void {
         if (data.tag == .Asteroid) {
             self.setSize(self.size + 0.1);
         } else if (data.tag == .PlayerBullet) {
@@ -64,19 +63,11 @@ const BlackHole = struct {
         rl.traceLog(.info, "BlackHole Colliding", .{});
     }
 
-    pub fn create(self: *BlackHole) Collidable {
-        return Collidable{
-            .ptr = self,
-            .impl = &.{ .collidingWith = colliding },
-        };
-    }
     pub fn init(self: *BlackHole) rl.RaylibError!void {
         if (self.phaserTexture.id > 0) {
             return;
         }
-        self.collider = self.create();
-        const physicsBodyInit: PhysicsBodyInitiator = .{
-            .owner = &self.collider,
+        self.body = .{
             .position = configZig.NATIVE_CENTER,
             .mass = 0,
             .useGravity = false,
@@ -90,14 +81,13 @@ const BlackHole = struct {
             .isWrapable = true,
             .tag = PhysicsZig.PhysicsBodyTagEnum.Blackhole,
         };
-        self.physicsId = PhysicsZig.getPhysicsSystem().createBody(physicsBodyInit);
+        self.physicsId = PhysicsZig.getPhysicsSystem().addBody(&self.body);
         // Init Phaser
         const phaserImage = rl.Image.genColor(256 * 2, 10, .white);
         self.phaserTexture = try phaserImage.toTexture();
         phaserImage.unload();
 
-        const phaserPhysicsBodyInit: PhysicsBodyInitiator = .{
-            .owner = &self.collider,
+        self.phaserBody = .{
             .position = configZig.NATIVE_CENTER,
             .mass = 0,
             .useGravity = false,
@@ -112,10 +102,14 @@ const BlackHole = struct {
             .isWrapable = true,
             .tag = PhysicsZig.PhysicsBodyTagEnum.Phaser,
         };
-        self.phaserPhysicsId = PhysicsZig.getPhysicsSystem().createBody(phaserPhysicsBodyInit);
+        self.phaserPhysicsId = PhysicsZig.getPhysicsSystem().addBody(&self.phaserBody);
         rl.traceLog(.info, "Blackhole init Completed", .{});
     }
     pub fn tick(self: *BlackHole, delta: f32) void {
+        self.isDisturbed = false;
+        if (self.body.collidingWith) |otherBody| {
+            self.colliding(otherBody);
+        }
         self.phasersCD -= delta;
         if (self.isRotatingRight) {
             PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.physicsId, 1);
@@ -144,23 +138,22 @@ const BlackHole = struct {
             if (self.isRotatingRight) self.size * -1 else self.size,
             0.5,
         );
-        const body = PhysicsZig.getPhysicsSystem().getBody(self.physicsId);
         self.collisionpoints[0] = configZig.NATIVE_CENTER.add(.{ .x = 0, .y = -5 });
         self.collisionpoints[1] = configZig.NATIVE_CENTER.add(.{ .x = 0, .y = 5 });
         self.collisionpoints[2] = configZig.NATIVE_CENTER.add(.{ .x = 1000, .y = -5 });
         self.collisionpoints[3] = configZig.NATIVE_CENTER.add(.{ .x = 1000, .y = 5 });
 
-        self.collisionpoints[0] = body.position.add(self.collisionpoints[0].subtract(body.position).rotate(
-            body.orient,
+        self.collisionpoints[0] = self.body.position.add(self.collisionpoints[0].subtract(self.body.position).rotate(
+            self.body.orient,
         ));
-        self.collisionpoints[1] = body.position.add(self.collisionpoints[1].subtract(body.position).rotate(
-            body.orient,
+        self.collisionpoints[1] = self.body.position.add(self.collisionpoints[1].subtract(self.body.position).rotate(
+            self.body.orient,
         ));
-        self.collisionpoints[2] = body.position.add(self.collisionpoints[2].subtract(body.position).rotate(
-            body.orient,
+        self.collisionpoints[2] = self.body.position.add(self.collisionpoints[2].subtract(self.body.position).rotate(
+            self.body.orient,
         ));
-        self.collisionpoints[3] = body.position.add(self.collisionpoints[3].subtract(body.position).rotate(
-            body.orient,
+        self.collisionpoints[3] = self.body.position.add(self.collisionpoints[3].subtract(self.body.position).rotate(
+            self.body.orient,
         ));
 
         PhysicsZig.getPhysicsSystem().changeBodyShape(self.phaserPhysicsId, PhysicsShapeUnion{
@@ -178,7 +171,7 @@ const BlackHole = struct {
         });
     }
     pub fn draw(self: BlackHole) void {
-        const blackholeBody = PhysicsZig.getPhysicsSystem().getBody(self.physicsId);
+        const blackholeBody = self.body;
         if (self.isPhasing) {
             self.phaserTexture.drawPro(
                 .{
@@ -270,7 +263,9 @@ pub const Game = struct {
         rl.traceLog(.info, "Game init Completed", .{});
     }
     pub fn tick(self: *Game, delta: f32) void {
-        _ = self;
+        for (&self.asteroids) |*asteroid| {
+            asteroid.tick();
+        }
         _ = delta;
     }
 

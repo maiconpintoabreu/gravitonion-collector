@@ -5,14 +5,13 @@ const testing = std.testing;
 const PhysicsZig = @import("../game_logic/physics.zig");
 const PhysicsSystem = PhysicsZig.PhysicsSystem;
 const PhysicsBody = PhysicsZig.PhysicsBody;
-const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
 
 test "PhysicsSystem physicsBodyCount should be 0 from start" {
     try testing.expectEqual(0, PhysicsZig.getPhysicsSystem().physicsBodyCount);
 }
 
 test "PhysicsSystem Create/Get Circular Body" {
-    const physicsBodyInit: PhysicsBodyInitiator = .{
+    var body: PhysicsBody = .{
         .position = .{
             .x = 0,
             .y = 0,
@@ -28,9 +27,8 @@ test "PhysicsSystem Create/Get Circular Body" {
         .enabled = true,
         .isWrapable = false,
     };
-    const id = PhysicsZig.getPhysicsSystem().createBody(physicsBodyInit);
+    const id = PhysicsZig.getPhysicsSystem().addBody(&body);
 
-    const body = PhysicsZig.getPhysicsSystem().getBody(id);
     if (body.shape == null) {
         try testing.expect(false);
         return;
@@ -45,13 +43,14 @@ test "PhysicsSystem Create/Get Circular Body" {
         },
     }
     try testing.expectEqual(10, body.mass);
+    try testing.expectEqual(body.id, id);
 }
 
 test "PhysicsSystem Create/Get Polygon Body" {
     var points: [configZig.MAX_PHYSICS_POLYGON_POINTS]rl.Vector2 = std.mem.zeroes([configZig.MAX_PHYSICS_POLYGON_POINTS]rl.Vector2);
     points[0].x = 10;
     points[1].y = 10;
-    const physicsCircularBodyInit: PhysicsBodyInitiator = .{
+    var physicsCircularBody: PhysicsBody = .{
         .position = .{
             .x = 0,
             .y = 0,
@@ -68,9 +67,9 @@ test "PhysicsSystem Create/Get Polygon Body" {
         .isWrapable = false,
     };
     for (0..20) |_| {
-        _ = PhysicsZig.getPhysicsSystem().createBody(physicsCircularBodyInit);
+        _ = PhysicsZig.getPhysicsSystem().addBody(&physicsCircularBody);
     }
-    const physicsBodyInit: PhysicsBodyInitiator = .{
+    var body: PhysicsBody = .{
         .position = .{
             .x = 0,
             .y = 0,
@@ -87,8 +86,8 @@ test "PhysicsSystem Create/Get Polygon Body" {
         .enabled = true,
         .isWrapable = false,
     };
-    const id = PhysicsZig.getPhysicsSystem().createBody(physicsBodyInit);
-    const body = PhysicsZig.getPhysicsSystem().getBody(id);
+    const id = PhysicsZig.getPhysicsSystem().addBody(&body);
+
     if (body.shape == null) {
         try testing.expect(false);
     }
@@ -101,14 +100,13 @@ test "PhysicsSystem Create/Get Polygon Body" {
         },
     }
     try testing.expectEqual(10, body.mass);
+    try testing.expectEqual(body.id, id);
 }
 
 test "PhysicsSystem Body should be affecte by gravity" {
-    const physicsCircularBodyInit: PhysicsBodyInitiator = .{
-        .position = .{
-            .x = 0,
-            .y = 0,
-        },
+    const initPosition = rl.Vector2{ .x = 0, .y = 0 };
+    var body: PhysicsBody = .{
+        .position = initPosition,
         .mass = 10,
         .useGravity = true,
         .velocity = .{ .x = 0, .y = 0 },
@@ -120,15 +118,13 @@ test "PhysicsSystem Body should be affecte by gravity" {
         .enabled = true,
         .isWrapable = false,
     };
-    const id = PhysicsZig.getPhysicsSystem().createBody(physicsCircularBodyInit);
+    const id = PhysicsZig.getPhysicsSystem().addBody(&body);
     PhysicsZig.getPhysicsSystem().moveBody(id, .{ .x = 101.0, .y = 102.0 }, 0.5);
-    const body = PhysicsZig.getPhysicsSystem().getBody(id);
     try testing.expect(body.position.x > 100.0);
     try testing.expect(body.position.y > 101.0);
     PhysicsZig.getPhysicsSystem().tick(1, 10);
-    const gravitedBody = PhysicsZig.getPhysicsSystem().getBody(id);
 
     // check if possition changed - X: 110.420334, Y: 105.35519
-    try testing.expectEqual(0, body.position.equals(gravitedBody.position));
+    try testing.expectEqual(0, initPosition.equals(body.position));
     try testing.expectApproxEqAbs(0.5, body.orient, 0.0);
 }

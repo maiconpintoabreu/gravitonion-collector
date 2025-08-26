@@ -23,6 +23,7 @@ pub const Player = struct {
     isTurningRight: bool = false,
     isAccelerating: bool = false,
     physicsId: i32 = -1,
+    body: PhysicsBody = std.mem.zeroes(PhysicsBody),
     textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
@@ -35,42 +36,15 @@ pub const Player = struct {
     shoot: rl.Sound = std.mem.zeroes(rl.Sound),
     collider: ?Collidable = null,
 
-    fn colliding(ptr: *anyopaque, data: *PhysicsBody) void {
-        const self: *Player = @ptrCast(@alignCast(ptr));
+    fn colliding(self: *Player, data: *PhysicsBody) void {
         if (data.tag != .Player) {
             self.health = -1.0;
             self.isAlive = false;
         }
-        switch (data.tag) {
-            .Asteroid => {
-                rl.traceLog(.info, "Player Colliding with Asteroid", .{});
-            },
-            .Player => {
-                rl.traceLog(.info, "Player Colliding with Player", .{});
-            },
-            .Blackhole => {
-                rl.traceLog(.info, "Player Colliding with Blackhole", .{});
-            },
-            .PlayerBullet => {
-                rl.traceLog(.info, "Player Colliding with Bullet", .{});
-            },
-            .Phaser => {
-                rl.traceLog(.info, "Player Colliding with Phaser", .{});
-            },
-        }
-    }
-
-    pub fn create(self: *Player) Collidable {
-        return Collidable{
-            .ptr = self,
-            .impl = &.{ .collidingWith = colliding },
-        };
     }
 
     pub fn init(self: *Player, initPosition: rl.Vector2) rl.RaylibError!void {
-        self.collider = self.create();
-        const physicsBodyInit: PhysicsBodyInitiator = .{
-            .owner = &self.collider.?,
+        self.body = .{
             .position = initPosition,
             .mass = 1,
             .useGravity = true,
@@ -84,7 +58,7 @@ pub const Player = struct {
             .isWrapable = true,
             .tag = PhysicsZig.PhysicsBodyTagEnum.Player,
         };
-        self.physicsId = PhysicsZig.getPhysicsSystem().createBody(physicsBodyInit);
+        self.physicsId = PhysicsZig.getPhysicsSystem().addBody(&self.body);
 
         // Avoid opengl calls while testing
         if (configZig.IS_TESTING) return;
@@ -121,14 +95,16 @@ pub const Player = struct {
         rl.traceLog(.info, "Player init Completed", .{});
     }
     pub fn tick(self: *Player) void {
-        const body = PhysicsZig.getPhysicsSystem().getBody(self.physicsId);
-        self.updateSlots(body);
+        self.updateSlots(self.body);
+
+        if (self.body.collidingWith) |otherBody| {
+            self.colliding(otherBody);
+        }
         // kill if not visible
         for (&self.bullets) |*bullet| {
             if (!bullet.isAlive) return;
 
-            const bulletBody = PhysicsZig.getPhysicsSystem().getBody(bullet.physicsId);
-            if (!bulletBody.isVisible) {
+            if (!bullet.body.isVisible) {
                 bullet.isAlive = false;
             }
         }
@@ -153,7 +129,7 @@ pub const Player = struct {
         PhysicsZig.getPhysicsSystem().moveBody(self.physicsId, position, orient);
     }
     pub fn getPosition(self: Player) rl.Vector2 {
-        return PhysicsZig.getPhysicsSystem().getBody(self.physicsId).position;
+        return self.body.position;
     }
     pub fn accelerate(self: *Player, delta: f32) void {
         PhysicsZig.getPhysicsSystem().applyForceToBody(self.physicsId, 1 * delta);
@@ -166,8 +142,7 @@ pub const Player = struct {
     }
     pub fn draw(self: *Player) void {
         if (self.physicsId < 0) return;
-        const body = PhysicsZig.getPhysicsSystem().getBody(self.physicsId);
-        if (!body.enabled) return;
+        if (!self.body.enabled) return;
         if (self.texture.id == 0) {
             return;
         }
@@ -186,13 +161,13 @@ pub const Player = struct {
         self.texture.drawPro(
             self.textureRec,
             .{
-                .x = body.position.x,
-                .y = body.position.y,
+                .x = self.body.position.x,
+                .y = self.body.position.y,
                 .width = currentWidth,
                 .height = currentHeight,
             },
             .{ .x = currentWidth / 2, .y = currentHeight / 2 },
-            math.radiansToDegrees(body.orient),
+            math.radiansToDegrees(self.body.orient),
             .white,
         );
     }
@@ -201,8 +176,7 @@ pub const Player = struct {
         for (&self.bullets) |*bullet| {
             if (!bullet.isAlive) {
                 bullet.isAlive = true;
-                const body = PhysicsZig.getPhysicsSystem().getBody(self.physicsId);
-                bullet.teleport(self.gunSlot, body.orient);
+                bullet.teleport(self.gunSlot, self.body.orient);
 
                 PhysicsZig.getPhysicsSystem().applyForceToBody(bullet.physicsId, 5.0);
                 PhysicsZig.getPhysicsSystem().enableBody(bullet.physicsId);

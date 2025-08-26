@@ -18,7 +18,7 @@ pub const DEFAULT_SHOOTING_CD = 0.1;
 pub const PHYSICS_TICK_SPEED = 0.02;
 
 // Debug
-pub const IS_DEBUG = false;
+pub const IS_DEBUG = true;
 pub const IS_DEBUG_MENU: bool = false;
 
 pub var IS_TESTING = false;

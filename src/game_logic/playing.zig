@@ -104,8 +104,7 @@ pub fn restartGame() void {
         bullets.isAlive = false;
     }
     PhysicsZig.getPhysicsSystem().disableBody(game.blackHole.phaserPhysicsId);
-    const playerBody = PhysicsZig.getPhysicsSystem().getBody(game.player.physicsId);
-    game.player.updateSlots(playerBody);
+    game.player.updateSlots(game.player.body);
 }
 pub fn closeGame() void {
     game.unload();
@@ -216,9 +215,16 @@ pub fn updateFrame() void {
             const gravityScale: f32 = if (game.blackHole.isDisturbed) 100.0 else 0.4;
             PhysicsZig.getPhysicsSystem().tick(configZig.PHYSICS_TICK_SPEED, gravityScale);
 
-            game.blackHole.isDisturbed = false;
+            game.tick(delta);
+
             game.blackHole.tick(delta);
+
+            for (&game.player.bullets) |*bullet| {
+                bullet.tick();
+            }
+
             game.player.tick();
+
             if (game.player.health <= 0.00) {
                 gameOver();
                 return;
@@ -250,9 +256,8 @@ pub fn drawFrame() void {
         // rl.beginBlendMode(.additive);
         // defer rl.endBlendMode();
         for (game.player.bullets) |projectile| {
-            const projectileBody = PhysicsZig.getPhysicsSystem().getBody(projectile.physicsId);
-            if (projectileBody.enabled) {
-                const rotation: f32 = math.radiansToDegrees(projectileBody.orient);
+            if (projectile.body.enabled) {
+                const rotation: f32 = math.radiansToDegrees(projectile.body.orient);
                 projectile.texture.drawPro(
                     .{
                         .x = 0,
@@ -261,8 +266,8 @@ pub fn drawFrame() void {
                         .height = @as(f32, @floatFromInt(projectile.texture.height)),
                     },
                     .{
-                        .x = projectileBody.position.x,
-                        .y = projectileBody.position.y,
+                        .x = projectile.body.position.x,
+                        .y = projectile.body.position.y,
                         .width = @as(f32, @floatFromInt(projectile.texture.width)) / 2,
                         .height = @as(f32, @floatFromInt(projectile.texture.height)) / 4,
                     },
