@@ -34,3 +34,15 @@ Player collides to everyone
 Asteroids collide to everyone
 
 Bullets collide to everyone but player
+
+## Ownership
+
+PhysicsBody is lives inside the entities, the PhysicsSystem only contains a list of pointers
+
+Entities can read the PhysicsBody but cannot edit (not blocked just a rule)
+
+PhysiscsSystem cam edit PhysicsBody
+
+## Config
+
+To activate Debug mode and tweak some values: [config.zig](src/config.zig)

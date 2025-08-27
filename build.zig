@@ -33,7 +33,7 @@ pub fn build(b: *std.Build) !void {
         );
         //this lets your program access files like "resources/my-image.png":
         // link_step.addArg("--emrun");
-        link_step.addArg("-sERROR_ON_UNDEFINED_SYMBOLS=0");
+        // link_step.addArg("-sERROR_ON_UNDEFINED_SYMBOLS=0");
         link_step.addArg("--shell-file");
         link_step.addArg("src/minshell.html");
         link_step.addArg("--embed-file");
@@ -58,10 +58,11 @@ pub fn build(b: *std.Build) !void {
             },
         ),
     });
-    const test_filters = b.option([]const u8, "test-filter", "Skip tests that do not match any filter") orelse null;
+    const test_filters = b.option([]const []const u8, "test-filter", "Skip tests that do not match any filter") orelse &[0][]const u8{};
+
     const test_step = b.addTest(.{
         .name = "space_researcher",
-        .filter = test_filters,
+        .filters = test_filters,
         .root_module = b.createModule(
             .{
                 .root_source_file = b.path("src/main_test.zig"),

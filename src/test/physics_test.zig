@@ -122,7 +122,7 @@ test "PhysicsSystem Body should be affecte by gravity" {
     PhysicsZig.getPhysicsSystem().moveBody(id, .{ .x = 101.0, .y = 102.0 }, 0.5);
     try testing.expect(body.position.x > 100.0);
     try testing.expect(body.position.y > 101.0);
-    PhysicsZig.getPhysicsSystem().tick(1, 10);
+    PhysicsZig.getPhysicsSystem().tick(1.0, 10.0);
 
     // check if possition changed - X: 110.420334, Y: 105.35519
     try testing.expectEqual(0, initPosition.equals(body.position));

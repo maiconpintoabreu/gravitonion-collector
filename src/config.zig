@@ -1,3 +1,5 @@
+const std = @import("std");
+const builtin = @import("builtin");
 const rl = @import("raylib");
 
 // This is like a config file
@@ -18,7 +20,7 @@ pub const DEFAULT_SHOOTING_CD = 0.1;
 pub const PHYSICS_TICK_SPEED = 0.02;
 
 // Debug
-pub const IS_DEBUG = false;
-pub const IS_DEBUG_MENU: bool = false;
+pub const IS_DEBUG = true and builtin.mode == .Debug;
+pub const IS_DEBUG_MENU: bool = false and builtin.mode == .Debug;
 
 pub var IS_TESTING = false;

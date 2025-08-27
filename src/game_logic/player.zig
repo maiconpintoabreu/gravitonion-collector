@@ -114,15 +114,15 @@ pub const Player = struct {
             .x = math.sin(body.orient),
             .y = -math.cos(body.orient),
         };
-        self.gunSlot = body.position.add(direction.scale(10));
-        const back = body.position.add(.{ .x = 0, .y = 8 });
+        self.gunSlot = body.position.add(direction.scale(8));
+        const back = body.position.add(.{ .x = 0, .y = 6 });
 
         self.rightTurbineSlot = body.position.add(back.subtract(body.position).rotate(
-            body.orient - 0.2, // TODO: needs Adjust
+            body.orient - 0.5, // TODO: needs Adjust
         ));
 
         self.leftTurbineSlot = body.position.add(back.subtract(body.position).rotate(
-            body.orient + 0.2, // TODO: needs Adjust
+            body.orient + 0.5, // TODO: needs Adjust
         ));
     }
     pub fn teleport(self: *Player, position: rl.Vector2, orient: f32) void {
@@ -166,7 +166,7 @@ pub const Player = struct {
                 .width = currentWidth,
                 .height = currentHeight,
             },
-            .{ .x = currentWidth / 2, .y = currentHeight / 2 },
+            self.textureCenter,
             math.radiansToDegrees(self.body.orient),
             .white,
         );
