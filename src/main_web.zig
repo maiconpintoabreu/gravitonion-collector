@@ -15,7 +15,7 @@ pub fn main() anyerror!void {
         .{},
     );
     defer rl.closeWindow(); // Close window and OpenGL context
-    defer gameController.closeGame();
+    defer gameController.closeGame(&game);
     rl.setConfigFlags(rl.ConfigFlags{
         .window_resizable = true,
     });

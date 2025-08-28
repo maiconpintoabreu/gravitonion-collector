@@ -222,7 +222,7 @@ const BlackHole = struct {
 };
 
 pub const Game = struct {
-    asteroids: [configZig.MAX_ASTEROIDS]Asteroid = std.mem.zeroes([configZig.MAX_ASTEROIDS]Asteroid),
+    asteroids: [configZig.MAX_ASTEROIDS]Asteroid = @splat(.{}),
     camera: rl.Camera2D = .{
         .offset = std.mem.zeroes(rl.Vector2),
         .rotation = 0,

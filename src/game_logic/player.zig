@@ -14,10 +14,7 @@ const MAX_HEALTH = 100;
 const MAX_POWER = 100;
 
 pub const Player = struct {
-    bullets: [configZig.MAX_PROJECTILES]Projectile = std.mem.zeroes([configZig.MAX_PROJECTILES]Projectile),
-    // physicsObject: PhysicsObject = .{
-    //     .rotationSpeed = 200,
-    // },
+    bullets: [configZig.MAX_PROJECTILES]Projectile = @splat(.{}),
     isAlive: bool = true,
     isTurningLeft: bool = false,
     isTurningRight: bool = false,
