@@ -6,7 +6,6 @@ const projectileZig = @import("projectile.zig");
 const PhysicsZig = @import("../game_logic/physics.zig");
 const math = std.math;
 const Projectile = projectileZig.Projectile;
-const PhysicsSystem = PhysicsZig.PhysicsSystem;
 const PhysicsBody = PhysicsZig.PhysicsBody;
 
 const MAX_HEALTH = 100;

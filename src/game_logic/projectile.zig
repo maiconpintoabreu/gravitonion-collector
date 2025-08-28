@@ -3,13 +3,10 @@ const math = std.math;
 const rl = @import("raylib");
 const PhysicsZig = @import("physics.zig");
 const PhysicsBody = PhysicsZig.PhysicsBody;
-const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
 
 pub const Projectile = struct {
-    // position: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     physicsId: i32 = -1,
     body: PhysicsBody = .{},
-    // previousPosition: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     size: f32 = 3,
     speed: f32 = 20,
     rotation: f32 = 0,

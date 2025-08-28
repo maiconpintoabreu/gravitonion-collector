@@ -3,7 +3,6 @@ const rl = @import("raylib");
 const configZig = @import("../config.zig");
 const testing = std.testing;
 const PhysicsZig = @import("../game_logic/physics.zig");
-const PhysicsSystem = PhysicsZig.PhysicsSystem;
 const PhysicsBody = PhysicsZig.PhysicsBody;
 
 test "PhysicsSystem physicsBodyCount should be 0 from start" {

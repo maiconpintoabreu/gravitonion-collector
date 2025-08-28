@@ -11,7 +11,6 @@ const asteroidZig = @import("game_logic/asteroid.zig");
 const Asteroid = asteroidZig.Asteroid;
 const PhysicsZig = @import("game_logic/physics.zig");
 const PhysicsShapeUnion = PhysicsZig.PhysicsShapeUnion;
-const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
 const PhysicsBody = PhysicsZig.PhysicsBody;
 
 const shaderVersion = if (builtin.cpu.arch.isWasm()) "100" else "330";

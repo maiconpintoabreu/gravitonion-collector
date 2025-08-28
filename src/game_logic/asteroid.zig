@@ -4,12 +4,9 @@ const math = std.math;
 const rl = @import("raylib");
 const configZig = @import("../config.zig");
 const PhysicsZig = @import("physics.zig");
-const PhysicsObject = PhysicsZig.PhysicsBody;
-const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
 const PhysicsBody = PhysicsZig.PhysicsBody;
 
 pub const Asteroid = struct {
-    // physicsObject: PhysicsObject = .{},
     physicsId: i32 = -1,
     body: PhysicsBody = .{},
     size: f32 = 6,
@@ -68,11 +65,6 @@ pub const Asteroid = struct {
             }
             moveTo.x = rand.float(f32) * configZig.NATIVE_WIDTH;
         }
-        // self.asteroids[self.asteroidCount].physicsObject.velocity = rl.Vector2.clampValue(
-        //     self.asteroids[self.asteroidCount].physicsObject.velocity,
-        //     0,
-        //     0.2,
-        // );
         PhysicsZig.getPhysicsSystem().moveBody(self.physicsId, moveTo, 0.0);
         PhysicsZig.getPhysicsSystem().enableBody(self.physicsId);
     }

@@ -5,20 +5,14 @@ const rl = @import("raylib");
 
 const configZig = @import("../config.zig");
 const PhysicsZig = @import("physics.zig");
-const playerZig = @import("player.zig");
-const Player = playerZig.Player;
-const projectileZig = @import("projectile.zig");
-const Projectile = projectileZig.Projectile;
-const asteroidZig = @import("asteroid.zig");
-const Asteroid = asteroidZig.Asteroid;
 const gameZig = @import("../game.zig");
 const Game = gameZig.Game;
 const GameState = gameZig.GameState;
 const GameControllerType = gameZig.GameControllerType;
-const rand = std.crypto.random;
 
 pub fn startGame(game: *Game) rl.RaylibError!bool {
     try game.init();
+
     // Start with one asteroid
     game.spawnAsteroidRandom();
     restartGame(game);
@@ -112,7 +106,11 @@ pub fn updateFrame(game: *Game) void {
         const rotationSpeed: f32 = game.blackHole.speed;
         rl.setShaderValue(game.blackHole.blackholeShader, game.blackHole.speedLoc, &rotationSpeed, .float);
         if (game.asteroidSpawnCd < 0) {
-            game.asteroidSpawnCd = rl.math.clamp(configZig.DEFAULT_ASTEROID_CD - game.blackHole.size * 2.0, 0.2, 100);
+            game.asteroidSpawnCd = math.clamp(
+                configZig.DEFAULT_ASTEROID_CD - game.blackHole.size * 2.0,
+                0.2,
+                50,
+            );
             game.spawnAsteroidRandom();
         }
         // Input
