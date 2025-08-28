@@ -29,11 +29,7 @@ test "PhysicsSystem Create/Get Circular Body" {
     };
     const id = PhysicsZig.getPhysicsSystem().addBody(&body);
 
-    if (body.shape == null) {
-        try testing.expect(false);
-        return;
-    }
-    switch (body.shape.?) {
+    switch (body.shape) {
         .Circular => |shape| {
             try testing.expectEqual(5, shape.radius);
         },
@@ -86,12 +82,10 @@ test "PhysicsSystem Create/Get Polygon Body" {
         .enabled = true,
         .isWrapable = false,
     };
+
     const id = PhysicsZig.getPhysicsSystem().addBody(&body);
 
-    if (body.shape == null) {
-        try testing.expect(false);
-    }
-    switch (body.shape.?) {
+    switch (body.shape) {
         .Polygon => |shape| {
             try testing.expectEqual(2, shape.pointCount);
         },

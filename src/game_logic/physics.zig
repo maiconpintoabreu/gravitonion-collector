@@ -58,7 +58,7 @@ pub const PhysicsBody = struct {
     useGravity: bool = false, // Apply gravity force to dynamics
     isColliding: bool = false,
     collidingWith: ?*PhysicsBody = null,
-    shape: ?PhysicsShapeUnion = null,
+    shape: PhysicsShapeUnion = undefined,
     enabled: bool = false,
     isWrapable: bool = false,
     isVisible: bool = true,
@@ -208,7 +208,7 @@ pub const PhysicsSystem = struct {
 
                 const color = if (body.isColliding) rl.Color.white else rl.Color.yellow;
 
-                switch (body.shape.?) {
+                switch (body.shape) {
                     .Circular => |shape| {
                         rl.drawCircleLinesV(body.position, shape.radius, color);
                     },
@@ -279,9 +279,9 @@ pub const PhysicsSystem = struct {
                 if (!shouldCollide) {
                     continue;
                 }
-                switch (leftBody.shape.?) {
+                switch (leftBody.shape) {
                     .Circular => |leftShape| {
-                        switch (rightBody.shape.?) {
+                        switch (rightBody.shape) {
                             .Circular => |rightShape| {
                                 if (rl.checkCollisionCircles(
                                     leftBody.position,
@@ -346,7 +346,7 @@ pub const PhysicsSystem = struct {
                     },
                     // TODO: implement polygon collisions
                     .Polygon => {
-                        switch (leftBody.shape.?) {
+                        switch (leftBody.shape) {
                             .Circular => {},
                             .Polygon => {},
                         }

@@ -40,12 +40,12 @@ const BLACK_HOLE_PHASER_MAX_ROTATION: f32 = 360.0;
 
 const BlackHole = struct {
     physicsId: i32 = -1,
-    body: PhysicsBody = std.mem.zeroes(PhysicsBody),
+    body: PhysicsBody = .{},
     size: f32 = BLACK_DEFAULT_SIZE,
     finalSize: f32 = BLACK_DEFAULT_SIZE * BLACK_HOLE_SCALE,
     speed: f32 = BLACK_DEFAULT_SIZE,
     phaserPhysicsId: i32 = -1,
-    phaserBody: PhysicsBody = std.mem.zeroes(PhysicsBody),
+    phaserBody: PhysicsBody = .{},
     phasersCD: f32 = BLACK_HOLE_PHASER_CD,
     phasersMinDuration: f32 = BLACK_HOLE_PHASER_MIN_DURATION,
     isPhasing: bool = false,
