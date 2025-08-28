@@ -8,6 +8,8 @@ const rl = @import("raylib");
 pub const NATIVE_WIDTH = 640;
 pub const NATIVE_HEIGHT = 360;
 pub const NATIVE_CENTER = rl.Vector2{ .x = NATIVE_WIDTH / 2, .y = NATIVE_HEIGHT / 2 };
+pub const MIN_WINDOW_SIZE_WIDTH = 400;
+pub const MIN_WINDOW_SIZE_HEIGHT = 225;
 pub const BACKGROUND_COLOR = rl.Color.init(20, 20, 20, 255);
 
 // Game consts
@@ -22,5 +24,3 @@ pub const PHYSICS_TICK_SPEED = 0.02;
 // Debug
 pub const IS_DEBUG = true and builtin.mode == .Debug;
 pub const IS_DEBUG_MENU: bool = false and builtin.mode == .Debug;
-
-pub var IS_TESTING = false;

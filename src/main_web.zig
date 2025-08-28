@@ -3,10 +3,12 @@ const std = @import("std");
 const buildin = @import("builtin");
 const gameController = @import("game_controller.zig");
 const configZig = @import("config.zig");
+const gameZig = @import("game.zig");
+const Game = gameZig.Game;
 
 pub fn main() anyerror!void {
+    var game: Game = .{};
     rl.setTraceLogLevel(if (buildin.mode == .Debug) .all else .err);
-    configZig.IS_TESTING = false;
     rl.traceLog(
         rl.TraceLogLevel.info,
         "Initializing Game!",
@@ -18,12 +20,15 @@ pub fn main() anyerror!void {
         .window_resizable = true,
     });
 
-    if (gameController.initGame(false)) {
+    if (gameController.initGame(&game, false)) {
         rl.setExitKey(.null);
-        rl.setWindowMinSize(400, 225);
-        std.os.emscripten.emscripten_set_main_loop(updateFrame, 0, 1);
+        rl.setWindowMinSize(configZig.MIN_WINDOW_SIZE_WIDTH, configZig.MIN_WINDOW_SIZE_HEIGHT);
+        std.os.emscripten.emscripten_set_main_loop_arg(updateFrame, &game, 0, 1);
     }
 }
-export fn updateFrame() void {
-    _ = gameController.update();
+export fn updateFrame(optionalPtr: ?*anyopaque) void {
+    if (optionalPtr) |ptr| {
+        const game: *Game = @ptrCast(@alignCast(ptr));
+        _ = gameController.update(game);
+    }
 }

@@ -3,20 +3,19 @@ const std = @import("std");
 const buildin = @import("builtin");
 const gameController = @import("game_controller.zig");
 const configZig = @import("config.zig");
-
-const MIN_WINDOW_SIZE_WIDTH = 400;
-const MIN_WINDOW_SIZE_HEIGHT = 225;
+const gameZig = @import("game.zig");
+const Game = gameZig.Game;
 
 pub fn main() anyerror!void {
+    var game: Game = .{};
     rl.setTraceLogLevel(if (buildin.mode == .Debug) .all else .err);
-    configZig.IS_TESTING = false;
     rl.traceLog(
         rl.TraceLogLevel.info,
         "Initializing Game!",
         .{},
     );
     defer rl.closeWindow(); // Close window and OpenGL context
-    defer gameController.closeGame();
+    defer gameController.closeGame(&game);
     const isFullScreen = buildin.os.tag == .windows or buildin.os.tag == .linux;
     const isBorderlessWindowed = buildin.mode != std.builtin.OptimizeMode.Debug;
     rl.setConfigFlags(rl.ConfigFlags{
@@ -24,9 +23,9 @@ pub fn main() anyerror!void {
         .window_highdpi = true,
     });
 
-    if (gameController.initGame(isFullScreen)) {
+    if (gameController.initGame(&game, isFullScreen)) {
         rl.setExitKey(.null);
-        rl.setWindowMinSize(MIN_WINDOW_SIZE_WIDTH, MIN_WINDOW_SIZE_HEIGHT);
+        rl.setWindowMinSize(configZig.MIN_WINDOW_SIZE_WIDTH, configZig.MIN_WINDOW_SIZE_HEIGHT);
         if (isFullScreen) {
             rl.toggleFullscreen();
         } else if (isBorderlessWindowed) {
@@ -37,6 +36,6 @@ pub fn main() anyerror!void {
         else
             60;
         rl.setTargetFPS(fps);
-        while (gameController.update()) {}
+        while (gameController.update(&game)) {}
     }
 }

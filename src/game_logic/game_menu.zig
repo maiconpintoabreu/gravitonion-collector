@@ -11,14 +11,7 @@ const BUTTON_BACKGROUND_NORMAL: rl.Color = .gray;
 const BUTTON_BACKGROUND_HOVER: rl.Color = .light_gray;
 const BUTTON_WIDTH = 140;
 
-var game: *Game = undefined;
-var font: rl.Font = std.mem.zeroes(rl.Font);
-var controlTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
-
-pub fn initMenu(inGame: *Game) bool {
-    game = inGame;
-
-    // Magic numbers to generate a triangle for the UI (I could add a file instead) TODO: Add the triangle as a file
+pub fn initMenu(game: *Game) bool {
     var controlImage: rl.Image = rl.genImageColor(
         16 * 4,
         16,
@@ -46,7 +39,7 @@ pub fn initMenu(inGame: *Game) bool {
         rl.Color.white,
     );
     rl.imageDrawText(&controlImage, "x", 48 + 3, -3, 20, rl.Color.white);
-    controlTexture = controlImage.toTexture() catch |err| switch (err) {
+    game.controlTexture = controlImage.toTexture() catch |err| switch (err) {
         rl.RaylibError.LoadTexture => {
             std.debug.print("LoadTexture controller ERROR", .{});
             return false;
@@ -58,27 +51,26 @@ pub fn initMenu(inGame: *Game) bool {
     };
     controlImage.unload();
 
-    font = rl.getFontDefault() catch |err| switch (err) {
+    game.font = rl.getFontDefault() catch |err| switch (err) {
         else => {
             return false;
         },
     };
     return true;
 }
-pub fn closeMenu() void {
-    if (font.isReady()) {
-        font.unload();
+pub fn closeMenu(game: *Game) void {
+    if (game.font.isReady()) {
+        game.font.unload();
     }
-    if (controlTexture.id > 0) {
-        controlTexture.unload();
+    if (game.controlTexture.id > 0) {
+        game.controlTexture.unload();
     }
 }
-pub fn updateFrame() void {
+pub fn updateFrame(game: *Game) void {
     if (rl.isKeyReleased(.escape) and game.gameState == GameState.Pause) {
         game.gameState = GameState.Playing;
     }
 
-    // TODO: Needs improvement (too repetitive)
     if (game.gameControllerType == GameControllerType.TouchScreen) {
         if (actionButtom(
             .{
@@ -86,6 +78,7 @@ pub fn updateFrame() void {
                 .y = configZig.NATIVE_HEIGHT - 80,
             },
             30,
+            game.camera,
         )) {
             game.isTouchLeft = true;
         } else {
@@ -97,6 +90,7 @@ pub fn updateFrame() void {
                 .y = configZig.NATIVE_HEIGHT - 80,
             },
             30,
+            game.camera,
         )) {
             game.isTouchRight = true;
         } else {
@@ -108,6 +102,7 @@ pub fn updateFrame() void {
                 .y = configZig.NATIVE_HEIGHT - 80,
             },
             30,
+            game.camera,
         )) {
             game.isTouchUp = true;
         } else {
@@ -119,6 +114,7 @@ pub fn updateFrame() void {
                 .y = configZig.NATIVE_HEIGHT - 150,
             },
             30,
+            game.camera,
         )) {
             game.isShooting = true;
         } else {
@@ -127,7 +123,7 @@ pub fn updateFrame() void {
     }
 }
 
-pub fn drawFrame() void {
+pub fn drawFrame(game: *Game) void {
     const width = BUTTON_WIDTH;
     const height = 30;
     const xPosition = configZig.NATIVE_CENTER.x - width / 2;
@@ -138,7 +134,7 @@ pub fn drawFrame() void {
                 .y = configZig.NATIVE_CENTER.y - height,
                 .width = width,
                 .height = height,
-            }, "Play", 20, .black)) {
+            }, "Play", game.font, 20, .black)) {
                 game.gameState = GameState.Playing;
             }
             if (uiTextButtom(rl.Rectangle{
@@ -146,7 +142,7 @@ pub fn drawFrame() void {
                 .y = configZig.NATIVE_CENTER.y - -height,
                 .width = width,
                 .height = height,
-            }, "Quit", 20, .black)) {
+            }, "Quit", game.font, 20, .black)) {
                 game.gameState = GameState.Quit;
             }
         },
@@ -158,12 +154,18 @@ pub fn drawFrame() void {
                 .a = 100,
             });
             if (game.highestScore > 0) {
-                uiText(rl.Rectangle{
-                    .x = xPosition - 20, // -20 to make it centered
-                    .y = configZig.NATIVE_CENTER.y - (80),
-                    .width = width,
-                    .height = height,
-                }, rl.textFormat("Highest Score: %3.2f", .{game.highestScore}), 10, .white);
+                uiText(
+                    rl.Rectangle{
+                        .x = xPosition - 20, // -20 to make it centered
+                        .y = configZig.NATIVE_CENTER.y - (80),
+                        .width = width,
+                        .height = height,
+                    },
+                    rl.textFormat("Highest Score: %3.2f", .{game.highestScore}),
+                    game.font,
+                    10,
+                    .white,
+                );
             }
             if (game.gameState == GameState.Pause) {
                 if (uiTextButtom(rl.Rectangle{
@@ -171,7 +173,7 @@ pub fn drawFrame() void {
                     .y = configZig.NATIVE_CENTER.y - (40),
                     .width = width,
                     .height = height,
-                }, "Continue", 20, .black)) {
+                }, "Continue", game.font, 20, .black)) {
                     game.gameState = GameState.Playing;
                 }
                 if (uiTextButtom(rl.Rectangle{
@@ -179,7 +181,7 @@ pub fn drawFrame() void {
                     .y = configZig.NATIVE_CENTER.y - (0),
                     .width = width,
                     .height = height,
-                }, "Main Menu", 20, .black)) {
+                }, "Main Menu", game.font, 20, .black)) {
                     game.gameState = GameState.MainMenu;
                 }
                 if (uiTextButtom(rl.Rectangle{
@@ -187,7 +189,7 @@ pub fn drawFrame() void {
                     .y = configZig.NATIVE_CENTER.y - (-40),
                     .width = width,
                     .height = height,
-                }, "Quit", 20, .black)) {
+                }, "Quit", game.font, 20, .black)) {
                     game.gameState = GameState.Quit;
                 }
             } else if (game.gameState == GameState.GameOver) {
@@ -196,7 +198,7 @@ pub fn drawFrame() void {
                     .y = configZig.NATIVE_CENTER.y - (40),
                     .width = width,
                     .height = height,
-                }, "Restart", 20, .black)) {
+                }, "Restart", game.font, 20, .black)) {
                     game.gameState = GameState.Playing;
                 }
                 if (uiTextButtom(rl.Rectangle{
@@ -204,7 +206,7 @@ pub fn drawFrame() void {
                     .y = configZig.NATIVE_CENTER.y - (0),
                     .width = width,
                     .height = height,
-                }, "Main Menu", 20, .black)) {
+                }, "Main Menu", game.font, 20, .black)) {
                     game.gameState = GameState.MainMenu;
                 }
                 if (uiTextButtom(rl.Rectangle{
@@ -212,7 +214,7 @@ pub fn drawFrame() void {
                     .y = configZig.NATIVE_CENTER.y - (-40),
                     .width = width,
                     .height = height,
-                }, "Quit", 20, .black)) {
+                }, "Quit", game.font, 20, .black)) {
                     game.gameState = GameState.Quit;
                 }
             }
@@ -234,6 +236,7 @@ pub fn drawFrame() void {
                             .y = configZig.NATIVE_HEIGHT - 80,
                         },
                         30,
+                        game.controlTexture,
                         0,
                     );
                     uiButtomIcon(
@@ -242,6 +245,7 @@ pub fn drawFrame() void {
                             .y = configZig.NATIVE_HEIGHT - 80,
                         },
                         30,
+                        game.controlTexture,
                         1,
                     );
                     uiButtomIcon(
@@ -250,6 +254,7 @@ pub fn drawFrame() void {
                             .y = configZig.NATIVE_HEIGHT - 80,
                         },
                         30,
+                        game.controlTexture,
                         2,
                     );
                     uiButtomIcon(
@@ -258,6 +263,7 @@ pub fn drawFrame() void {
                             .y = configZig.NATIVE_HEIGHT - 150,
                         },
                         30,
+                        game.controlTexture,
                         3,
                     );
                 }
@@ -317,12 +323,12 @@ pub fn drawFrame() void {
     }
 }
 
-fn actionButtom(buttom: rl.Vector2, buttomSize: f32) bool {
+fn actionButtom(buttom: rl.Vector2, buttomSize: f32, camera: rl.Camera2D) bool {
     // remove mouse to use only touch values
     const touchCount = @as(usize, @intCast(rl.getTouchPointCount()));
     for (0..touchCount) |touchIndex| {
         if (rl.checkCollisionPointCircle(
-            rl.getScreenToWorld2D(rl.getTouchPosition(@intCast(touchIndex)), game.camera),
+            rl.getScreenToWorld2D(rl.getTouchPosition(@intCast(touchIndex)), camera),
             buttom,
             buttomSize,
         )) {
@@ -333,7 +339,7 @@ fn actionButtom(buttom: rl.Vector2, buttomSize: f32) bool {
     return false;
 }
 
-fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) void {
+fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, texture: rl.Texture2D, icon: f32) void {
     const buttomEdge = rl.Vector2{ .x = buttom.x - buttomSize / 2, .y = buttom.y - buttomSize / 2 };
 
     rl.drawCircleV(buttom, buttomSize, .{
@@ -342,8 +348,7 @@ fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) void {
         .b = BUTTON_BACKGROUND_NORMAL.b,
         .a = 200,
     });
-    rl.drawTexturePro(
-        controlTexture,
+    texture.drawPro(
         rl.Rectangle{ .x = 16 * icon, .y = 0, .width = 16, .height = 16 },
         .{ .x = buttomEdge.x, .y = buttomEdge.y, .width = buttomSize, .height = buttomSize },
         rl.Vector2.zero(),
@@ -352,7 +357,7 @@ fn uiButtomIcon(buttom: rl.Vector2, buttomSize: f32, icon: f32) void {
     );
 }
 
-fn uiTextButtom(buttom: rl.Rectangle, text: [:0]const u8, fontSize: f32, color: rl.Color) bool {
+fn uiTextButtom(buttom: rl.Rectangle, text: [:0]const u8, font: rl.Font, fontSize: f32, color: rl.Color) bool {
     const mousePosition = rl.getMousePosition();
     if (rl.checkCollisionPointRec(mousePosition, buttom)) {
         rl.drawRectangleRec(buttom, BUTTON_BACKGROUND_HOVER);
@@ -369,7 +374,7 @@ fn uiTextButtom(buttom: rl.Rectangle, text: [:0]const u8, fontSize: f32, color: 
 
     return false;
 }
-fn uiText(buttom: rl.Rectangle, text: [:0]const u8, fontSize: f32, color: rl.Color) void {
+fn uiText(buttom: rl.Rectangle, text: [:0]const u8, font: rl.Font, fontSize: f32, color: rl.Color) void {
     rl.drawTextEx(font, text, rl.Vector2{
         .x = buttom.x + 5,
         .y = (buttom.y + buttom.height / 2) - (fontSize / 2),

@@ -1,14 +1,14 @@
 const std = @import("std");
-const math = std.math;
+const builtin = @import("builtin");
 const rl = @import("raylib");
 const configZig = @import("../config.zig");
 const projectileZig = @import("projectile.zig");
-const Projectile = projectileZig.Projectile;
 const PhysicsZig = @import("../game_logic/physics.zig");
+const math = std.math;
+const Projectile = projectileZig.Projectile;
 const PhysicsSystem = PhysicsZig.PhysicsSystem;
 const PhysicsBody = PhysicsZig.PhysicsBody;
 const Collidable = PhysicsZig.Collidable;
-const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
 
 const MAX_HEALTH = 100;
 const MAX_POWER = 100;
@@ -61,7 +61,7 @@ pub const Player = struct {
         self.physicsId = PhysicsZig.getPhysicsSystem().addBody(&self.body);
 
         // Avoid opengl calls while testing
-        if (configZig.IS_TESTING) return;
+        if (builtin.is_test) return;
         const playerTexture = try rl.loadTexture("resources/ship.png");
         const playerTextureCenter = rl.Vector2{
             .x = @as(f32, @floatFromInt(playerTexture.width)) / 2,

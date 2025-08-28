@@ -2,6 +2,8 @@ const std = @import("std");
 const math = std.math;
 const rl = @import("raylib");
 const configZig = @import("../config.zig");
+
+// TODO: Find a way to remove this global variable
 var physicsSystem: PhysicsSystem = .{};
 
 pub fn getPhysicsSystem() *PhysicsSystem {

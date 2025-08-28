@@ -19,66 +19,44 @@ const rand = std.crypto.random;
 
 const shaderVersion = if (builtin.cpu.arch.isWasm()) "100" else "330";
 
-var gameTime: f64 = 0.1;
-// Audios
-var music: rl.Music = std.mem.zeroes(rl.Music);
-var destruction: rl.Sound = std.mem.zeroes(rl.Sound);
-var blackholeincreasing: rl.Sound = std.mem.zeroes(rl.Sound);
-var blackholeShader: rl.Shader = std.mem.zeroes(rl.Shader);
-var blackholePhaserShader: rl.Shader = std.mem.zeroes(rl.Shader);
-var blackholeTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D);
-
-// For shader TODO: move it inside blackhole
-var resolutionLoc: i32 = 0;
-var timeLoc: i32 = 0;
-var radiusLoc: i32 = 0;
-var speedLoc: i32 = 0;
-
-// For Phaser Shader
-var timePhaserLoc: i32 = 0;
-
-var game: *Game = undefined;
-
-pub fn startGame(currentGame: *Game) rl.RaylibError!bool {
-    game = currentGame;
-
+pub fn startGame(game: *Game) rl.RaylibError!bool {
     try game.init();
-    music = try rl.loadMusicStream("resources/ambient.mp3");
-    destruction = try rl.loadSound("resources/destruction.wav");
-    rl.setSoundVolume(destruction, 0.1);
-    blackholeincreasing = try rl.loadSound("resources/blackholeincreasing.mp3");
-    blackholeShader = try rl.loadShader(
+    game.music = try rl.loadMusicStream("resources/ambient.mp3");
+    game.destruction = try rl.loadSound("resources/destruction.wav");
+    rl.setSoundVolume(game.destruction, 0.1);
+    game.blackHole.blackholeincreasing = try rl.loadSound("resources/blackholeincreasing.mp3");
+    game.blackHole.blackholeShader = try rl.loadShader(
         rl.textFormat("resources/shaders%s/blackhole.vs", .{shaderVersion}),
         rl.textFormat("resources/shaders%s/blackhole.fs", .{shaderVersion}),
     );
-    blackholePhaserShader = try rl.loadShader(
+    game.blackHole.blackholePhaserShader = try rl.loadShader(
         null,
         rl.textFormat("resources/shaders%s/phaser.fs", .{shaderVersion}),
     );
-    resolutionLoc = rl.getShaderLocation(blackholeShader, "resolution");
-    timeLoc = rl.getShaderLocation(blackholeShader, "time");
-    radiusLoc = rl.getShaderLocation(blackholeShader, "radius");
-    speedLoc = rl.getShaderLocation(blackholeShader, "speed");
-    timePhaserLoc = rl.getShaderLocation(blackholePhaserShader, "time");
+    game.blackHole.resolutionLoc = rl.getShaderLocation(game.blackHole.blackholeShader, "resolution");
+    game.blackHole.timeLoc = rl.getShaderLocation(game.blackHole.blackholeShader, "time");
+    game.blackHole.radiusLoc = rl.getShaderLocation(game.blackHole.blackholeShader, "radius");
+    game.blackHole.speedLoc = rl.getShaderLocation(game.blackHole.blackholeShader, "speed");
+    game.blackHole.timePhaserLoc = rl.getShaderLocation(game.blackHole.blackholePhaserShader, "time");
     const blackholeImage = rl.genImageColor(configZig.NATIVE_WIDTH, configZig.NATIVE_HEIGHT, .white);
-    blackholeTexture = try blackholeImage.toTexture();
+    game.blackHole.blackholeTexture = try blackholeImage.toTexture();
     blackholeImage.unload();
-    rl.setShaderValue(blackholeShader, resolutionLoc, &game.screen, .vec2);
+    rl.setShaderValue(game.blackHole.blackholeShader, game.blackHole.resolutionLoc, &game.screen, .vec2);
     const radius: f32 = 2.0;
-    rl.setShaderValue(blackholeShader, radiusLoc, &radius, .float);
+    rl.setShaderValue(game.blackHole.blackholeShader, game.blackHole.radiusLoc, &radius, .float);
 
     // Start with one asteroid
     game.spawnAsteroidRandom();
-    restartGame();
+    restartGame(game);
     return true;
 }
 
-pub fn restartGame() void {
+pub fn restartGame(game: *Game) void {
     game.currentScore = 0;
-    gameTime = 0;
-    if (rl.isMusicValid(music)) {
-        rl.stopMusicStream(music);
-        rl.playMusicStream(music);
+    game.gameTime = 0;
+    if (rl.isMusicValid(game.music)) {
+        rl.stopMusicStream(game.music);
+        rl.playMusicStream(game.music);
     }
 
     game.blackHole.setSize(0.6);
@@ -106,33 +84,33 @@ pub fn restartGame() void {
     PhysicsZig.getPhysicsSystem().disableBody(game.blackHole.phaserPhysicsId);
     game.player.updateSlots(game.player.body);
 }
-pub fn closeGame() void {
+pub fn closeGame(game: *Game) void {
     game.unload();
-    if (rl.isMusicValid(music)) music.unload();
-    if (rl.isSoundValid(destruction)) destruction.unload();
-    if (rl.isSoundValid(blackholeincreasing)) blackholeincreasing.unload();
+    if (rl.isMusicValid(game.music)) game.music.unload();
+    if (rl.isSoundValid(game.destruction)) game.destruction.unload();
+    if (rl.isSoundValid(game.blackHole.blackholeincreasing)) game.blackHole.blackholeincreasing.unload();
 
-    if (blackholeTexture.id > 0) {
-        blackholeTexture.unload();
+    if (game.blackHole.blackholeTexture.id > 0) {
+        game.blackHole.blackholeTexture.unload();
     }
-    if (blackholeShader.id > 0) {
-        blackholeShader.unload();
+    if (game.blackHole.blackholeShader.id > 0) {
+        game.blackHole.blackholeShader.unload();
     }
-    if (blackholePhaserShader.id > 0) {
-        blackholePhaserShader.unload();
+    if (game.blackHole.blackholePhaserShader.id > 0) {
+        game.blackHole.blackholePhaserShader.unload();
     }
 }
-fn gameOver() void {
+fn gameOver(game: *Game) void {
     if (game.highestScore < game.currentScore) {
         game.highestScore = game.currentScore;
     }
     game.gameState = GameState.GameOver;
 }
-pub fn updateFrame() void {
+pub fn updateFrame(game: *Game) void {
     if (rl.isKeyReleased(rl.KeyboardKey.escape)) {
         game.gameState = GameState.Pause;
     }
-    rl.updateMusicStream(music);
+    rl.updateMusicStream(game.music);
     // Only change to keyboard if Touchscreen
     if (game.gameControllerType == GameControllerType.TouchScreen and rl.getKeyPressed() != .null) {
         game.gameControllerType = GameControllerType.Keyboard;
@@ -147,18 +125,18 @@ pub fn updateFrame() void {
     if (game.gameState == GameState.Playing and game.isPlaying) {
         // Tick
         const delta = rl.getFrameTime();
-        gameTime += @as(f64, delta);
+        game.gameTime += @as(f64, delta);
         game.currentScore += 20 / game.blackHole.size * delta; // TODO: add distance on calculation
         game.asteroidSpawnCd -= delta;
         game.blackHole.setSize(game.blackHole.size + 0.05 * delta);
         game.player.shootingCd -= delta;
-        const reducedTime = @as(f32, @floatCast(gameTime / 2));
+        const reducedTime = @as(f32, @floatCast(game.gameTime / 2));
 
-        rl.setShaderValue(blackholeShader, timeLoc, &reducedTime, .float);
-        rl.setShaderValue(blackholePhaserShader, timePhaserLoc, &reducedTime, .float);
+        rl.setShaderValue(game.blackHole.blackholeShader, game.blackHole.timeLoc, &reducedTime, .float);
+        rl.setShaderValue(game.blackHole.blackholePhaserShader, game.blackHole.timePhaserLoc, &reducedTime, .float);
 
         const rotationSpeed: f32 = game.blackHole.speed;
-        rl.setShaderValue(blackholeShader, speedLoc, &rotationSpeed, .float);
+        rl.setShaderValue(game.blackHole.blackholeShader, game.blackHole.speedLoc, &rotationSpeed, .float);
         if (game.asteroidSpawnCd < 0) {
             game.asteroidSpawnCd = rl.math.clamp(configZig.DEFAULT_ASTEROID_CD - game.blackHole.size * 2.0, 0.2, 100);
             game.spawnAsteroidRandom();
@@ -226,25 +204,25 @@ pub fn updateFrame() void {
             game.player.tick();
 
             if (game.player.health <= 0.00) {
-                gameOver();
+                gameOver(game);
                 return;
             }
         }
     }
 }
-pub fn drawFrame() void {
+pub fn drawFrame(game: *Game) void {
     {
-        blackholeShader.activate();
-        defer blackholeShader.deactivate();
-        blackholeTexture.draw(
+        game.blackHole.blackholeShader.activate();
+        defer game.blackHole.blackholeShader.deactivate();
+        game.blackHole.blackholeTexture.draw(
             0,
             0,
             .white,
         );
     }
     if (game.isPlaying) {
-        blackholePhaserShader.activate();
-        defer blackholePhaserShader.deactivate();
+        game.blackHole.blackholePhaserShader.activate();
+        defer game.blackHole.blackholePhaserShader.deactivate();
         game.blackHole.draw();
     }
     rl.drawCircleV(
