@@ -41,8 +41,8 @@ pub fn restartGame(game: *Game) void {
         0.0,
     );
 
-    PhysicsZig.getPhysicsSystem().reset(PhysicsZig.PhysicsBodyTagEnum.PlayerBullet);
-    PhysicsZig.getPhysicsSystem().reset(PhysicsZig.PhysicsBodyTagEnum.Asteroid);
+    PhysicsZig.getPhysicsSystem().reset(.PlayerBullet);
+    PhysicsZig.getPhysicsSystem().reset(.Asteroid);
     for (&game.asteroids) |*asteroid| {
         asteroid.isAlive = false;
     }

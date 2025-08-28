@@ -11,20 +11,14 @@ test "PhysicsSystem physicsBodyCount should be 0 from start" {
 
 test "PhysicsSystem Create/Get Circular Body" {
     var body: PhysicsBody = .{
-        .position = .{
-            .x = 0,
-            .y = 0,
-        },
         .mass = 10,
         .useGravity = true,
-        .velocity = .{ .x = 0, .y = 0 },
         .shape = .{
             .Circular = .{
                 .radius = 5,
             },
         },
         .enabled = true,
-        .isWrapable = false,
     };
     const id = PhysicsZig.getPhysicsSystem().addBody(&body);
 
@@ -46,32 +40,21 @@ test "PhysicsSystem Create/Get Polygon Body" {
     points[0].x = 10;
     points[1].y = 10;
     var physicsCircularBody: PhysicsBody = .{
-        .position = .{
-            .x = 0,
-            .y = 0,
-        },
         .mass = 10,
         .useGravity = true,
-        .velocity = .{ .x = 0, .y = 0 },
         .shape = .{
             .Circular = .{
                 .radius = 10,
             },
         },
         .enabled = true,
-        .isWrapable = false,
     };
     for (0..20) |_| {
         _ = PhysicsZig.getPhysicsSystem().addBody(&physicsCircularBody);
     }
     var body: PhysicsBody = .{
-        .position = .{
-            .x = 0,
-            .y = 0,
-        },
         .mass = 10,
         .useGravity = true,
-        .velocity = .{ .x = 0, .y = 0 },
         .shape = .{
             .Polygon = .{
                 .pointCount = 2,
@@ -79,7 +62,6 @@ test "PhysicsSystem Create/Get Polygon Body" {
             },
         },
         .enabled = true,
-        .isWrapable = false,
     };
 
     const id = PhysicsZig.getPhysicsSystem().addBody(&body);
@@ -97,19 +79,17 @@ test "PhysicsSystem Create/Get Polygon Body" {
 }
 
 test "PhysicsSystem Body should be affecte by gravity" {
-    const initPosition = rl.Vector2{ .x = 0, .y = 0 };
+    const initPosition: rl.Vector2 = .zero();
     var body: PhysicsBody = .{
         .position = initPosition,
         .mass = 10,
         .useGravity = true,
-        .velocity = .{ .x = 0, .y = 0 },
         .shape = .{
             .Circular = .{
                 .radius = 10,
             },
         },
         .enabled = true,
-        .isWrapable = false,
     };
     const id = PhysicsZig.getPhysicsSystem().addBody(&body);
     PhysicsZig.getPhysicsSystem().moveBody(id, .{ .x = 101.0, .y = 102.0 }, 0.5);

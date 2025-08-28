@@ -35,7 +35,7 @@ pub const PhysicsShapeUnion = union(enum) {
 
 pub const PhysicsBody = struct {
     id: i32 = -1,
-    tag: PhysicsBodyTagEnum = PhysicsBodyTagEnum.Asteroid,
+    tag: PhysicsBodyTagEnum = undefined,
     position: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Physics body shape pivot
     velocity: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Current linear velocity applied to position
     force: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Current linear force (reset to 0 every step)
@@ -84,9 +84,9 @@ pub const PhysicsSystem = struct {
     // may need to change id system
     pub fn enableBody(self: *PhysicsSystem, id: i32) void {
         var body = self.physicsBodyList[@as(usize, @intCast(id))];
-        if (body.tag == PhysicsBodyTagEnum.PlayerBullet) {
+        if (body.tag == .PlayerBullet) {
             body.enabled = true;
-        } else if (body.tag == PhysicsBodyTagEnum.Asteroid) {
+        } else if (body.tag == .Asteroid) {
             body.enabled = true;
         } else {
             body.enabled = true;
@@ -105,6 +105,7 @@ pub const PhysicsSystem = struct {
         body.isVisible = true;
     }
 
+    // Apply force will project the body forward by orient
     pub fn applyForceToBody(self: *PhysicsSystem, id: i32, force: f32) void {
         var body = self.physicsBodyList[@as(usize, @intCast(id))];
         const direction = rl.Vector2{

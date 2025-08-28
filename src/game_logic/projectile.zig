@@ -6,8 +6,14 @@ const PhysicsBody = PhysicsZig.PhysicsBody;
 
 pub const Projectile = struct {
     physicsId: i32 = -1,
-    body: PhysicsBody = .{},
-    size: f32 = 3,
+    body: PhysicsBody = .{
+        .shape = .{
+            .Circular = .{
+                .radius = 3,
+            },
+        },
+        .tag = .PlayerBullet,
+    },
     speed: f32 = 20,
     rotation: f32 = 0,
     isAlive: bool = false,
@@ -24,20 +30,6 @@ pub const Projectile = struct {
 
     // Init physics
     pub fn init(self: *Projectile) rl.RaylibError!void {
-        self.body = .{
-            .position = .{ .x = 0, .y = 0 },
-            .mass = 0,
-            .useGravity = false,
-            .velocity = .{ .x = 0, .y = 0 },
-            .shape = .{
-                .Circular = .{
-                    .radius = self.size,
-                },
-            },
-            .enabled = false,
-            .isWrapable = false,
-            .tag = PhysicsZig.PhysicsBodyTagEnum.PlayerBullet,
-        };
         self.physicsId = PhysicsZig.getPhysicsSystem().addBody(&self.body);
     }
 

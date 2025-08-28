@@ -16,20 +16,20 @@ test "PlayerZig bulletsCount should be 0 from start" {
 
 test "PlayerZig init" {
     var player: Player = .{};
-    try player.init(.{ .x = 0, .y = 0 });
+    try player.init(.zero());
 }
 
 test "PlayerZig Physics Body init" {
     var player: Player = .{};
     try testing.expect(player.physicsId == -1);
-    try player.init(.{ .x = 0, .y = 0 });
+    try player.init(.zero());
     try testing.expect(player.physicsId > -1);
 }
 
 test "PlayerZig Move Player to start position" {
     var player: Player = .{};
     try testing.expect(player.physicsId == -1);
-    try player.init(.{ .x = 0, .y = 0 });
+    try player.init(.zero());
     try testing.expect(player.physicsId > -1);
 
     player.teleport(

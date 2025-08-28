@@ -21,6 +21,11 @@ pub const DEFAULT_ASTEROID_CD = 5;
 pub const DEFAULT_SHOOTING_CD = 0.1;
 pub const PHYSICS_TICK_SPEED = 0.02;
 
+// Player consts
+pub const PLAYER_SPEED_DEFAULT = 2.0;
+pub const PLAYER_ROTATION_SPEED_DEFAULT = 200.0;
+pub const PLAYER_GUN_SPEED_DEFAULT = 5.0;
+
 // Debug
 pub const IS_DEBUG = true and builtin.mode == .Debug;
 pub const IS_DEBUG_MENU: bool = false and builtin.mode == .Debug;

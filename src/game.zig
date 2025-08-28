@@ -79,9 +79,6 @@ const BlackHole = struct {
         }
         self.body = .{
             .position = configZig.NATIVE_CENTER,
-            .mass = 0,
-            .useGravity = false,
-            .velocity = .{ .x = 0, .y = 0 },
             .shape = .{
                 .Circular = .{
                     .radius = self.finalSize,
@@ -89,7 +86,7 @@ const BlackHole = struct {
             },
             .enabled = true,
             .isWrapable = true,
-            .tag = PhysicsZig.PhysicsBodyTagEnum.Blackhole,
+            .tag = .Blackhole,
         };
         self.physicsId = PhysicsZig.getPhysicsSystem().addBody(&self.body);
         // Init Phaser
@@ -99,18 +96,13 @@ const BlackHole = struct {
 
         self.phaserBody = .{
             .position = configZig.NATIVE_CENTER,
-            .mass = 0,
-            .useGravity = false,
-            .velocity = .{ .x = 0, .y = 0 },
             .shape = .{
                 .Polygon = .{
                     .pointCount = 4,
                     .points = self.collisionpoints,
                 },
             },
-            .enabled = false,
-            .isWrapable = true,
-            .tag = PhysicsZig.PhysicsBodyTagEnum.Phaser,
+            .tag = .Phaser,
         };
         self.phaserPhysicsId = PhysicsZig.getPhysicsSystem().addBody(&self.phaserBody);
 
