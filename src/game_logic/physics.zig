@@ -150,12 +150,15 @@ pub const PhysicsSystem = struct {
             const gravityDirection = configZig.NATIVE_CENTER.subtract(body.position).normalize();
             body.orient += body.angularVelocity;
 
+            // Increases gravity by how close it is
+            const blackholeDistance = (1 / (body.position.distance(configZig.NATIVE_CENTER) + 0.1)) * 100.0;
+
             // Calculate force or Calculate gravity
             if (body.force.length() > 0) {
                 body.velocity = body.velocity.add(body.force);
             } else {
                 if (body.useGravity) {
-                    body.velocity = body.velocity.add(gravityDirection.scale(body.mass * gravityScale * delta / 2));
+                    body.velocity = body.velocity.add(gravityDirection.scale(body.mass * blackholeDistance * gravityScale * delta / 2));
                 }
             }
 
