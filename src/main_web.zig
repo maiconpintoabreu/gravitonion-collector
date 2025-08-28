@@ -24,6 +24,6 @@ pub fn main() anyerror!void {
         std.os.emscripten.emscripten_set_main_loop(updateFrame, 0, 1);
     }
 }
-export fn updateFrame() callconv(.C) void {
+export fn updateFrame() void {
     _ = gameController.update();
 }

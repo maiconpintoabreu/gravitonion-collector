@@ -13,6 +13,7 @@ pub const Asteroid = struct {
     // physicsObject: PhysicsObject = .{},
     physicsId: i32 = -1,
     body: PhysicsBody = std.mem.zeroes(PhysicsBody),
+    size: f32 = 6,
     isAlive: bool = true,
     textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
@@ -33,7 +34,7 @@ pub const Asteroid = struct {
             .velocity = .{ .x = 0, .y = 0 },
             .shape = .{
                 .Circular = .{
-                    .radius = 6,
+                    .radius = self.size,
                 },
             },
             .enabled = false,
@@ -52,7 +53,7 @@ pub const Asteroid = struct {
     }
 
     pub fn spawn(self: Asteroid) void {
-        var moveTo = std.mem.zeroes(rl.Vector2);
+        var moveTo: rl.Vector2 = std.mem.zeroes(rl.Vector2);
         if (rand.boolean()) {
             if (rand.boolean()) {
                 moveTo.x = 0;
@@ -83,7 +84,7 @@ pub const Asteroid = struct {
         const currentWidth = self.textureRec.width;
         const currentHeight = self.textureRec.height;
         if (!self.body.enabled) return;
-        rl.drawTexturePro(self.texture, self.textureRec, .{
+        self.texture.drawPro(self.textureRec, .{
             .x = self.body.position.x,
             .y = self.body.position.y,
             .width = currentWidth,

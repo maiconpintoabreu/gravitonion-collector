@@ -32,11 +32,11 @@ pub fn main() anyerror!void {
         } else if (isBorderlessWindowed) {
             rl.toggleBorderlessWindowed();
         }
-        // const fps = if (rl.getMonitorRefreshRate(rl.getCurrentMonitor()) != 0)
-        //     rl.getMonitorRefreshRate(rl.getCurrentMonitor())
-        // else
-        //     60;
-        // rl.setTargetFPS(fps);
+        const fps = if (rl.getMonitorRefreshRate(rl.getCurrentMonitor()) != 0)
+            rl.getMonitorRefreshRate(rl.getCurrentMonitor())
+        else
+            60;
+        rl.setTargetFPS(fps);
         while (gameController.update()) {}
     }
 }
