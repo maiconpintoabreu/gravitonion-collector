@@ -8,7 +8,6 @@ const math = std.math;
 const Projectile = projectileZig.Projectile;
 const PhysicsSystem = PhysicsZig.PhysicsSystem;
 const PhysicsBody = PhysicsZig.PhysicsBody;
-const Collidable = PhysicsZig.Collidable;
 
 const MAX_HEALTH = 100;
 const MAX_POWER = 100;
@@ -31,7 +30,6 @@ pub const Player = struct {
     leftTurbineSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     shootingCd: f32 = 0,
     shoot: rl.Sound = std.mem.zeroes(rl.Sound),
-    collider: ?Collidable = null,
 
     fn colliding(self: *Player, data: *PhysicsBody) void {
         if (data.tag != .Player) {

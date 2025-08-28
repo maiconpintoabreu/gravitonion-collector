@@ -17,34 +17,8 @@ const GameState = gameZig.GameState;
 const GameControllerType = gameZig.GameControllerType;
 const rand = std.crypto.random;
 
-const shaderVersion = if (builtin.cpu.arch.isWasm()) "100" else "330";
-
 pub fn startGame(game: *Game) rl.RaylibError!bool {
     try game.init();
-    game.music = try rl.loadMusicStream("resources/ambient.mp3");
-    game.destruction = try rl.loadSound("resources/destruction.wav");
-    rl.setSoundVolume(game.destruction, 0.1);
-    game.blackHole.blackholeincreasing = try rl.loadSound("resources/blackholeincreasing.mp3");
-    game.blackHole.blackholeShader = try rl.loadShader(
-        rl.textFormat("resources/shaders%s/blackhole.vs", .{shaderVersion}),
-        rl.textFormat("resources/shaders%s/blackhole.fs", .{shaderVersion}),
-    );
-    game.blackHole.blackholePhaserShader = try rl.loadShader(
-        null,
-        rl.textFormat("resources/shaders%s/phaser.fs", .{shaderVersion}),
-    );
-    game.blackHole.resolutionLoc = rl.getShaderLocation(game.blackHole.blackholeShader, "resolution");
-    game.blackHole.timeLoc = rl.getShaderLocation(game.blackHole.blackholeShader, "time");
-    game.blackHole.radiusLoc = rl.getShaderLocation(game.blackHole.blackholeShader, "radius");
-    game.blackHole.speedLoc = rl.getShaderLocation(game.blackHole.blackholeShader, "speed");
-    game.blackHole.timePhaserLoc = rl.getShaderLocation(game.blackHole.blackholePhaserShader, "time");
-    const blackholeImage = rl.genImageColor(configZig.NATIVE_WIDTH, configZig.NATIVE_HEIGHT, .white);
-    game.blackHole.blackholeTexture = try blackholeImage.toTexture();
-    blackholeImage.unload();
-    rl.setShaderValue(game.blackHole.blackholeShader, game.blackHole.resolutionLoc, &game.screen, .vec2);
-    const radius: f32 = 2.0;
-    rl.setShaderValue(game.blackHole.blackholeShader, game.blackHole.radiusLoc, &radius, .float);
-
     // Start with one asteroid
     game.spawnAsteroidRandom();
     restartGame(game);

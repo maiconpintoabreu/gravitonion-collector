@@ -21,18 +21,6 @@ pub const PhysicsBodyTagEnum = enum {
     Blackhole,
     Phaser,
 };
-pub const Collidable = struct {
-    ptr: *anyopaque,
-    impl: *const Interface,
-
-    pub const Interface = struct {
-        collidingWith: *const fn (ctx: *anyopaque, data: *PhysicsBody) void,
-    };
-
-    pub fn collidingWith(self: Collidable, data: *PhysicsBody) void {
-        return self.impl.collidingWith(self.ptr, data);
-    }
-};
 
 // Set only 4 points for now add more if needed
 pub const PhysicsShapePolygon = struct {

@@ -14,6 +14,7 @@ pub fn initGame(game: *Game, isFullscreen: bool) bool {
         game.screen = rl.Vector2.zero();
     }
     rl.initWindow(@as(i32, @intFromFloat(game.screen.x)), @as(i32, @intFromFloat(game.screen.y)), "Space Researcher");
+
     rl.initAudioDevice();
     updateRatio(game);
     game.gameState = GameState.MainMenu;

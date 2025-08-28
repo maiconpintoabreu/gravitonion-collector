@@ -7,7 +7,6 @@ const PhysicsZig = @import("physics.zig");
 const PhysicsObject = PhysicsZig.PhysicsBody;
 const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
 const PhysicsBody = PhysicsZig.PhysicsBody;
-const Collidable = PhysicsZig.Collidable;
 
 pub const Asteroid = struct {
     // physicsObject: PhysicsObject = .{},

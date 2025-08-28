@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const rl = @import("raylib");
 const rand = std.crypto.random;
 const math = std.math;
@@ -12,7 +13,8 @@ const PhysicsZig = @import("game_logic/physics.zig");
 const PhysicsShapeUnion = PhysicsZig.PhysicsShapeUnion;
 const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
 const PhysicsBody = PhysicsZig.PhysicsBody;
-const Collidable = PhysicsZig.Collidable;
+
+const shaderVersion = if (builtin.cpu.arch.isWasm()) "100" else "330";
 
 pub const GameState = enum {
     MainMenu,
@@ -112,6 +114,27 @@ const BlackHole = struct {
             .tag = PhysicsZig.PhysicsBodyTagEnum.Phaser,
         };
         self.phaserPhysicsId = PhysicsZig.getPhysicsSystem().addBody(&self.phaserBody);
+
+        self.blackholeincreasing = try rl.loadSound("resources/blackholeincreasing.mp3");
+        self.blackholeShader = try rl.loadShader(
+            rl.textFormat("resources/shaders%s/blackhole.vs", .{shaderVersion}),
+            rl.textFormat("resources/shaders%s/blackhole.fs", .{shaderVersion}),
+        );
+        self.blackholePhaserShader = try rl.loadShader(
+            null,
+            rl.textFormat("resources/shaders%s/phaser.fs", .{shaderVersion}),
+        );
+        self.resolutionLoc = rl.getShaderLocation(self.blackholeShader, "resolution");
+        self.timeLoc = rl.getShaderLocation(self.blackholeShader, "time");
+        self.radiusLoc = rl.getShaderLocation(self.blackholeShader, "radius");
+        self.speedLoc = rl.getShaderLocation(self.blackholeShader, "speed");
+        self.timePhaserLoc = rl.getShaderLocation(self.blackholePhaserShader, "time");
+        const blackholeImage = rl.genImageColor(configZig.NATIVE_WIDTH, configZig.NATIVE_HEIGHT, .white);
+        self.blackholeTexture = try blackholeImage.toTexture();
+        blackholeImage.unload();
+        const radius: f32 = 2.0;
+        rl.setShaderValue(self.blackholeShader, self.radiusLoc, &radius, .float);
+
         rl.traceLog(.info, "Blackhole init Completed", .{});
     }
     pub fn tick(self: *BlackHole, delta: f32) void {
@@ -272,7 +295,15 @@ pub const Game = struct {
             asteroid.textureRec = asteroidTextureRec;
             try asteroid.init();
         }
+
+        self.music = try rl.loadMusicStream("resources/ambient.mp3");
+        self.destruction = try rl.loadSound("resources/destruction.wav");
+        rl.setSoundVolume(self.destruction, 0.1);
+
         try self.blackHole.init();
+
+        rl.setShaderValue(self.blackHole.blackholeShader, self.blackHole.resolutionLoc, &self.screen, .vec2);
+
         try self.player.init(std.mem.zeroes(rl.Vector2));
         rl.traceLog(.info, "Game init Completed", .{});
     }

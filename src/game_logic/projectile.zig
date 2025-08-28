@@ -4,7 +4,6 @@ const rl = @import("raylib");
 const PhysicsZig = @import("physics.zig");
 const PhysicsBody = PhysicsZig.PhysicsBody;
 const PhysicsBodyInitiator = PhysicsZig.PhysicsBodyInitiator;
-const Collidable = PhysicsZig.Collidable;
 
 pub const Projectile = struct {
     // position: rl.Vector2 = std.mem.zeroes(rl.Vector2),
@@ -18,7 +17,6 @@ pub const Projectile = struct {
     direction: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
-    collider: ?Collidable = null,
 
     fn colliding(self: *Projectile, data: *PhysicsBody) void {
         _ = data;
