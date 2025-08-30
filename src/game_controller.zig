@@ -11,9 +11,9 @@ const GameState = gameZig.GameState;
 
 pub fn initGame(game: *Game, isFullscreen: bool) bool {
     if (isFullscreen) {
-        game.screen = rl.Vector2.zero();
+        game.screen = .zero();
     }
-    rl.initWindow(@as(i32, @intFromFloat(game.screen.x)), @as(i32, @intFromFloat(game.screen.y)), "Space Researcher");
+    rl.initWindow(game.screen.x, game.screen.y, "Space Researcher");
 
     rl.initAudioDevice();
     updateRatio(game);
@@ -45,20 +45,20 @@ pub fn initGame(game: *Game, isFullscreen: bool) bool {
 fn updateRatio(game: *Game) void {
     if (rl.isWindowFullscreen()) {
         if (builtin.cpu.arch.isWasm()) {
-            game.screen.x = @as(f32, @floatFromInt(rl.getScreenWidth()));
-            game.screen.y = @as(f32, @floatFromInt(rl.getScreenHeight()));
+            game.screen.x = rl.getScreenWidth();
+            game.screen.y = rl.getScreenHeight();
         } else {
-            game.screen.x = @as(f32, @floatFromInt(rl.getRenderWidth()));
-            game.screen.y = @as(f32, @floatFromInt(rl.getRenderHeight()));
+            game.screen.x = rl.getRenderWidth();
+            game.screen.y = rl.getRenderHeight();
         }
     } else {
-        game.screen.x = @as(f32, @floatFromInt(rl.getScreenWidth()));
-        game.screen.y = @as(f32, @floatFromInt(rl.getScreenHeight()));
-        rl.traceLog(.info, "Window: %f x %f", .{ game.screen.x, game.screen.y });
+        game.screen.x = rl.getScreenWidth();
+        game.screen.y = rl.getScreenHeight();
+        rl.traceLog(.info, "Window: %i x %i", .{ game.screen.x, game.screen.y });
     }
     game.virtualRatio = .{
-        .x = game.screen.x / @as(f32, @floatFromInt(configZig.NATIVE_WIDTH)),
-        .y = game.screen.y / @as(f32, @floatFromInt(configZig.NATIVE_HEIGHT)),
+        .x = @as(f32, @floatFromInt(game.screen.x)) / @as(f32, @floatFromInt(configZig.NATIVE_WIDTH)),
+        .y = @as(f32, @floatFromInt(game.screen.y)) / @as(f32, @floatFromInt(configZig.NATIVE_HEIGHT)),
     };
     if (game.virtualRatio.y < game.virtualRatio.x) {
         game.camera.zoom = 1 * game.virtualRatio.y;
@@ -108,6 +108,7 @@ pub fn update(game: *Game) bool {
             }
         },
         GameState.GameOver => {
+            menuZig.updateFrame(game);
             rl.beginDrawing();
             defer rl.endDrawing();
             rl.clearBackground(configZig.BACKGROUND_COLOR);

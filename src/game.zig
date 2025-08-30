@@ -12,6 +12,14 @@ const Asteroid = asteroidZig.Asteroid;
 const PhysicsZig = @import("game_logic/physics.zig");
 const PhysicsShapeUnion = PhysicsZig.PhysicsShapeUnion;
 const PhysicsBody = PhysicsZig.PhysicsBody;
+const Vector2i = struct {
+    x: i32,
+    y: i32,
+
+    pub fn zero() Vector2i {
+        return .{ .x = 0, .y = 0 };
+    }
+};
 
 const shaderVersion = if (builtin.cpu.arch.isWasm()) "100" else "330";
 
@@ -254,7 +262,7 @@ pub const Game = struct {
     gameControllerType: GameControllerType = GameControllerType.Keyboard,
     virtualRatio: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     nativeSizeScaled: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    screen: rl.Vector2 = .{
+    screen: Vector2i = .{
         .x = configZig.NATIVE_WIDTH,
         .y = configZig.NATIVE_HEIGHT,
     },

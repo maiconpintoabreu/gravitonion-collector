@@ -10,10 +10,6 @@ pub fn getPhysicsSystem() *PhysicsSystem {
     return &physicsSystem;
 }
 
-pub const PhysicsShapeCircular = struct {
-    radius: f32 = 0.0,
-};
-
 pub const PhysicsBodyTagEnum = enum {
     Player,
     Asteroid,
@@ -22,10 +18,25 @@ pub const PhysicsBodyTagEnum = enum {
     Phaser,
 };
 
+pub const PhysicsShapeCircular = struct {
+    radius: f32 = 0.0,
+
+    fn draw(self: PhysicsShapeCircular, position: rl.Vector2, color: rl.Color) void {
+        rl.drawCircleLinesV(position, self.radius, color);
+    }
+};
+
 // Set only 4 points for now add more if needed
 pub const PhysicsShapePolygon = struct {
     pointCount: usize = 0,
     points: [configZig.MAX_PHYSICS_POLYGON_POINTS]rl.Vector2 = std.mem.zeroes([configZig.MAX_PHYSICS_POLYGON_POINTS]rl.Vector2),
+
+    fn draw(self: PhysicsShapePolygon, _: rl.Vector2, color: rl.Color) void {
+        rl.drawLineV(self.points[0], self.points[2], color);
+        rl.drawLineV(self.points[2], self.points[3], color);
+        rl.drawLineV(self.points[3], self.points[1], color);
+        rl.drawLineV(self.points[1], self.points[0], color);
+    }
 };
 
 pub const PhysicsShapeUnion = union(enum) {
@@ -201,15 +212,7 @@ pub const PhysicsSystem = struct {
                 const color = if (body.isColliding) rl.Color.white else rl.Color.yellow;
 
                 switch (body.shape) {
-                    .Circular => |shape| {
-                        rl.drawCircleLinesV(body.position, shape.radius, color);
-                    },
-                    .Polygon => |shape| {
-                        rl.drawLineV(shape.points[0], shape.points[2], color);
-                        rl.drawLineV(shape.points[2], shape.points[3], color);
-                        rl.drawLineV(shape.points[3], shape.points[1], color);
-                        rl.drawLineV(shape.points[1], shape.points[0], color);
-                    },
+                    inline else => |shape| shape.draw(body.position, color),
                 }
             }
         }
