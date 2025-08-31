@@ -12,12 +12,18 @@ const Asteroid = asteroidZig.Asteroid;
 const PhysicsZig = @import("game_logic/physics.zig");
 const PhysicsShapeUnion = PhysicsZig.PhysicsShapeUnion;
 const PhysicsBody = PhysicsZig.PhysicsBody;
-const Vector2i = struct {
+pub const Vector2i = struct {
     x: i32,
     y: i32,
 
     pub fn zero() Vector2i {
         return .{ .x = 0, .y = 0 };
+    }
+    pub fn toVector2(self: Vector2i) rl.Vector2 {
+        return .{
+            .x = @as(f32, @floatFromInt(self.x)),
+            .y = @as(f32, @floatFromInt(self.y)),
+        };
     }
 };
 
@@ -237,6 +243,15 @@ const BlackHole = struct {
         }
     }
     pub fn unload(self: *BlackHole) void {
+        if (self.blackholeTexture.id > 0) {
+            self.blackholeTexture.unload();
+        }
+        if (self.blackholeShader.id > 0) {
+            self.blackholeShader.unload();
+        }
+        if (self.blackholePhaserShader.id > 0) {
+            self.blackholePhaserShader.unload();
+        }
         if (self.phaserTexture.id > 0) {
             self.phaserTexture.unload();
         }
@@ -300,8 +315,8 @@ pub const Game = struct {
         rl.setSoundVolume(self.destruction, 0.1);
 
         try self.blackHole.init();
-
-        rl.setShaderValue(self.blackHole.blackholeShader, self.blackHole.resolutionLoc, &self.screen, .vec2);
+        const screen = self.screen.toVector2();
+        rl.setShaderValue(self.blackHole.blackholeShader, self.blackHole.resolutionLoc, &screen, .vec2);
 
         try self.player.init(std.mem.zeroes(rl.Vector2));
         rl.traceLog(.info, "Game init Completed", .{});
@@ -324,6 +339,10 @@ pub const Game = struct {
     }
 
     pub fn unload(self: *Game) void {
+        if (rl.isMusicValid(self.music)) self.music.unload();
+        if (rl.isSoundValid(self.destruction)) self.destruction.unload();
+        if (rl.isSoundValid(self.blackHole.blackholeincreasing)) self.blackHole.blackholeincreasing.unload();
+
         // remove only first as they are all the same
         if (self.asteroids[0].texture.id > 0) {
             self.asteroids[0].texture.unload();

@@ -8,6 +8,7 @@ const Game = gameZig.Game;
 const playingZig = @import("game_logic/playing.zig");
 const menuZig = @import("game_logic/game_menu.zig");
 const GameState = gameZig.GameState;
+const Vector2i = gameZig.Vector2i;
 
 pub fn initGame(game: *Game, isFullscreen: bool) bool {
     if (isFullscreen) {
@@ -16,7 +17,9 @@ pub fn initGame(game: *Game, isFullscreen: bool) bool {
     rl.initWindow(game.screen.x, game.screen.y, "Space Researcher");
 
     rl.initAudioDevice();
+
     updateRatio(game);
+
     game.gameState = GameState.MainMenu;
     const menuReady = menuZig.initMenu(game);
     game.camera.target = configZig.NATIVE_CENTER;

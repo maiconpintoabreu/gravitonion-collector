@@ -12,7 +12,6 @@ const GameControllerType = gameZig.GameControllerType;
 
 pub fn startGame(game: *Game) rl.RaylibError!bool {
     try game.init();
-
     // Start with one asteroid
     game.spawnAsteroidRandom();
     restartGame(game);
@@ -54,19 +53,6 @@ pub fn restartGame(game: *Game) void {
 }
 pub fn closeGame(game: *Game) void {
     game.unload();
-    if (rl.isMusicValid(game.music)) game.music.unload();
-    if (rl.isSoundValid(game.destruction)) game.destruction.unload();
-    if (rl.isSoundValid(game.blackHole.blackholeincreasing)) game.blackHole.blackholeincreasing.unload();
-
-    if (game.blackHole.blackholeTexture.id > 0) {
-        game.blackHole.blackholeTexture.unload();
-    }
-    if (game.blackHole.blackholeShader.id > 0) {
-        game.blackHole.blackholeShader.unload();
-    }
-    if (game.blackHole.blackholePhaserShader.id > 0) {
-        game.blackHole.blackholePhaserShader.unload();
-    }
 }
 fn gameOver(game: *Game) void {
     if (game.highestScore < game.currentScore) {
@@ -237,11 +223,4 @@ pub fn drawFrame(game: *Game) void {
     }
     PhysicsZig.getPhysicsSystem().debug();
     game.player.draw();
-
-    if (configZig.IS_DEBUG) {
-        rl.drawCircleLinesV(game.blackHole.collisionpoints[0], 1, .yellow);
-        rl.drawCircleLinesV(game.blackHole.collisionpoints[1], 1, .yellow);
-        rl.drawCircleLinesV(game.blackHole.collisionpoints[2], 1, .yellow);
-        rl.drawCircleLinesV(game.blackHole.collisionpoints[3], 1, .yellow);
-    }
 }
