@@ -16,7 +16,6 @@ pub fn initGame(game: *Game, physics: *PhysicSystem, isFullscreen: bool) bool {
         game.screen = .zero();
     }
     rl.initWindow(game.screen.x, game.screen.y, "Space Researcher");
-
     rl.initAudioDevice();
     updateRatio(game);
     game.init(physics) catch |err| switch (err) {
@@ -37,7 +36,6 @@ pub fn initGame(game: *Game, physics: *PhysicSystem, isFullscreen: bool) bool {
             return false;
         },
     };
-
     game.gameState = GameState.MainMenu;
     const menuReady = menuZig.initMenu(game);
     game.camera.target = configZig.NATIVE_CENTER;
@@ -131,10 +129,8 @@ pub fn update(game: *Game, physics: *PhysicSystem) bool {
                 rl.pollInputEvents();
                 return true;
             }
-            game.tick(physics, delta);
             rl.beginDrawing();
             defer rl.endDrawing();
-
             {
                 game.camera.begin();
                 defer game.camera.end();
@@ -147,7 +143,6 @@ pub fn update(game: *Game, physics: *PhysicSystem) bool {
             return false;
         },
     }
-
     return true;
 }
 

@@ -96,7 +96,6 @@ pub const Game = struct {
             asteroid.textureRec = asteroidTextureRec;
             asteroid.init(physics);
         }
-
         self.music = try rl.loadMusicStream("resources/ambient.mp3");
         self.destruction = try rl.loadSound("resources/destruction.wav");
         rl.setSoundVolume(self.destruction, 0.1);
@@ -152,6 +151,7 @@ pub const Game = struct {
         }
         self.gameState = GameState.GameOver;
     }
+
     pub fn tick(self: *Game, physics: *PhysicSystem, delta: f32) void {
         if (rl.isKeyReleased(rl.KeyboardKey.escape)) {
             self.gameState = GameState.Pause;
@@ -168,7 +168,6 @@ pub const Game = struct {
                 self.isPlaying = true;
             }
         }
-
         if (self.gameState == GameState.Playing and self.isPlaying) {
             // Tick
             self.gameTime += @as(f64, delta);
@@ -221,7 +220,6 @@ pub const Game = struct {
                     self.player.isTurningRight = false;
                 }
             }
-
             const gamepadAceleration = rl.getGamepadAxisMovement(0, .right_trigger);
             if (rl.isGamepadButtonDown(0, .right_trigger_2)) {
                 self.player.isAccelerating = true;
@@ -236,32 +234,27 @@ pub const Game = struct {
             } else {
                 self.player.isAccelerating = false;
             }
-
             self.currentTickLength += delta;
             while (self.currentTickLength > configZig.PHYSICS_TICK_SPEED) {
                 self.currentTickLength -= configZig.PHYSICS_TICK_SPEED;
                 const gravityScale: f32 = if (self.blackhole.isDisturbed) 100.0 else 0.4;
                 physics.tick(configZig.PHYSICS_TICK_SPEED, gravityScale);
-
                 if (self.player.health <= 0.00) {
                     self.gameOver();
                     return;
                 }
-
-                self.blackhole.tick(physics, delta);
-
+                self.blackhole.tick(physics, configZig.PHYSICS_TICK_SPEED);
                 for (&self.player.bullets) |*bullet| {
                     bullet.tick(physics);
                 }
-
                 self.player.tick(configZig.PHYSICS_TICK_SPEED);
-
                 for (&self.asteroids) |*asteroid| {
                     asteroid.tick(physics);
                 }
             }
         }
     }
+
     pub fn draw(self: Game, physics: *PhysicSystem) void {
         {
             self.blackhole.blackholeShader.activate();
@@ -272,21 +265,17 @@ pub const Game = struct {
                 .white,
             );
         }
-
         if (self.isPlaying) {
             self.blackhole.draw();
         }
-
         rl.drawCircleV(
             configZig.NATIVE_CENTER,
             self.blackhole.finalSize,
             if (self.blackhole.isDisturbed) .red else .black,
         );
-
         for (self.asteroids) |asteroid| {
             if (asteroid.isAlive) asteroid.draw();
         }
-
         physics.debug();
         self.player.draw();
     }

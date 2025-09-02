@@ -75,11 +75,6 @@ pub const PhysicsSystem = struct {
         }
     }
 
-    // no needed anymore as body lives inside the gameobject
-    // pub fn getBody(self: *PhysicsSystem, id: usize) PhysicsBody {
-    //     return self.physicsBodies[id];
-    // }
-
     pub fn changeBodyShape(self: *PhysicsSystem, id: usize, shape: PhysicsShapeUnion) void {
         self.physicsBodyList[id].shape = shape;
     }
@@ -344,6 +339,7 @@ pub const PhysicsSystem = struct {
             }
         }
     }
+
     fn setCollision(bodyFrom: *PhysicsBody, bodyTo: *PhysicsBody) void {
         bodyFrom.isColliding = true;
         bodyFrom.collidingWith = bodyTo;
