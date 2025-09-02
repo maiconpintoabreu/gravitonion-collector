@@ -2,7 +2,7 @@ const std = @import("std");
 const rl = @import("raylib");
 
 const configZig = @import("../config.zig");
-const gameZig = @import("../game.zig");
+const gameZig = @import("game_play.zig");
 const Game = gameZig.Game;
 const GameState = gameZig.GameState;
 const GameControllerType = gameZig.GameControllerType;
@@ -41,11 +41,11 @@ pub fn initMenu(game: *Game) bool {
     rl.imageDrawText(&controlImage, "x", 48 + 3, -3, 20, rl.Color.white);
     game.controlTexture = controlImage.toTexture() catch |err| switch (err) {
         rl.RaylibError.LoadTexture => {
-            std.debug.print("LoadTexture controller ERROR", .{});
+            rl.traceLog(.err, "LoadTexture controller ERROR", .{});
             return false;
         },
         else => {
-            std.debug.print("ERROR", .{});
+            rl.traceLog(.err, "ERROR", .{});
             return false;
         },
     };
@@ -142,6 +142,7 @@ pub fn drawFrame(game: *Game) void {
         .width = width,
         .height = height,
     };
+    rl.drawFPS(10, 10);
     switch (game.gameState) {
         GameState.MainMenu => {
             recTextButton.y = configZig.NATIVE_CENTER.y - height;
@@ -316,9 +317,9 @@ pub fn drawFrame(game: *Game) void {
                 fontSize,
                 .white,
             );
-            rl.drawFPS(10, 10);
             // Start Debug
             if (configZig.IS_DEBUG_MENU) {
+                const delta = rl.getFrameTime();
                 rl.drawText(
                     rl.textFormat("--------------DEBUG--------------", .{}),
                     10,
@@ -327,9 +328,23 @@ pub fn drawFrame(game: *Game) void {
                     .white,
                 );
                 rl.drawText(
-                    rl.textFormat("game.blackhole.size: %3.3f", .{game.blackHole.size}),
+                    rl.textFormat("game.blackhole.size: %3.3f", .{game.blackhole.size}),
                     10,
                     40 + fontSize * 2,
+                    fontSize,
+                    .white,
+                );
+                rl.drawText(
+                    rl.textFormat("delta: %3.3f", .{delta}),
+                    10,
+                    40 + fontSize * 3,
+                    fontSize,
+                    .white,
+                );
+                rl.drawText(
+                    rl.textFormat("currentTickLength: %3.3f", .{game.currentTickLength}),
+                    10,
+                    40 + fontSize * 4,
                     fontSize,
                     .white,
                 );

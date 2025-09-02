@@ -1,9 +1,9 @@
 const rl = @import("raylib");
 const std = @import("std");
 const buildin = @import("builtin");
-const gameController = @import("game_controller.zig");
+const gameManager = @import("game_manager.zig");
 const configZig = @import("config.zig");
-const gameZig = @import("game.zig");
+const gameZig = @import("game_logic/game_play.zig");
 const Game = gameZig.Game;
 
 pub fn main() anyerror!void {
@@ -15,12 +15,12 @@ pub fn main() anyerror!void {
         .{},
     );
     defer rl.closeWindow(); // Close window and OpenGL context
-    defer gameController.closeGame(&game);
+    defer gameManager.closeGame(&game);
     rl.setConfigFlags(rl.ConfigFlags{
         .window_resizable = true,
     });
 
-    if (gameController.initGame(&game, false)) {
+    if (gameManager.initGame(&game, false)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(configZig.MIN_WINDOW_SIZE_WIDTH, configZig.MIN_WINDOW_SIZE_HEIGHT);
         std.os.emscripten.emscripten_set_main_loop_arg(updateFrame, &game, 0, 1);
@@ -29,6 +29,6 @@ pub fn main() anyerror!void {
 export fn updateFrame(optionalPtr: ?*anyopaque) void {
     if (optionalPtr) |ptr| {
         const game: *Game = @ptrCast(@alignCast(ptr));
-        _ = gameController.update(game);
+        _ = gameManager.update(game);
     }
 }

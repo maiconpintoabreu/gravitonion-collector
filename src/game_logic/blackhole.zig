@@ -1,47 +1,17 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const rl = @import("raylib");
-const rand = std.crypto.random;
-const math = std.math;
 
-const configZig = @import("config.zig");
-const playerZig = @import("game_logic/player.zig");
-const Player = playerZig.Player;
-const asteroidZig = @import("game_logic/asteroid.zig");
-const Asteroid = asteroidZig.Asteroid;
-const PhysicsZig = @import("game_logic/physics.zig");
+const configZig = @import("../config.zig");
+
+const PhysicsZig = @import("physics.zig");
 const PhysicsShapeUnion = PhysicsZig.PhysicsShapeUnion;
 const PhysicsBody = PhysicsZig.PhysicsBody;
-pub const Vector2i = struct {
-    x: i32,
-    y: i32,
 
-    pub fn zero() Vector2i {
-        return .{ .x = 0, .y = 0 };
-    }
-    pub fn toVector2(self: Vector2i) rl.Vector2 {
-        return .{
-            .x = @as(f32, @floatFromInt(self.x)),
-            .y = @as(f32, @floatFromInt(self.y)),
-        };
-    }
-};
+const math = std.math;
+const rand = std.crypto.random;
 
 const shaderVersion = if (builtin.cpu.arch.isWasm()) "100" else "330";
-
-pub const GameState = enum {
-    MainMenu,
-    Playing,
-    GameOver,
-    Pause,
-    Quit,
-};
-
-pub const GameControllerType = enum {
-    Keyboard,
-    Joystick,
-    TouchScreen,
-};
 
 const BLACK_HOLE_PHASER_CD: f32 = 15;
 const BLACK_HOLE_PHASER_MIN_DURATION: f32 = 1;
@@ -53,14 +23,12 @@ const BLACK_HOLE_SCALE = 20;
 const BLACK_HOLE_PHASER_ROTATION_SPEED: f32 = 0.1;
 const BLACK_HOLE_PHASER_MAX_ROTATION: f32 = 360.0;
 
-const BlackHole = struct {
-    physicsId: i32 = -1,
+pub const Blackhole = struct {
     body: PhysicsBody = .{},
+    phaserBody: PhysicsBody = .{},
     size: f32 = BLACK_DEFAULT_SIZE,
     finalSize: f32 = BLACK_DEFAULT_SIZE * BLACK_HOLE_SCALE,
     speed: f32 = BLACK_DEFAULT_SIZE,
-    phaserPhysicsId: i32 = -1,
-    phaserBody: PhysicsBody = .{},
     phasersCD: f32 = BLACK_HOLE_PHASER_CD,
     phasersMinDuration: f32 = BLACK_HOLE_PHASER_MIN_DURATION,
     isPhasing: bool = false,
@@ -78,16 +46,16 @@ const BlackHole = struct {
     timePhaserLoc: i32 = 0,
     collisionpoints: [BLACK_HOLE_COLLISION_POINTS]rl.Vector2 = std.mem.zeroes([BLACK_HOLE_COLLISION_POINTS]rl.Vector2),
 
-    fn colliding(self: *BlackHole, data: *PhysicsBody) void {
+    fn colliding(self: *Blackhole, data: *PhysicsBody) void {
         if (data.tag == .Asteroid) {
             self.setSize(self.size + 0.1);
         } else if (data.tag == .PlayerBullet) {
             self.setSize(self.size + 0.02);
         }
-        rl.traceLog(.info, "BlackHole Colliding", .{});
+        rl.traceLog(.info, "Blackhole Colliding", .{});
     }
 
-    pub fn init(self: *BlackHole) rl.RaylibError!void {
+    pub fn init(self: *Blackhole) rl.RaylibError!void {
         if (self.phaserTexture.id > 0) {
             return;
         }
@@ -102,7 +70,7 @@ const BlackHole = struct {
             .isWrapable = true,
             .tag = .Blackhole,
         };
-        self.physicsId = PhysicsZig.getPhysicsSystem().addBody(&self.body);
+        PhysicsZig.getPhysicsSystem().addBody(&self.body);
         // Init Phaser
         const phaserImage = rl.Image.genColor(256 * 2, 10, .white);
         self.phaserTexture = try phaserImage.toTexture();
@@ -118,7 +86,7 @@ const BlackHole = struct {
             },
             .tag = .Phaser,
         };
-        self.phaserPhysicsId = PhysicsZig.getPhysicsSystem().addBody(&self.phaserBody);
+        PhysicsZig.getPhysicsSystem().addBody(&self.phaserBody);
 
         self.blackholeincreasing = try rl.loadSound("resources/blackholeincreasing.mp3");
         self.blackholeShader = try rl.loadShader(
@@ -134,39 +102,38 @@ const BlackHole = struct {
         self.radiusLoc = rl.getShaderLocation(self.blackholeShader, "radius");
         self.speedLoc = rl.getShaderLocation(self.blackholeShader, "speed");
         self.timePhaserLoc = rl.getShaderLocation(self.blackholePhaserShader, "time");
-        const blackholeImage = rl.genImageColor(configZig.NATIVE_WIDTH, configZig.NATIVE_HEIGHT, .white);
-        self.blackholeTexture = try blackholeImage.toTexture();
-        blackholeImage.unload();
+        const BlackholeImage = rl.genImageColor(configZig.NATIVE_WIDTH, configZig.NATIVE_HEIGHT, .white);
+        self.blackholeTexture = try BlackholeImage.toTexture();
+        BlackholeImage.unload();
         const radius: f32 = 2.0;
         rl.setShaderValue(self.blackholeShader, self.radiusLoc, &radius, .float);
 
         rl.traceLog(.info, "Blackhole init Completed", .{});
     }
-    pub fn tick(self: *BlackHole, delta: f32) void {
+    pub fn tick(self: *Blackhole, delta: f32) void {
         self.isDisturbed = false;
         if (self.body.collidingWith) |otherBody| {
             self.colliding(otherBody);
         }
         self.phasersCD -= delta;
         if (self.isRotatingRight) {
-            PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.physicsId, 1);
+            PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.body.id, 1);
         } else {
-            PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.physicsId, -1);
+            PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.body.id, -1);
         }
         if (self.isPhasing) {
-            const tempSize = self.size - delta;
-            if (tempSize < BLACK_DEFAULT_SIZE) {
+            if (self.size < BLACK_DEFAULT_SIZE) {
                 self.setSize(BLACK_DEFAULT_SIZE);
-                PhysicsZig.getPhysicsSystem().disableBody(self.phaserPhysicsId);
+                PhysicsZig.getPhysicsSystem().disableBody(self.phaserBody.id);
                 self.isPhasing = false;
             } else {
-                self.setSize(self.size - (0.1 / (BLACK_DEFAULT_SIZE / self.size) * delta));
+                self.setSize(self.size - (0.9 * self.size) * delta);
             }
         }
         if ((self.size > BLACK_HOLE_SIZE_PHASER_ACTIVE) and !self.isPhasing) {
             self.phasersCD = BLACK_HOLE_PHASER_CD;
             self.phasersMinDuration = BLACK_HOLE_PHASER_MIN_DURATION;
-            PhysicsZig.getPhysicsSystem().enableBody(self.phaserPhysicsId);
+            PhysicsZig.getPhysicsSystem().enableBody(self.phaserBody.id);
             self.isPhasing = true;
             self.isRotatingRight = rand.boolean();
         }
@@ -193,23 +160,25 @@ const BlackHole = struct {
             self.body.orient,
         ));
 
-        PhysicsZig.getPhysicsSystem().changeBodyShape(self.phaserPhysicsId, PhysicsShapeUnion{
+        PhysicsZig.getPhysicsSystem().changeBodyShape(self.phaserBody.id, PhysicsShapeUnion{
             .Polygon = .{
                 .pointCount = 4,
                 .points = self.collisionpoints,
             },
         });
     }
-    pub fn setSize(self: *BlackHole, size: f32) void {
+    pub fn setSize(self: *Blackhole, size: f32) void {
         self.size = size;
         self.finalSize = size * BLACK_HOLE_SCALE;
-        PhysicsZig.getPhysicsSystem().changeBodyShape(self.physicsId, PhysicsShapeUnion{
+        PhysicsZig.getPhysicsSystem().changeBodyShape(self.body.id, PhysicsShapeUnion{
             .Circular = .{ .radius = self.finalSize },
         });
     }
-    pub fn draw(self: BlackHole) void {
-        const blackholeBody = self.body;
+    pub fn draw(self: Blackhole) void {
+        const BlackholeBody = self.body;
         if (self.isPhasing) {
+            self.blackholePhaserShader.activate();
+            defer self.blackholePhaserShader.deactivate();
             self.phaserTexture.drawPro(
                 .{
                     .x = 0,
@@ -224,7 +193,7 @@ const BlackHole = struct {
                     .height = @as(f32, @floatFromInt(self.phaserTexture.height)),
                 },
                 rl.Vector2.zero(),
-                math.radiansToDegrees(blackholeBody.orient),
+                math.radiansToDegrees(BlackholeBody.orient),
                 .white,
             );
         } else {
@@ -242,7 +211,7 @@ const BlackHole = struct {
             );
         }
     }
-    pub fn unload(self: *BlackHole) void {
+    pub fn unload(self: *Blackhole) void {
         if (self.blackholeTexture.id > 0) {
             self.blackholeTexture.unload();
         }
@@ -255,99 +224,5 @@ const BlackHole = struct {
         if (self.phaserTexture.id > 0) {
             self.phaserTexture.unload();
         }
-    }
-};
-
-pub const Game = struct {
-    asteroids: [configZig.MAX_ASTEROIDS]Asteroid = @splat(.{}),
-    camera: rl.Camera2D = .{
-        .offset = std.mem.zeroes(rl.Vector2),
-        .rotation = 0,
-        .target = std.mem.zeroes(rl.Vector2),
-        .zoom = 1,
-    },
-    player: Player = .{},
-    blackHole: BlackHole = .{},
-    gameTime: f64 = 0.1,
-    font: rl.Font = std.mem.zeroes(rl.Font),
-    controlTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
-    music: rl.Music = std.mem.zeroes(rl.Music),
-    destruction: rl.Sound = std.mem.zeroes(rl.Sound),
-    gameState: GameState = GameState.MainMenu,
-    gameControllerType: GameControllerType = GameControllerType.Keyboard,
-    virtualRatio: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    nativeSizeScaled: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    screen: Vector2i = .{
-        .x = configZig.NATIVE_WIDTH,
-        .y = configZig.NATIVE_HEIGHT,
-    },
-    asteroidSpawnCd: f32 = 0,
-    currentTickLength: f32 = 0.0,
-    isTouchLeft: bool = false,
-    isTouchRight: bool = false,
-    isTouchUp: bool = false,
-    isShooting: bool = false,
-    currentScore: f32 = 0,
-    highestScore: f32 = 0,
-    isPlaying: bool = false,
-    pub fn init(self: *Game) rl.RaylibError!void {
-        // Init asteroid to reuse texture
-        const asteroidTexture: rl.Texture2D = try rl.loadTexture("resources/rock.png");
-        const asteroidTextureCenter = rl.Vector2{
-            .x = @as(f32, @floatFromInt(asteroidTexture.width)) / 2,
-            .y = @as(f32, @floatFromInt(asteroidTexture.height)) / 2 + 2,
-        };
-        const asteroidTextureRec = rl.Rectangle{
-            .x = 0,
-            .y = 0,
-            .width = @as(f32, @floatFromInt(asteroidTexture.width)),
-            .height = @as(f32, @floatFromInt(asteroidTexture.height)),
-        };
-        for (&self.asteroids) |*asteroid| {
-            asteroid.texture = asteroidTexture;
-            asteroid.textureCenter = asteroidTextureCenter;
-            asteroid.textureRec = asteroidTextureRec;
-            try asteroid.init();
-        }
-
-        self.music = try rl.loadMusicStream("resources/ambient.mp3");
-        self.destruction = try rl.loadSound("resources/destruction.wav");
-        rl.setSoundVolume(self.destruction, 0.1);
-
-        try self.blackHole.init();
-        const screen = self.screen.toVector2();
-        rl.setShaderValue(self.blackHole.blackholeShader, self.blackHole.resolutionLoc, &screen, .vec2);
-
-        try self.player.init(std.mem.zeroes(rl.Vector2));
-        rl.traceLog(.info, "Game init Completed", .{});
-    }
-    pub fn tick(self: *Game, delta: f32) void {
-        for (&self.asteroids) |*asteroid| {
-            asteroid.tick();
-        }
-        _ = delta;
-    }
-
-    pub fn spawnAsteroidRandom(self: *Game) void {
-        for (&self.asteroids) |*asteroid| {
-            if (!asteroid.isAlive) {
-                asteroid.isAlive = true;
-                asteroid.spawn();
-                return;
-            }
-        }
-    }
-
-    pub fn unload(self: *Game) void {
-        if (rl.isMusicValid(self.music)) self.music.unload();
-        if (rl.isSoundValid(self.destruction)) self.destruction.unload();
-        if (rl.isSoundValid(self.blackHole.blackholeincreasing)) self.blackHole.blackholeincreasing.unload();
-
-        // remove only first as they are all the same
-        if (self.asteroids[0].texture.id > 0) {
-            self.asteroids[0].texture.unload();
-        }
-        self.blackHole.unload();
-        self.player.unload();
     }
 };

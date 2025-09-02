@@ -45,7 +45,7 @@ pub const PhysicsShapeUnion = union(enum) {
 };
 
 pub const PhysicsBody = struct {
-    id: i32 = -1,
+    id: usize = undefined,
     tag: PhysicsBodyTagEnum = undefined,
     position: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Physics body shape pivot
     velocity: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Current linear velocity applied to position
@@ -67,8 +67,8 @@ pub const PhysicsSystem = struct {
     currentId: i32 = 0,
     physicsBodyList: [configZig.MAX_PHYSICS_OBJECTS]*PhysicsBody = undefined,
 
-    pub fn resetById(self: *PhysicsSystem, id: i32) void {
-        self.physicsBodyList[@as(usize, @intCast(id))].isColliding = false;
+    pub fn resetById(self: *PhysicsSystem, id: usize) void {
+        self.physicsBodyList[id].isColliding = false;
     }
 
     pub fn reset(self: *PhysicsSystem, tag: PhysicsBodyTagEnum) void {
@@ -83,18 +83,18 @@ pub const PhysicsSystem = struct {
     }
 
     // no needed anymore as body lives inside the gameobject
-    // pub fn getBody(self: *PhysicsSystem, id: i32) PhysicsBody {
-    //     return self.physicsBodies[@as(usize, @intCast(id))];
+    // pub fn getBody(self: *PhysicsSystem, id: usize) PhysicsBody {
+    //     return self.physicsBodies[id];
     // }
 
-    pub fn changeBodyShape(self: *PhysicsSystem, id: i32, shape: PhysicsShapeUnion) void {
-        self.physicsBodyList[@as(usize, @intCast(id))].shape = shape;
+    pub fn changeBodyShape(self: *PhysicsSystem, id: usize, shape: PhysicsShapeUnion) void {
+        self.physicsBodyList[id].shape = shape;
     }
 
     // TODO: change EnableDesable system to resort the array to keep only enabled bodies on the beginning
     // may need to change id system
-    pub fn enableBody(self: *PhysicsSystem, id: i32) void {
-        var body = self.physicsBodyList[@as(usize, @intCast(id))];
+    pub fn enableBody(self: *PhysicsSystem, id: usize) void {
+        var body = self.physicsBodyList[id];
         if (body.tag == .PlayerBullet) {
             body.enabled = true;
         } else if (body.tag == .Asteroid) {
@@ -104,12 +104,12 @@ pub const PhysicsSystem = struct {
         }
     }
 
-    pub fn disableBody(self: *PhysicsSystem, id: i32) void {
-        self.physicsBodyList[@as(usize, @intCast(id))].enabled = false;
+    pub fn disableBody(self: *PhysicsSystem, id: usize) void {
+        self.physicsBodyList[id].enabled = false;
     }
 
-    pub fn moveBody(self: *PhysicsSystem, id: i32, position: rl.Vector2, orient: f32) void {
-        var body = self.physicsBodyList[@as(usize, @intCast(id))];
+    pub fn moveBody(self: *PhysicsSystem, id: usize, position: rl.Vector2, orient: f32) void {
+        var body = self.physicsBodyList[id];
         body.position = position;
         body.orient = orient;
         body.velocity = std.mem.zeroes(rl.Vector2);
@@ -117,8 +117,8 @@ pub const PhysicsSystem = struct {
     }
 
     // Apply force will project the body forward by orient
-    pub fn applyForceToBody(self: *PhysicsSystem, id: i32, force: f32) void {
-        var body = self.physicsBodyList[@as(usize, @intCast(id))];
+    pub fn applyForceToBody(self: *PhysicsSystem, id: usize, force: f32) void {
+        var body = self.physicsBodyList[id];
         const direction = rl.Vector2{
             .x = math.sin(body.orient),
             .y = -math.cos(body.orient),
@@ -127,15 +127,14 @@ pub const PhysicsSystem = struct {
         body.force = body.force.add(norm_vector.scale(force));
     }
 
-    pub fn applyTorqueToBody(self: *PhysicsSystem, id: i32, torque: f32) void {
-        self.physicsBodyList[@as(usize, @intCast(id))].torque += torque;
+    pub fn applyTorqueToBody(self: *PhysicsSystem, id: usize, torque: f32) void {
+        self.physicsBodyList[id].torque += torque;
     }
 
-    pub fn addBody(self: *PhysicsSystem, body: *PhysicsBody) i32 {
-        body.id = @as(i32, @intCast(self.physicsBodyCount));
+    pub fn addBody(self: *PhysicsSystem, body: *PhysicsBody) void {
+        body.id = self.physicsBodyCount;
         self.physicsBodyList[self.physicsBodyCount] = body;
         self.physicsBodyCount += 1;
-        return body.id;
     }
 
     pub fn tick(self: *PhysicsSystem, delta: f32, gravityScale: f32) void {
@@ -148,21 +147,20 @@ pub const PhysicsSystem = struct {
             body.collidingWith = null;
 
             const gravityDirection = configZig.NATIVE_CENTER.subtract(body.position).normalize();
+            body.angularVelocity = body.torque * 1 * (delta / 2.0);
             body.orient += body.angularVelocity;
 
             // Increases gravity by how close it is
-            const blackholeDistance = (1 / (body.position.distance(configZig.NATIVE_CENTER) + 0.1)) * 100.0;
+            const BlackholeDistance = (1 / (body.position.distance(configZig.NATIVE_CENTER) + 0.1)) * 100.0;
 
             // Calculate force or Calculate gravity
             if (body.force.length() > 0) {
                 body.velocity = body.velocity.add(body.force);
             } else {
                 if (body.useGravity) {
-                    body.velocity = body.velocity.add(gravityDirection.scale(body.mass * blackholeDistance * gravityScale * delta / 2));
+                    body.velocity = body.velocity.add(gravityDirection.scale(body.mass * BlackholeDistance * gravityScale * delta));
                 }
             }
-
-            body.angularVelocity = body.torque * 1 * (delta / 2.0);
 
             body.position = body.position.add(body.velocity);
 

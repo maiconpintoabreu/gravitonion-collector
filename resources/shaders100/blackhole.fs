@@ -27,10 +27,7 @@ float noise(vec2 st) {
 
     vec2 u = f*f*(3.0-2.0*f);
 
-    return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
-                     dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
-                mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
-                     dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+    return dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) );
 }
 
 // A 2D rotation matrix
@@ -70,10 +67,10 @@ void main()
 
     // --- 4. Black Hole and Color ---
     // Smooth transition to the black center (event horizon)
-    float blackHole = 0.5;
+    float Blackhole = 0.5;
     
     // Combine the background and disk, then apply the black hole mask
     vec3 finalColor = mix(backgroundColor, vec3(rInverted), ring);
-    finalColor *= blackHole;
+    finalColor *= Blackhole;
     gl_FragColor = vec4(finalColor, 1.0);
 }

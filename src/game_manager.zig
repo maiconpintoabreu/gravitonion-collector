@@ -3,9 +3,8 @@ const std = @import("std");
 const builtin = @import("builtin");
 
 const configZig = @import("config.zig");
-const gameZig = @import("game.zig");
+const gameZig = @import("game_logic/game_play.zig");
 const Game = gameZig.Game;
-const playingZig = @import("game_logic/playing.zig");
 const menuZig = @import("game_logic/game_menu.zig");
 const GameState = gameZig.GameState;
 const Vector2i = gameZig.Vector2i;
@@ -17,32 +16,30 @@ pub fn initGame(game: *Game, isFullscreen: bool) bool {
     rl.initWindow(game.screen.x, game.screen.y, "Space Researcher");
 
     rl.initAudioDevice();
-
     updateRatio(game);
+    game.init() catch |err| switch (err) {
+        rl.RaylibError.LoadShader => {
+            rl.traceLog(.err, "LoadShader Blackhole.fs ERROR", .{});
+            return false;
+        },
+        rl.RaylibError.LoadAudioStream => {
+            rl.traceLog(.err, "LoadAudioStream ERROR", .{});
+            return false;
+        },
+        rl.RaylibError.LoadSound => {
+            rl.traceLog(.err, "LoadSound destruction ERROR", .{});
+            return false;
+        },
+        else => {
+            rl.traceLog(.err, "ERROR", .{});
+            return false;
+        },
+    };
 
     game.gameState = GameState.MainMenu;
     const menuReady = menuZig.initMenu(game);
     game.camera.target = configZig.NATIVE_CENTER;
-    // TODO: if needed start game only after the menu when player pressed `Play`
-    const gameReady = playingZig.startGame(game) catch |err| switch (err) {
-        rl.RaylibError.LoadShader => {
-            std.debug.print("LoadShader blackhole.fs ERROR", .{});
-            return false;
-        },
-        rl.RaylibError.LoadAudioStream => {
-            std.debug.print("LoadAudioStream ERROR", .{});
-            return false;
-        },
-        rl.RaylibError.LoadSound => {
-            std.debug.print("LoadSound destruction ERROR", .{});
-            return false;
-        },
-        else => {
-            std.debug.print("ERROR", .{});
-            return false;
-        },
-    };
-    return menuReady and gameReady;
+    return menuReady;
 }
 
 fn updateRatio(game: *Game) void {
@@ -82,6 +79,7 @@ pub fn update(game: *Game) bool {
     if (!rl.isWindowFocused() and game.gameState == GameState.Playing) {
         game.gameState = GameState.Pause;
     }
+    const delta = rl.getFrameTime();
     switch (game.gameState) {
         GameState.MainMenu => {
             menuZig.updateFrame(game);
@@ -94,19 +92,20 @@ pub fn update(game: *Game) bool {
                 menuZig.drawFrame(game);
             }
             if (game.gameState == GameState.Playing) {
-                playingZig.restartGame(game);
+                game.restart();
+                game.currentTickLength = 0.0;
             }
         },
         GameState.Playing => {
             menuZig.updateFrame(game);
-            playingZig.updateFrame(game);
+            game.tick(delta);
             rl.beginDrawing();
             defer rl.endDrawing();
             rl.clearBackground(configZig.BACKGROUND_COLOR);
             {
                 game.camera.begin();
                 defer game.camera.end();
-                playingZig.drawFrame(game);
+                game.draw();
                 menuZig.drawFrame(game);
             }
         },
@@ -121,7 +120,7 @@ pub fn update(game: *Game) bool {
                 menuZig.drawFrame(game);
             }
             if (game.gameState == GameState.Playing) {
-                playingZig.restartGame(game);
+                game.restart();
             }
         },
         GameState.Pause => {
@@ -130,7 +129,7 @@ pub fn update(game: *Game) bool {
                 rl.pollInputEvents();
                 return true;
             }
-            playingZig.updateFrame(game);
+            game.tick(delta);
             rl.beginDrawing();
             defer rl.endDrawing();
 
@@ -138,7 +137,7 @@ pub fn update(game: *Game) bool {
                 game.camera.begin();
                 defer game.camera.end();
                 rl.clearBackground(configZig.BACKGROUND_COLOR);
-                playingZig.drawFrame(game);
+                game.draw();
                 menuZig.drawFrame(game);
             }
         },
@@ -152,6 +151,6 @@ pub fn update(game: *Game) bool {
 
 pub fn closeGame(game: *Game) void {
     rl.closeAudioDevice();
-    playingZig.closeGame(game);
+    game.unload();
     menuZig.closeMenu(game);
 }

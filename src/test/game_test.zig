@@ -1,7 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 const builtin = @import("builtin");
-const gameZig = @import("../game.zig");
+const gameZig = @import("../game_logic/game_play.zig");
 const configZig = @import("../config.zig");
 
 test "GameZig asteroidCount should be 0 from start" {

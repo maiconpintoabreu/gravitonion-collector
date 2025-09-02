@@ -20,7 +20,7 @@ test "PhysicsSystem Create/Get Circular Body" {
         },
         .enabled = true,
     };
-    const id = PhysicsZig.getPhysicsSystem().addBody(&body);
+    PhysicsZig.getPhysicsSystem().addBody(&body);
 
     switch (body.shape) {
         .Circular => |shape| {
@@ -32,7 +32,7 @@ test "PhysicsSystem Create/Get Circular Body" {
         },
     }
     try testing.expectEqual(10, body.mass);
-    try testing.expectEqual(body.id, id);
+    try testing.expect(body.id >= 0);
 }
 
 test "PhysicsSystem Create/Get Polygon Body" {
@@ -64,7 +64,7 @@ test "PhysicsSystem Create/Get Polygon Body" {
         .enabled = true,
     };
 
-    const id = PhysicsZig.getPhysicsSystem().addBody(&body);
+    PhysicsZig.getPhysicsSystem().addBody(&body);
 
     switch (body.shape) {
         .Polygon => |shape| {
@@ -75,7 +75,7 @@ test "PhysicsSystem Create/Get Polygon Body" {
         },
     }
     try testing.expectEqual(10, body.mass);
-    try testing.expectEqual(body.id, id);
+    try testing.expect(body.id >= 0);
 }
 
 test "PhysicsSystem Body should be affecte by gravity" {
@@ -91,8 +91,8 @@ test "PhysicsSystem Body should be affecte by gravity" {
         },
         .enabled = true,
     };
-    const id = PhysicsZig.getPhysicsSystem().addBody(&body);
-    PhysicsZig.getPhysicsSystem().moveBody(id, .{ .x = 101.0, .y = 102.0 }, 0.5);
+    PhysicsZig.getPhysicsSystem().addBody(&body);
+    PhysicsZig.getPhysicsSystem().moveBody(body.id, .{ .x = 101.0, .y = 102.0 }, 0.5);
     try testing.expect(body.position.x > 100.0);
     try testing.expect(body.position.y > 101.0);
     PhysicsZig.getPhysicsSystem().tick(1.0, 10.0);

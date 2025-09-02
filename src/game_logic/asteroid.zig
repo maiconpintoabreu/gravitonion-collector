@@ -7,7 +7,6 @@ const PhysicsZig = @import("physics.zig");
 const PhysicsBody = PhysicsZig.PhysicsBody;
 
 pub const Asteroid = struct {
-    physicsId: i32 = -1,
     body: PhysicsBody = .{
         .mass = 2,
         .useGravity = true,
@@ -25,13 +24,13 @@ pub const Asteroid = struct {
 
     fn colliding(self: *Asteroid, data: *PhysicsBody) void {
         if (data.tag != .Asteroid) {
-            PhysicsZig.getPhysicsSystem().disableBody(self.physicsId);
+            PhysicsZig.getPhysicsSystem().disableBody(self.body.id);
             self.isAlive = false;
         }
     }
 
     pub fn init(self: *Asteroid) rl.RaylibError!void {
-        self.physicsId = PhysicsZig.getPhysicsSystem().addBody(&self.body);
+        PhysicsZig.getPhysicsSystem().addBody(&self.body);
     }
     pub fn tick(self: *Asteroid) void {
         if (self.body.collidingWith) |otherBody| {
@@ -39,7 +38,7 @@ pub const Asteroid = struct {
         }
     }
     pub fn unSpawn(self: Asteroid) void {
-        PhysicsZig.getPhysicsSystem().disableBody(self.physicsId);
+        PhysicsZig.getPhysicsSystem().disableBody(self.body.id);
     }
 
     pub fn spawn(self: Asteroid) void {
@@ -59,12 +58,12 @@ pub const Asteroid = struct {
             }
             moveTo.x = rand.float(f32) * configZig.NATIVE_WIDTH;
         }
-        PhysicsZig.getPhysicsSystem().moveBody(self.physicsId, moveTo, 0.0);
-        PhysicsZig.getPhysicsSystem().enableBody(self.physicsId);
+        PhysicsZig.getPhysicsSystem().moveBody(self.body.id, moveTo, 0.0);
+        PhysicsZig.getPhysicsSystem().enableBody(self.body.id);
     }
 
     pub fn draw(self: Asteroid) void {
-        if (self.physicsId < 0) return;
+        if (self.body.id < 0) return;
         if (self.texture.id == 0) return;
         const currentWidth = self.textureRec.width;
         const currentHeight = self.textureRec.height;

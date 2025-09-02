@@ -1,9 +1,9 @@
 const rl = @import("raylib");
 const std = @import("std");
 const buildin = @import("builtin");
-const gameController = @import("game_controller.zig");
+const gameManager = @import("game_manager.zig");
 const configZig = @import("config.zig");
-const gameZig = @import("game.zig");
+const gameZig = @import("game_logic/game_play.zig");
 const Game = gameZig.Game;
 
 pub fn main() anyerror!void {
@@ -15,7 +15,7 @@ pub fn main() anyerror!void {
         .{},
     );
     defer rl.closeWindow(); // Close window and OpenGL context
-    defer gameController.closeGame(&game);
+    defer gameManager.closeGame(&game);
     const isFullScreen = buildin.os.tag == .windows or buildin.os.tag == .linux;
     const isBorderlessWindowed = buildin.mode != std.builtin.OptimizeMode.Debug;
     rl.setConfigFlags(rl.ConfigFlags{
@@ -23,7 +23,7 @@ pub fn main() anyerror!void {
         .window_highdpi = true,
     });
 
-    if (gameController.initGame(&game, isFullScreen)) {
+    if (gameManager.initGame(&game, isFullScreen)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(configZig.MIN_WINDOW_SIZE_WIDTH, configZig.MIN_WINDOW_SIZE_HEIGHT);
         if (isFullScreen) {
@@ -36,6 +36,6 @@ pub fn main() anyerror!void {
         else
             60;
         rl.setTargetFPS(fps);
-        while (gameController.update(&game)) {}
+        while (gameManager.update(&game)) {}
     }
 }

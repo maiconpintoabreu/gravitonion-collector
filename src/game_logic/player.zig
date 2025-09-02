@@ -17,7 +17,6 @@ pub const Player = struct {
     isTurningLeft: bool = false,
     isTurningRight: bool = false,
     isAccelerating: bool = false,
-    physicsId: i32 = -1,
     body: PhysicsBody = .{
         .mass = 5,
         .useGravity = true,
@@ -53,7 +52,7 @@ pub const Player = struct {
 
     pub fn init(self: *Player, initPosition: rl.Vector2) rl.RaylibError!void {
         self.body.position = initPosition;
-        self.physicsId = PhysicsZig.getPhysicsSystem().addBody(&self.body);
+        PhysicsZig.getPhysicsSystem().addBody(&self.body);
 
         // Avoid opengl calls while testing
         if (builtin.is_test) return;
@@ -88,7 +87,7 @@ pub const Player = struct {
         rl.setSoundVolume(self.shoot, 0.1);
         rl.traceLog(.info, "Player init Completed", .{});
     }
-    pub fn tick(self: *Player) void {
+    pub fn tick(self: *Player, _: f32) void {
         self.updateSlots(self.body);
 
         if (self.body.collidingWith) |otherBody| {
@@ -120,25 +119,54 @@ pub const Player = struct {
         ));
     }
     pub fn teleport(self: *Player, position: rl.Vector2, orient: f32) void {
-        PhysicsZig.getPhysicsSystem().moveBody(self.physicsId, position, orient);
+        PhysicsZig.getPhysicsSystem().moveBody(self.body.id, position, orient);
     }
     pub fn getPosition(self: Player) rl.Vector2 {
         return self.body.position;
     }
     pub fn accelerate(self: *Player, delta: f32) void {
-        PhysicsZig.getPhysicsSystem().applyForceToBody(self.physicsId, self.speed * delta);
+        PhysicsZig.getPhysicsSystem().applyForceToBody(self.body.id, self.speed * delta);
     }
     pub fn turnLeft(self: *Player, delta: f32) void {
-        PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.physicsId, -self.rotationSpeed * delta);
+        PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.body.id, -self.rotationSpeed * delta);
     }
     pub fn turnRight(self: *Player, delta: f32) void {
-        PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.physicsId, self.rotationSpeed * delta);
+        PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.body.id, self.rotationSpeed * delta);
     }
-    pub fn draw(self: *Player) void {
-        if (self.physicsId < 0) return;
+    pub fn draw(self: Player) void {
+        if (self.body.id < 0) return;
         if (!self.body.enabled) return;
         if (self.texture.id == 0) {
             return;
+        }
+        {
+            // rl.beginBlendMode(.additive);
+            // defer rl.endBlendMode();
+            for (self.bullets) |projectile| {
+                if (projectile.body.enabled) {
+                    const rotation: f32 = math.radiansToDegrees(projectile.body.orient);
+                    projectile.texture.drawPro(
+                        .{
+                            .x = 0,
+                            .y = 0,
+                            .width = @as(f32, @floatFromInt(projectile.texture.width)),
+                            .height = @as(f32, @floatFromInt(projectile.texture.height)),
+                        },
+                        .{
+                            .x = projectile.body.position.x,
+                            .y = projectile.body.position.y,
+                            .width = @as(f32, @floatFromInt(projectile.texture.width)) / 2,
+                            .height = @as(f32, @floatFromInt(projectile.texture.height)) / 4,
+                        },
+                        .{
+                            .x = @as(f32, @floatFromInt(projectile.texture.width)) / 4,
+                            .y = @as(f32, @floatFromInt(projectile.texture.height)) / 4,
+                        },
+                        rotation,
+                        .white,
+                    );
+                }
+            }
         }
 
         const currentWidth = self.textureRec.width;
@@ -172,8 +200,8 @@ pub const Player = struct {
                 bullet.isAlive = true;
                 bullet.teleport(self.gunSlot, self.body.orient);
 
-                PhysicsZig.getPhysicsSystem().applyForceToBody(bullet.physicsId, self.gunSpeed);
-                PhysicsZig.getPhysicsSystem().enableBody(bullet.physicsId);
+                PhysicsZig.getPhysicsSystem().applyForceToBody(bullet.body.id, self.gunSpeed);
+                PhysicsZig.getPhysicsSystem().enableBody(bullet.body.id);
                 rl.playSound(self.shoot);
                 return;
             }

@@ -5,7 +5,6 @@ const PhysicsZig = @import("physics.zig");
 const PhysicsBody = PhysicsZig.PhysicsBody;
 
 pub const Projectile = struct {
-    physicsId: i32 = -1,
     body: PhysicsBody = .{
         .shape = .{
             .Circular = .{
@@ -23,18 +22,18 @@ pub const Projectile = struct {
 
     fn colliding(self: *Projectile, data: *PhysicsBody) void {
         _ = data;
-        PhysicsZig.getPhysicsSystem().disableBody(self.physicsId);
+        PhysicsZig.getPhysicsSystem().disableBody(self.body.id);
         self.isAlive = false;
         rl.traceLog(.info, "Projectile Colliding", .{});
     }
 
     // Init physics
     pub fn init(self: *Projectile) rl.RaylibError!void {
-        self.physicsId = PhysicsZig.getPhysicsSystem().addBody(&self.body);
+        PhysicsZig.getPhysicsSystem().addBody(&self.body);
     }
 
     pub fn teleport(self: *Projectile, position: rl.Vector2, orient: f32) void {
-        PhysicsZig.getPhysicsSystem().moveBody(self.physicsId, position, orient);
+        PhysicsZig.getPhysicsSystem().moveBody(self.body.id, position, orient);
     }
 
     pub fn tick(self: *Projectile) void {

@@ -21,21 +21,21 @@ test "PlayerZig init" {
 
 test "PlayerZig Physics Body init" {
     var player: Player = .{};
-    try testing.expect(player.physicsId == -1);
+    try testing.expect(player.body.id >= 0);
     try player.init(.zero());
-    try testing.expect(player.physicsId > -1);
+    try testing.expect(player.body.id > -1);
 }
 
 test "PlayerZig Move Player to start position" {
     var player: Player = .{};
-    try testing.expect(player.physicsId == -1);
+    try testing.expect(player.body.id >= 0);
     try player.init(.zero());
-    try testing.expect(player.physicsId > -1);
+    try testing.expect(player.body.id > -1);
 
     player.teleport(
         rl.Vector2{
             .x = 50,
-            .y = configZig.NATIVE_HEIGHT / 2, // Put the player beside the blackhole
+            .y = configZig.NATIVE_HEIGHT / 2, // Put the player beside the Blackhole
         },
         0.0,
     );
