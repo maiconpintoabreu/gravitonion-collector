@@ -5,9 +5,13 @@ const gameManager = @import("game_manager.zig");
 const configZig = @import("config.zig");
 const gameZig = @import("game_logic/game_play.zig");
 const Game = gameZig.Game;
+const PhysicsZig = @import("game_logic/physics.zig");
+const PhysicSystem = PhysicsZig.PhysicsSystem;
+
+var game: Game = .{};
+var physics: PhysicSystem = .{};
 
 pub fn main() anyerror!void {
-    var game: Game = .{};
     rl.setTraceLogLevel(if (buildin.mode == .Debug) .all else .err);
     rl.traceLog(
         rl.TraceLogLevel.info,
@@ -20,15 +24,12 @@ pub fn main() anyerror!void {
         .window_resizable = true,
     });
 
-    if (gameManager.initGame(&game, false)) {
+    if (gameManager.initGame(&game, &physics, false)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(configZig.MIN_WINDOW_SIZE_WIDTH, configZig.MIN_WINDOW_SIZE_HEIGHT);
-        std.os.emscripten.emscripten_set_main_loop_arg(updateFrame, &game, 0, 1);
+        std.os.emscripten.emscripten_set_main_loop(updateFrame, 0, 1);
     }
 }
-export fn updateFrame(optionalPtr: ?*anyopaque) void {
-    if (optionalPtr) |ptr| {
-        const game: *Game = @ptrCast(@alignCast(ptr));
-        _ = gameManager.update(game);
-    }
+export fn updateFrame() void {
+    _ = gameManager.update(&game, &physics);
 }
