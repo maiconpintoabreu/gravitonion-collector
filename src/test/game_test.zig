@@ -3,10 +3,12 @@ const testing = std.testing;
 const builtin = @import("builtin");
 const gameZig = @import("../game_logic/game_play.zig");
 const configZig = @import("../config.zig");
+const PhysicsZig = @import("../game_logic/physics.zig");
+const PhysicsSystem = PhysicsZig.PhysicsSystem;
+const Game = gameZig.Game;
 
 test "GameZig asteroidCount should be 0 from start" {
-    const game: gameZig.Game = .{};
-
+    const game: Game = .{};
     for (game.asteroids) |asteroid| {
         if (asteroid.isAlive) {
             try testing.expect(false);

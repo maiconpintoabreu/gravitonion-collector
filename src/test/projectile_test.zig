@@ -3,31 +3,35 @@ const testing = std.testing;
 const PhysicsZig = @import("../game_logic/physics.zig");
 const ProjectileZig = @import("../game_logic/projectile.zig");
 const Projectile = ProjectileZig.Projectile;
+const PhysicsSystem = PhysicsZig.PhysicsSystem;
 
 test "projectileZig init" {
+    var physics: PhysicsSystem = .{};
     var projectile: Projectile = .{};
-    try projectile.init();
+    projectile.init(&physics);
 }
 
 test "projectileZig Physics Body init" {
+    var physics: PhysicsSystem = .{};
     var projectile: Projectile = .{};
     try testing.expect(projectile.body.id >= 0);
 
-    try projectile.init();
+    projectile.init(&physics);
     try testing.expect(projectile.body.id > -1);
 }
 
 test "projectileZig Physics Body enable/desable" {
+    var physics: PhysicsSystem = .{};
     var projectile: Projectile = .{};
     try testing.expect(projectile.body.id >= 0);
 
-    try projectile.init();
+    projectile.init(&physics);
     try testing.expect(projectile.body.id > -1);
     try testing.expect(projectile.body.enabled == false);
 
-    PhysicsZig.getPhysicsSystem().enableBody(projectile.body.id);
+    physics.enableBody(projectile.body.id);
     try testing.expect(projectile.body.enabled == true);
 
-    PhysicsZig.getPhysicsSystem().disableBody(projectile.body.id);
+    physics.disableBody(projectile.body.id);
     try testing.expect(projectile.body.enabled == false);
 }

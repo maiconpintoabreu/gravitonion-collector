@@ -7,6 +7,7 @@ const configZig = @import("../config.zig");
 const PhysicsZig = @import("physics.zig");
 const PhysicsShapeUnion = PhysicsZig.PhysicsShapeUnion;
 const PhysicsBody = PhysicsZig.PhysicsBody;
+const PhysicSystem = PhysicsZig.PhysicsSystem;
 
 const math = std.math;
 const rand = std.crypto.random;
@@ -46,16 +47,16 @@ pub const Blackhole = struct {
     timePhaserLoc: i32 = 0,
     collisionpoints: [BLACK_HOLE_COLLISION_POINTS]rl.Vector2 = std.mem.zeroes([BLACK_HOLE_COLLISION_POINTS]rl.Vector2),
 
-    fn colliding(self: *Blackhole, data: *PhysicsBody) void {
+    fn colliding(self: *Blackhole, physics: *PhysicSystem, data: *PhysicsBody) void {
         if (data.tag == .Asteroid) {
-            self.setSize(self.size + 0.1);
+            self.setSize(physics, self.size + 0.1);
         } else if (data.tag == .PlayerBullet) {
-            self.setSize(self.size + 0.02);
+            self.setSize(physics, self.size + 0.02);
         }
         rl.traceLog(.info, "Blackhole Colliding", .{});
     }
 
-    pub fn init(self: *Blackhole) rl.RaylibError!void {
+    pub fn init(self: *Blackhole, physics: *PhysicSystem) rl.RaylibError!void {
         if (self.phaserTexture.id > 0) {
             return;
         }
@@ -70,7 +71,7 @@ pub const Blackhole = struct {
             .isWrapable = true,
             .tag = .Blackhole,
         };
-        PhysicsZig.getPhysicsSystem().addBody(&self.body);
+        physics.addBody(&self.body);
         // Init Phaser
         const phaserImage = rl.Image.genColor(256 * 2, 10, .white);
         self.phaserTexture = try phaserImage.toTexture();
@@ -86,7 +87,7 @@ pub const Blackhole = struct {
             },
             .tag = .Phaser,
         };
-        PhysicsZig.getPhysicsSystem().addBody(&self.phaserBody);
+        physics.addBody(&self.phaserBody);
 
         self.blackholeincreasing = try rl.loadSound("resources/blackholeincreasing.mp3");
         self.blackholeShader = try rl.loadShader(
@@ -110,30 +111,30 @@ pub const Blackhole = struct {
 
         rl.traceLog(.info, "Blackhole init Completed", .{});
     }
-    pub fn tick(self: *Blackhole, delta: f32) void {
+    pub fn tick(self: *Blackhole, physics: *PhysicSystem, delta: f32) void {
         self.isDisturbed = false;
         if (self.body.collidingWith) |otherBody| {
-            self.colliding(otherBody);
+            self.colliding(physics, otherBody);
         }
         self.phasersCD -= delta;
         if (self.isRotatingRight) {
-            PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.body.id, 1);
+            physics.applyTorqueToBody(self.body.id, 1);
         } else {
-            PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.body.id, -1);
+            physics.applyTorqueToBody(self.body.id, -1);
         }
         if (self.isPhasing) {
             if (self.size < BLACK_DEFAULT_SIZE) {
-                self.setSize(BLACK_DEFAULT_SIZE);
-                PhysicsZig.getPhysicsSystem().disableBody(self.phaserBody.id);
+                self.setSize(physics, BLACK_DEFAULT_SIZE);
+                physics.disableBody(self.phaserBody.id);
                 self.isPhasing = false;
             } else {
-                self.setSize(self.size - (0.9 * self.size) * delta);
+                self.setSize(physics, self.size - (0.9 * self.size) * delta);
             }
         }
         if ((self.size > BLACK_HOLE_SIZE_PHASER_ACTIVE) and !self.isPhasing) {
             self.phasersCD = BLACK_HOLE_PHASER_CD;
             self.phasersMinDuration = BLACK_HOLE_PHASER_MIN_DURATION;
-            PhysicsZig.getPhysicsSystem().enableBody(self.phaserBody.id);
+            physics.enableBody(self.phaserBody.id);
             self.isPhasing = true;
             self.isRotatingRight = rand.boolean();
         }
@@ -160,17 +161,17 @@ pub const Blackhole = struct {
             self.body.orient,
         ));
 
-        PhysicsZig.getPhysicsSystem().changeBodyShape(self.phaserBody.id, PhysicsShapeUnion{
+        physics.changeBodyShape(self.phaserBody.id, PhysicsShapeUnion{
             .Polygon = .{
                 .pointCount = 4,
                 .points = self.collisionpoints,
             },
         });
     }
-    pub fn setSize(self: *Blackhole, size: f32) void {
+    pub fn setSize(self: *Blackhole, physics: *PhysicSystem, size: f32) void {
         self.size = size;
         self.finalSize = size * BLACK_HOLE_SCALE;
-        PhysicsZig.getPhysicsSystem().changeBodyShape(self.body.id, PhysicsShapeUnion{
+        physics.changeBodyShape(self.body.id, PhysicsShapeUnion{
             .Circular = .{ .radius = self.finalSize },
         });
     }

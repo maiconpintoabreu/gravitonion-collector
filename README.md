@@ -38,7 +38,7 @@ PhysicsBody is lives inside the entities, the PhysicsSystem only contains a list
 
 Entities can read the PhysicsBody but cannot edit (not blocked just a rule)
 
-PhysiscsSystem cam edit PhysicsBody
+PhysicsSystem can edit PhysicsBody
 
 ## Config
 

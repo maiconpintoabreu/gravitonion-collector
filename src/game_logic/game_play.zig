@@ -9,6 +9,7 @@ const Asteroid = @import("asteroid.zig").Asteroid;
 const Blackhole = @import("blackhole.zig").Blackhole;
 
 const PhysicsZig = @import("physics.zig");
+const PhysicSystem = PhysicsZig.PhysicsSystem;
 
 const math = std.math;
 
@@ -74,8 +75,8 @@ pub const Game = struct {
     highestScore: f32 = 0,
     isPlaying: bool = false,
 
-    pub fn init(self: *Game) rl.RaylibError!void {
-        try self.blackhole.init();
+    pub fn init(self: *Game, physics: *PhysicSystem) rl.RaylibError!void {
+        try self.blackhole.init(physics);
         // self.restart();
         // Init asteroid to reuse texture
         const asteroidTexture: rl.Texture2D = try rl.loadTexture("resources/rock.png");
@@ -93,7 +94,7 @@ pub const Game = struct {
             asteroid.texture = asteroidTexture;
             asteroid.textureCenter = asteroidTextureCenter;
             asteroid.textureRec = asteroidTextureRec;
-            try asteroid.init();
+            asteroid.init(physics);
         }
 
         self.music = try rl.loadMusicStream("resources/ambient.mp3");
@@ -103,14 +104,14 @@ pub const Game = struct {
         const screen = self.screen.toVector2();
         rl.setShaderValue(self.blackhole.blackholeShader, self.blackhole.resolutionLoc, &screen, .vec2);
 
-        try self.player.init(std.mem.zeroes(rl.Vector2));
-        self.restart();
+        try self.player.init(physics, std.mem.zeroes(rl.Vector2));
+        self.restart(physics);
         // Start with one asteroid
-        self.spawnAsteroidRandom();
+        self.spawnAsteroidRandom(physics);
         rl.traceLog(.info, "Game init Completed", .{});
     }
 
-    pub fn restart(self: *Game) void {
+    pub fn restart(self: *Game, physics: *PhysicSystem) void {
         self.currentScore = 0;
         self.gameTime = 0;
         if (rl.isMusicValid(self.music)) {
@@ -118,13 +119,14 @@ pub const Game = struct {
             rl.playMusicStream(self.music);
         }
 
-        self.blackhole.setSize(0.6);
+        self.blackhole.setSize(physics, 0.6);
         self.blackhole.isPhasing = false;
         self.isPlaying = false;
 
         self.player.isAlive = true;
         self.player.health = 100.0;
         self.player.teleport(
+            physics,
             rl.Vector2{
                 .x = 50,
                 .y = configZig.NATIVE_HEIGHT / 2, // Put the player beside the Blackhole
@@ -132,15 +134,15 @@ pub const Game = struct {
             0.0,
         );
 
-        PhysicsZig.getPhysicsSystem().reset(.PlayerBullet);
-        PhysicsZig.getPhysicsSystem().reset(.Asteroid);
+        physics.reset(.PlayerBullet);
+        physics.reset(.Asteroid);
         for (&self.asteroids) |*asteroid| {
             asteroid.isAlive = false;
         }
         for (&self.player.bullets) |*bullets| {
             bullets.isAlive = false;
         }
-        PhysicsZig.getPhysicsSystem().disableBody(self.blackhole.phaserBody.id);
+        physics.disableBody(self.blackhole.phaserBody.id);
         self.player.updateSlots(self.player.body);
     }
 
@@ -150,7 +152,7 @@ pub const Game = struct {
         }
         self.gameState = GameState.GameOver;
     }
-    pub fn tick(self: *Game, delta: f32) void {
+    pub fn tick(self: *Game, physics: *PhysicSystem, delta: f32) void {
         if (rl.isKeyReleased(rl.KeyboardKey.escape)) {
             self.gameState = GameState.Pause;
         }
@@ -172,7 +174,7 @@ pub const Game = struct {
             self.gameTime += @as(f64, delta);
             self.currentScore += 20 / self.blackhole.size * delta; // TODO: add distance on calculation
             self.asteroidSpawnCd -= delta;
-            self.blackhole.setSize(self.blackhole.size + 0.05 * delta);
+            self.blackhole.setSize(physics, self.blackhole.size + 0.05 * delta);
             self.player.shootingCd -= delta;
             const reducedTime = @as(f32, @floatCast(self.gameTime / 2));
 
@@ -187,34 +189,34 @@ pub const Game = struct {
                     0.2,
                     50,
                 );
-                self.spawnAsteroidRandom();
+                self.spawnAsteroidRandom(physics);
             }
             // Input
             if (rl.isKeyDown(.space) or rl.isGamepadButtonDown(0, .right_face_down) or self.isShooting) {
                 if (self.player.shootingCd < 0) {
                     self.player.shootingCd = configZig.DEFAULT_SHOOTING_CD;
-                    self.player.shotBullet();
+                    self.player.shotBullet(physics);
                 }
             }
             const gamepadSide = rl.getGamepadAxisMovement(0, .left_x);
             if (gamepadSide < -0.01) {
                 rl.traceLog(.info, "left", .{});
                 self.player.isTurningLeft = true;
-                self.player.turnLeft(gamepadSide * delta);
+                self.player.turnLeft(physics, gamepadSide * delta);
             } else if (gamepadSide > 0.01) {
                 rl.traceLog(.info, "right", .{});
                 self.player.isTurningRight = true;
-                self.player.turnRight(gamepadSide * delta);
+                self.player.turnRight(physics, gamepadSide * delta);
             } else {
                 if (rl.isKeyDown(.left) or rl.isGamepadButtonDown(0, .left_face_left) or self.isTouchLeft) {
                     self.player.isTurningLeft = true;
-                    self.player.turnLeft(delta);
+                    self.player.turnLeft(physics, delta);
                 } else {
                     self.player.isTurningLeft = false;
                 }
                 if (rl.isKeyDown(.right) or rl.isGamepadButtonDown(0, .left_face_right) or self.isTouchRight) {
                     self.player.isTurningRight = true;
-                    self.player.turnRight(delta);
+                    self.player.turnRight(physics, delta);
                 } else {
                     self.player.isTurningRight = false;
                 }
@@ -224,13 +226,13 @@ pub const Game = struct {
             if (rl.isGamepadButtonDown(0, .right_trigger_2)) {
                 self.player.isAccelerating = true;
                 if (builtin.cpu.arch.isWasm()) {
-                    self.player.accelerate(delta);
+                    self.player.accelerate(physics, delta);
                 } else {
-                    self.player.accelerate(gamepadAceleration * delta);
+                    self.player.accelerate(physics, gamepadAceleration * delta);
                 }
             } else if (rl.isKeyDown(.up) or self.isTouchUp) {
                 self.player.isAccelerating = true;
-                self.player.accelerate(delta);
+                self.player.accelerate(physics, delta);
             } else {
                 self.player.isAccelerating = false;
             }
@@ -239,28 +241,28 @@ pub const Game = struct {
             while (self.currentTickLength > configZig.PHYSICS_TICK_SPEED) {
                 self.currentTickLength -= configZig.PHYSICS_TICK_SPEED;
                 const gravityScale: f32 = if (self.blackhole.isDisturbed) 100.0 else 0.4;
-                PhysicsZig.getPhysicsSystem().tick(configZig.PHYSICS_TICK_SPEED, gravityScale);
+                physics.tick(configZig.PHYSICS_TICK_SPEED, gravityScale);
 
                 if (self.player.health <= 0.00) {
                     self.gameOver();
                     return;
                 }
 
-                self.blackhole.tick(delta);
+                self.blackhole.tick(physics, delta);
 
                 for (&self.player.bullets) |*bullet| {
-                    bullet.tick();
+                    bullet.tick(physics);
                 }
 
                 self.player.tick(configZig.PHYSICS_TICK_SPEED);
 
                 for (&self.asteroids) |*asteroid| {
-                    asteroid.tick();
+                    asteroid.tick(physics);
                 }
             }
         }
     }
-    pub fn draw(self: Game) void {
+    pub fn draw(self: Game, physics: *PhysicSystem) void {
         {
             self.blackhole.blackholeShader.activate();
             defer self.blackhole.blackholeShader.deactivate();
@@ -285,15 +287,15 @@ pub const Game = struct {
             if (asteroid.isAlive) asteroid.draw();
         }
 
-        PhysicsZig.getPhysicsSystem().debug();
+        physics.debug();
         self.player.draw();
     }
 
-    fn spawnAsteroidRandom(self: *Game) void {
+    fn spawnAsteroidRandom(self: *Game, physics: *PhysicSystem) void {
         for (&self.asteroids) |*asteroid| {
             if (!asteroid.isAlive) {
                 asteroid.isAlive = true;
-                asteroid.spawn();
+                asteroid.spawn(physics);
                 return;
             }
         }

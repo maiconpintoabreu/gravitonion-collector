@@ -3,11 +3,14 @@ const std = @import("std");
 const buildin = @import("builtin");
 const gameManager = @import("game_manager.zig");
 const configZig = @import("config.zig");
-const gameZig = @import("game_logic/game_play.zig");
-const Game = gameZig.Game;
+const GameZig = @import("game_logic/game_play.zig");
+const Game = GameZig.Game;
+const PhysicsZig = @import("game_logic/physics.zig");
+const PhysicSystem = PhysicsZig.PhysicsSystem;
 
 pub fn main() anyerror!void {
     var game: Game = .{};
+    var physics: PhysicSystem = .{};
     rl.setTraceLogLevel(if (buildin.mode == .Debug) .all else .err);
     rl.traceLog(
         rl.TraceLogLevel.info,
@@ -23,7 +26,7 @@ pub fn main() anyerror!void {
         .window_highdpi = true,
     });
 
-    if (gameManager.initGame(&game, isFullScreen)) {
+    if (gameManager.initGame(&game, &physics, isFullScreen)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(configZig.MIN_WINDOW_SIZE_WIDTH, configZig.MIN_WINDOW_SIZE_HEIGHT);
         if (isFullScreen) {
@@ -36,6 +39,6 @@ pub fn main() anyerror!void {
         else
             60;
         rl.setTargetFPS(fps);
-        while (gameManager.update(&game)) {}
+        while (gameManager.update(&game, &physics)) {}
     }
 }

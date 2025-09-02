@@ -3,13 +3,6 @@ const math = std.math;
 const rl = @import("raylib");
 const configZig = @import("../config.zig");
 
-// TODO: Find a way to remove this global variable
-var physicsSystem: PhysicsSystem = .{};
-
-pub fn getPhysicsSystem() *PhysicsSystem {
-    return &physicsSystem;
-}
-
 pub const PhysicsBodyTagEnum = enum {
     Player,
     Asteroid,
@@ -198,7 +191,10 @@ pub const PhysicsSystem = struct {
             body.force.y = 0;
             body.torque = 0;
         }
-        checkCollisions(self);
+        // std.debug.print("Test {d}", .{self.physicsBodyCount});
+        if (self.physicsBodyCount > 1) {
+            self.checkCollisions();
+        }
     }
 
     pub fn debug(self: PhysicsSystem) void {

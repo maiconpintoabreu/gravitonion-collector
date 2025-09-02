@@ -5,6 +5,7 @@ const rl = @import("raylib");
 const configZig = @import("../config.zig");
 const PhysicsZig = @import("physics.zig");
 const PhysicsBody = PhysicsZig.PhysicsBody;
+const PhysicSystem = PhysicsZig.PhysicsSystem;
 
 pub const Asteroid = struct {
     body: PhysicsBody = .{
@@ -22,26 +23,26 @@ pub const Asteroid = struct {
     textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
 
-    fn colliding(self: *Asteroid, data: *PhysicsBody) void {
+    fn colliding(self: *Asteroid, physics: *PhysicSystem, data: *PhysicsBody) void {
         if (data.tag != .Asteroid) {
-            PhysicsZig.getPhysicsSystem().disableBody(self.body.id);
+            physics.disableBody(self.body.id);
             self.isAlive = false;
         }
     }
 
-    pub fn init(self: *Asteroid) rl.RaylibError!void {
-        PhysicsZig.getPhysicsSystem().addBody(&self.body);
+    pub fn init(self: *Asteroid, physics: *PhysicSystem) void {
+        physics.addBody(&self.body);
     }
-    pub fn tick(self: *Asteroid) void {
+    pub fn tick(self: *Asteroid, physics: *PhysicSystem) void {
         if (self.body.collidingWith) |otherBody| {
-            self.colliding(otherBody);
+            self.colliding(physics, otherBody);
         }
     }
-    pub fn unSpawn(self: Asteroid) void {
-        PhysicsZig.getPhysicsSystem().disableBody(self.body.id);
+    pub fn unSpawn(self: Asteroid, physics: *PhysicSystem) void {
+        physics.disableBody(self.body.id);
     }
 
-    pub fn spawn(self: Asteroid) void {
+    pub fn spawn(self: Asteroid, physics: *PhysicSystem) void {
         var moveTo: rl.Vector2 = std.mem.zeroes(rl.Vector2);
         if (rand.boolean()) {
             if (rand.boolean()) {
@@ -58,8 +59,8 @@ pub const Asteroid = struct {
             }
             moveTo.x = rand.float(f32) * configZig.NATIVE_WIDTH;
         }
-        PhysicsZig.getPhysicsSystem().moveBody(self.body.id, moveTo, 0.0);
-        PhysicsZig.getPhysicsSystem().enableBody(self.body.id);
+        physics.moveBody(self.body.id, moveTo, 0.0);
+        physics.enableBody(self.body.id);
     }
 
     pub fn draw(self: Asteroid) void {

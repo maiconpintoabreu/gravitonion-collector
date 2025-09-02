@@ -48,10 +48,10 @@ jobs:
         run: | 
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends python3 libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libwayland-dev libxkbcommon-dev cmake wget
-          wget https://ziglang.org/download/0.15.1/zig-x86_64-linux-0.15.1.tar.xz
+          wget https://ziglang.org/download/0.14.1/zig-x86_64-linux-0.14.1.tar.xz
           mkdir -p zig-folder
-          tar xf zig-x86_64-linux-0.15.1.tar.xz -C ./zig-folder  --strip-components=1
-          rm ./zig-x86_64-linux-0.15.1.tar.xz
+          tar xf zig-x86_64-linux-0.14.1.tar.xz -C ./zig-folder  --strip-components=1
+          rm ./zig-x86_64-linux-0.14.1.tar.xz
           chmod +x ./zig-folder/zig
         shell: bash
 

@@ -3,6 +3,7 @@ const math = std.math;
 const rl = @import("raylib");
 const PhysicsZig = @import("physics.zig");
 const PhysicsBody = PhysicsZig.PhysicsBody;
+const PhysicSystem = PhysicsZig.PhysicsSystem;
 
 pub const Projectile = struct {
     body: PhysicsBody = .{
@@ -20,25 +21,25 @@ pub const Projectile = struct {
     textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
 
-    fn colliding(self: *Projectile, data: *PhysicsBody) void {
+    fn colliding(self: *Projectile, physics: *PhysicSystem, data: *PhysicsBody) void {
         _ = data;
-        PhysicsZig.getPhysicsSystem().disableBody(self.body.id);
+        physics.disableBody(self.body.id);
         self.isAlive = false;
         rl.traceLog(.info, "Projectile Colliding", .{});
     }
 
     // Init physics
-    pub fn init(self: *Projectile) rl.RaylibError!void {
-        PhysicsZig.getPhysicsSystem().addBody(&self.body);
+    pub fn init(self: *Projectile, physics: *PhysicSystem) void {
+        physics.addBody(&self.body);
     }
 
-    pub fn teleport(self: *Projectile, position: rl.Vector2, orient: f32) void {
-        PhysicsZig.getPhysicsSystem().moveBody(self.body.id, position, orient);
+    pub fn teleport(self: *Projectile, physics: *PhysicSystem, position: rl.Vector2, orient: f32) void {
+        physics.moveBody(self.body.id, position, orient);
     }
 
-    pub fn tick(self: *Projectile) void {
+    pub fn tick(self: *Projectile, physics: *PhysicSystem) void {
         if (self.body.collidingWith) |otherBody| {
-            self.colliding(otherBody);
+            self.colliding(physics, otherBody);
         }
     }
 

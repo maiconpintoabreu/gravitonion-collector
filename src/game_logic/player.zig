@@ -7,6 +7,7 @@ const PhysicsZig = @import("../game_logic/physics.zig");
 const math = std.math;
 const Projectile = projectileZig.Projectile;
 const PhysicsBody = PhysicsZig.PhysicsBody;
+const PhysicSystem = PhysicsZig.PhysicsSystem;
 
 const MAX_HEALTH = 100;
 const MAX_POWER = 100;
@@ -50,9 +51,9 @@ pub const Player = struct {
         }
     }
 
-    pub fn init(self: *Player, initPosition: rl.Vector2) rl.RaylibError!void {
+    pub fn init(self: *Player, physics: *PhysicSystem, initPosition: rl.Vector2) rl.RaylibError!void {
         self.body.position = initPosition;
-        PhysicsZig.getPhysicsSystem().addBody(&self.body);
+        physics.addBody(&self.body);
 
         // Avoid opengl calls while testing
         if (builtin.is_test) return;
@@ -81,7 +82,7 @@ pub const Player = struct {
         for (&self.bullets) |*bullet| {
             bullet.texture = bulletTexture;
             bullet.textureRec = bulletTextureRec;
-            try bullet.init();
+            bullet.init(physics);
         }
         self.shoot = try rl.loadSound("resources/shoot.wav");
         rl.setSoundVolume(self.shoot, 0.1);
@@ -118,20 +119,20 @@ pub const Player = struct {
             body.orient + 0.5, // TODO: needs Adjust
         ));
     }
-    pub fn teleport(self: *Player, position: rl.Vector2, orient: f32) void {
-        PhysicsZig.getPhysicsSystem().moveBody(self.body.id, position, orient);
+    pub fn teleport(self: *Player, physics: *PhysicSystem, position: rl.Vector2, orient: f32) void {
+        physics.moveBody(self.body.id, position, orient);
     }
     pub fn getPosition(self: Player) rl.Vector2 {
         return self.body.position;
     }
-    pub fn accelerate(self: *Player, delta: f32) void {
-        PhysicsZig.getPhysicsSystem().applyForceToBody(self.body.id, self.speed * delta);
+    pub fn accelerate(self: *Player, physics: *PhysicSystem, delta: f32) void {
+        physics.applyForceToBody(self.body.id, self.speed * delta);
     }
-    pub fn turnLeft(self: *Player, delta: f32) void {
-        PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.body.id, -self.rotationSpeed * delta);
+    pub fn turnLeft(self: *Player, physics: *PhysicSystem, delta: f32) void {
+        physics.applyTorqueToBody(self.body.id, -self.rotationSpeed * delta);
     }
-    pub fn turnRight(self: *Player, delta: f32) void {
-        PhysicsZig.getPhysicsSystem().applyTorqueToBody(self.body.id, self.rotationSpeed * delta);
+    pub fn turnRight(self: *Player, physics: *PhysicSystem, delta: f32) void {
+        physics.applyTorqueToBody(self.body.id, self.rotationSpeed * delta);
     }
     pub fn draw(self: Player) void {
         if (self.body.id < 0) return;
@@ -194,14 +195,14 @@ pub const Player = struct {
         );
     }
 
-    pub fn shotBullet(self: *Player) void {
+    pub fn shotBullet(self: *Player, physics: *PhysicSystem) void {
         for (&self.bullets) |*bullet| {
             if (!bullet.isAlive) {
                 bullet.isAlive = true;
-                bullet.teleport(self.gunSlot, self.body.orient);
+                bullet.teleport(physics, self.gunSlot, self.body.orient);
 
-                PhysicsZig.getPhysicsSystem().applyForceToBody(bullet.body.id, self.gunSpeed);
-                PhysicsZig.getPhysicsSystem().enableBody(bullet.body.id);
+                physics.applyForceToBody(bullet.body.id, self.gunSpeed);
+                physics.enableBody(bullet.body.id);
                 rl.playSound(self.shoot);
                 return;
             }
