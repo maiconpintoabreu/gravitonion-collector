@@ -45,9 +45,15 @@ pub const Player = struct {
     shoot: rl.Sound = std.mem.zeroes(rl.Sound),
 
     fn colliding(self: *Player, data: *PhysicsBody) void {
-        if (data.tag != .Player) {
-            self.health = -1.0;
-            self.isAlive = false;
+        switch (data.tag) {
+            .PickupItem => {
+                rl.traceLog(.info, "PowerUp Collected", .{});
+            },
+            .Player => {},
+            else => {
+                self.health = -1.0;
+                self.isAlive = false;
+            },
         }
     }
 

@@ -15,7 +15,8 @@ pub const BACKGROUND_COLOR = rl.Color.init(20, 20, 20, 255);
 // Game consts
 pub const MAX_PROJECTILES = 30; // enough for now
 pub const MAX_ASTEROIDS = 20;
-pub const MAX_PHYSICS_OBJECTS: comptime_int = MAX_PROJECTILES + MAX_ASTEROIDS + 3;
+pub const MAX_PICKUPS = 20;
+pub const MAX_PHYSICS_OBJECTS: comptime_int = MAX_PROJECTILES + MAX_ASTEROIDS + MAX_PICKUPS + 3;
 pub const MAX_PHYSICS_POLYGON_POINTS = 4;
 pub const DEFAULT_ASTEROID_CD = 5;
 pub const DEFAULT_SHOOTING_CD = 0.2;

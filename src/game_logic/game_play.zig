@@ -6,6 +6,7 @@ const configZig = @import("../config.zig");
 
 const Player = @import("player.zig").Player;
 const Asteroid = @import("asteroid.zig").Asteroid;
+const PickupItem = @import("pickup_item.zig").PickupItem;
 const Blackhole = @import("blackhole.zig").Blackhole;
 
 const PhysicsZig = @import("physics.zig");
@@ -44,6 +45,7 @@ pub const GameControllerType = enum {
 
 pub const Game = struct {
     asteroids: [configZig.MAX_ASTEROIDS]Asteroid = @splat(.{}),
+    pickups: [configZig.MAX_PICKUPS]PickupItem = @splat(.{}),
     camera: rl.Camera2D = .{
         .offset = std.mem.zeroes(rl.Vector2),
         .rotation = 0,
@@ -77,6 +79,8 @@ pub const Game = struct {
 
     pub fn init(self: *Game, physics: *PhysicSystem) rl.RaylibError!void {
         try self.blackhole.init(physics);
+        try self.player.init(physics, std.mem.zeroes(rl.Vector2));
+        if (builtin.is_test) return;
         // self.restart();
         // Init asteroid to reuse texture
         const asteroidTexture: rl.Texture2D = try rl.loadTexture("resources/rock.png");
@@ -94,8 +98,16 @@ pub const Game = struct {
             asteroid.texture = asteroidTexture;
             asteroid.textureCenter = asteroidTextureCenter;
             asteroid.textureRec = asteroidTextureRec;
+            asteroid.owner = self;
             asteroid.init(physics);
         }
+        for (&self.pickups) |*pickup| {
+            pickup.texture = asteroidTexture;
+            pickup.textureCenter = asteroidTextureCenter;
+            pickup.textureRec = asteroidTextureRec;
+            pickup.init(physics);
+        }
+
         self.music = try rl.loadMusicStream("resources/ambient.mp3");
         self.destruction = try rl.loadSound("resources/destruction.wav");
         rl.setSoundVolume(self.destruction, 0.1);
@@ -103,7 +115,6 @@ pub const Game = struct {
         const screen = self.screen.toVector2();
         rl.setShaderValue(self.blackhole.blackholeShader, self.blackhole.resolutionLoc, &screen, .vec2);
 
-        try self.player.init(physics, std.mem.zeroes(rl.Vector2));
         self.restart(physics);
         // Start with one asteroid
         self.spawnAsteroidRandom(physics);
@@ -251,6 +262,9 @@ pub const Game = struct {
                 for (&self.asteroids) |*asteroid| {
                     asteroid.tick(physics);
                 }
+                for (&self.pickups) |*pickup| {
+                    pickup.tick(physics);
+                }
             }
         }
     }
@@ -285,6 +299,16 @@ pub const Game = struct {
             if (!asteroid.isAlive) {
                 asteroid.isAlive = true;
                 asteroid.spawn(physics);
+                return;
+            }
+        }
+    }
+
+    pub fn spawnPickupFromAsteroid(self: *Game, physics: *PhysicSystem, asteroid: Asteroid) void {
+        for (&self.pickups) |*pickup| {
+            if (!pickup.isAlive) {
+                pickup.isAlive = true;
+                pickup.spawn(physics, asteroid.body);
                 return;
             }
         }

@@ -9,6 +9,7 @@ pub const PhysicsBodyTagEnum = enum {
     PlayerBullet,
     Blackhole,
     Phaser,
+    PickupItem,
 };
 
 pub const PhysicsShapeCircular = struct {
@@ -245,6 +246,9 @@ pub const PhysicsSystem = struct {
                                 shouldCollide = true;
                             },
                             .Phaser => {
+                                shouldCollide = true;
+                            },
+                            .PickupItem => {
                                 shouldCollide = true;
                             },
                             else => {},

@@ -72,6 +72,7 @@ pub const Blackhole = struct {
             .tag = .Blackhole,
         };
         physics.addBody(&self.body);
+        if (builtin.is_test) return;
         // Init Phaser
         const phaserImage = rl.Image.genColor(256 * 2, 10, .white);
         self.phaserTexture = try phaserImage.toTexture();
