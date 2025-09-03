@@ -66,42 +66,48 @@ jobs:
           source ./emsdk_env.sh
 
       - name: Build Web Project
+        id: buildWeb
+        continue-on-error: true
         run: |
           ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall --sysroot emsdk/upstream/emscripten
-          
-      - name: Build Linux Project
-        run: |
-          ./zig-folder/zig build -Doptimize=ReleaseSmall --prefix zig-out/linux --prefix-exe-dir ""
-          
-      - name: Build Windows Project
-        run: |
-          ./zig-folder/zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSmall --prefix zig-out/windows --prefix-exe-dir ""
-
-      - name: Generate Artifacts
-        run: |
           cp README.md ${{ env.WEB_BUILD_DIR }}
           cp LICENSE ${{ env.WEB_BUILD_DIR }}
+          
+      - name: Build Linux Project
+        id: buildLinux
+        continue-on-error: true
+        run: |
+          ./zig-folder/zig build -Doptimize=ReleaseSmall --prefix zig-out/linux --prefix-exe-dir ""
           cp README.md ${{ env.LINUX_BUILD_DIR }}
           cp LICENSE ${{ env.LINUX_BUILD_DIR }}
+          
+      - name: Build Windows Project
+        id: buildWindows
+        continue-on-error: true
+        run: |
+          ./zig-folder/zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSmall --prefix zig-out/windows --prefix-exe-dir ""
           cp README.md ${{ env.WINDOWS_BUILD_DIR }}
           cp LICENSE ${{ env.WINDOWS_BUILD_DIR }}
 
       - name: Upload Web Artifacts
+        if: steps.buildWeb.outcome != 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PROJECT_NAME }}-web.zip
+          name: ${{ env.PROJECT_NAME }}-web
           path: ./${{ env.WEB_BUILD_DIR }}/*
 
       - name: Upload Linux Artifacts
+        if: steps.buildLinux.outcome != 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PROJECT_NAME }}-linux.zip
+          name: ${{ env.PROJECT_NAME }}-linux
           path: ./${{ env.LINUX_BUILD_DIR }}/*
 
       - name: Upload Windows Artifacts
+        if: steps.buildWindows.outcome != 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PROJECT_NAME }}-windows.zip
+          name: ${{ env.PROJECT_NAME }}-windows
           path: ./${{ env.WINDOWS_BUILD_DIR }}/*
 
       - name: Download + Authorize Butler
@@ -115,10 +121,13 @@ jobs:
         run: ./butler login
 
       - name: Push Web to Itch
+        if: steps.buildWeb.outcome != 'failure'
         run: ./butler push ${{ env.WEB_BUILD_DIR }} maiconspas/space-researcher:web
 
       - name: Push Linux to Itch
+        if: steps.buildLinux.outcome != 'failure'
         run: ./butler push ${{ env.LINUX_BUILD_DIR }} maiconspas/space-researcher:linux
 
       - name: Push Windows to Itch
+        if: steps.buildWindows.outcome != 'failure'
         run: ./butler push ${{ env.WINDOWS_BUILD_DIR }} maiconspas/space-researcher:windows
