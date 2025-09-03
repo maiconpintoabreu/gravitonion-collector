@@ -59,17 +59,17 @@ jobs:
         run: ./zig-folder/zig build test --summary new -Doptimize=ReleaseSmall
   
       - name: Setup emsdk
-        run: |
-          if cd emsdk; then git pull; else git clone https://github.com/emscripten-core/emsdk.git emsdk; cd emsdk; fi
-          ./emsdk install latest
-          ./emsdk activate latest
-          source ./emsdk_env.sh
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          # Make sure to set a version number!
+          version: 4.0.9
+          actions-cache-folder: 'emsdk-cache'
 
       - name: Build Web Project
         id: buildWeb
         continue-on-error: true
         run: |
-          ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall --sysroot emsdk/upstream/emscripten
+          ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall --sysroot ${EMSDK}/upstream/emscripten
           cp README.md ${{ env.WEB_BUILD_DIR }}
           cp LICENSE ${{ env.WEB_BUILD_DIR }}
           
