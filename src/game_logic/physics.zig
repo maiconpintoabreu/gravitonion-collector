@@ -93,7 +93,10 @@ pub const PhysicsSystem = struct {
     }
 
     pub fn disableBody(self: *PhysicsSystem, id: usize) void {
-        self.physicsBodyList[id].enabled = false;
+        var body = self.physicsBodyList[id];
+        body.enabled = false;
+        body.isColliding = false;
+        body.collidingWith = null;
     }
 
     pub fn moveBody(self: *PhysicsSystem, id: usize, position: rl.Vector2, orient: f32) void {
