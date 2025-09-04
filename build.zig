@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) !void {
     if (target.query.os_tag == .emscripten) {
         const exe_lib = try rlz.emcc.compileForEmscripten(
             b,
-            "space_researcher",
+            "gravitonion_collector",
             "src/main_web.zig",
             target,
             optimize,
@@ -42,13 +42,13 @@ pub fn build(b: *std.Build) !void {
         const run_step = try rlz.emcc.emscriptenRunStep(b);
         run_step.addArg("--no_browser");
         run_step.step.dependOn(&link_step.step);
-        const run_option = b.step("run", "Run space_researcher");
+        const run_option = b.step("run", "Run gravitonion_collector");
         run_option.dependOn(&run_step.step);
         return;
     }
 
     const exe = b.addExecutable(.{
-        .name = "space_researcher",
+        .name = "gravitonion_collector",
         .root_module = b.createModule(
             .{
                 .root_source_file = b.path("src/main.zig"),
@@ -60,7 +60,7 @@ pub fn build(b: *std.Build) !void {
     const test_filters = b.option([]const []const u8, "test-filter", "Skip tests that do not match any filter") orelse &[0][]const u8{};
 
     const test_step = b.addTest(.{
-        .name = "space_researcher",
+        .name = "gravitonion_collector",
         .filters = test_filters,
         .root_module = b.createModule(
             .{
@@ -87,11 +87,11 @@ pub fn build(b: *std.Build) !void {
     test_step.root_module.addImport("raylib", raylib);
 
     const run_cmd = b.addRunArtifact(exe);
-    const run_step = b.step("run", "Run space_researcher");
+    const run_step = b.step("run", "Run gravitonion_collector");
     run_step.dependOn(&run_cmd.step);
 
     const test_cmd = b.addRunArtifact(test_step);
-    const run_test_step = b.step("test", "Test space_researcher");
+    const run_test_step = b.step("test", "Test gravitonion_collector");
     run_test_step.dependOn(&test_cmd.step);
 
     b.installArtifact(exe);

@@ -4,10 +4,14 @@ const math = std.math;
 const rl = @import("raylib");
 const configZig = @import("../config.zig");
 const PhysicsZig = @import("physics.zig");
+const Game = @import("game_play.zig").Game;
 const PhysicsBody = PhysicsZig.PhysicsBody;
 const PhysicSystem = PhysicsZig.PhysicsSystem;
+const ItemZig = @import("inventory/item.zig");
+const Item = ItemZig.Item;
 
 pub const PickupItem = struct {
+    parent: *Game = undefined,
     body: PhysicsBody = .{
         .mass = 2,
         .useGravity = false,
@@ -18,26 +22,39 @@ pub const PickupItem = struct {
         },
         .tag = .PickupItem,
     },
+    item: Item = .{},
     isAlive: bool = false,
     textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
 
     fn colliding(self: *PickupItem, physics: *PhysicSystem, data: *PhysicsBody) void {
-        if (data.tag != .PickupItem) {
+        if (data.tag == .Player) {
             physics.disableBody(self.body.id);
             self.isAlive = false;
+            self.parent.player.pickupItem(self.item);
         }
     }
 
     pub fn init(self: *PickupItem, physics: *PhysicSystem) void {
         physics.addBody(&self.body);
     }
+
+    pub fn generateRandomItem(self: *PickupItem) void {
+        self.item = .{};
+        if (rand.boolean()) {
+            self.item.type = .{ .Shield = .{ .shieldDuration = 5 } };
+        } else {
+            self.item.type = .{ .GunImprovement = .{ .gunSpeedIncrease = 2.0 } };
+        }
+    }
+
     pub fn tick(self: *PickupItem, physics: *PhysicSystem) void {
         if (self.body.collidingWith) |otherBody| {
             self.colliding(physics, otherBody);
         }
     }
+
     pub fn unSpawn(self: PickupItem, physics: *PhysicSystem) void {
         physics.disableBody(self.body.id);
     }

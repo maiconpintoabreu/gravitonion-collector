@@ -319,7 +319,7 @@ pub fn drawFrame(game: *Game) void {
             );
             // Start Debug
             if (configZig.IS_DEBUG_MENU) {
-                const delta = rl.getFrameTime();
+                // const delta = rl.getFrameTime();
                 rl.drawText(
                     rl.textFormat("--------------DEBUG--------------", .{}),
                     10,
@@ -334,13 +334,23 @@ pub fn drawFrame(game: *Game) void {
                     fontSize,
                     .white,
                 );
-                rl.drawText(
-                    rl.textFormat("delta: %3.3f", .{delta}),
-                    10,
-                    40 + fontSize * 3,
-                    fontSize,
-                    .white,
-                );
+                if (game.player.isInvunerable) {
+                    rl.drawText(
+                        rl.textFormat("Player is: %s", .{"Invunerable"}),
+                        10,
+                        40 + fontSize * 3,
+                        fontSize,
+                        .white,
+                    );
+                } else {
+                    rl.drawText(
+                        rl.textFormat("Player is: %s", .{"Vunerable"}),
+                        10,
+                        40 + fontSize * 3,
+                        fontSize,
+                        .white,
+                    );
+                }
                 rl.drawText(
                     rl.textFormat("currentTickLength: %3.3f", .{game.currentTickLength}),
                     10,

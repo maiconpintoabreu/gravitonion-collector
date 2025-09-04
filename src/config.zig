@@ -17,11 +17,12 @@ pub const MAX_PROJECTILES = 30; // enough for now
 pub const MAX_ASTEROIDS = 20;
 pub const MAX_PICKUPS = 20;
 pub const MAX_PHYSICS_OBJECTS: comptime_int = MAX_PROJECTILES + MAX_ASTEROIDS + MAX_PICKUPS + 3;
+pub const MAX_GAME_OBJECTS = MAX_PROJECTILES + MAX_ASTEROIDS + MAX_PICKUPS;
 pub const MAX_PHYSICS_POLYGON_POINTS = 4;
 pub const DEFAULT_ASTEROID_CD = 5;
 pub const DEFAULT_SHOOTING_CD = 0.2;
 pub const PHYSICS_TICK_SPEED = 0.02;
-
+pub const MAX_BODY_VELOCITY = 1;
 // Player consts
 pub const PLAYER_SPEED_DEFAULT = 2.0;
 pub const PLAYER_ROTATION_SPEED_DEFAULT = 200.0;

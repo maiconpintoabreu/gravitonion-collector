@@ -150,7 +150,10 @@ pub const PhysicsSystem = struct {
                 body.velocity = body.velocity.add(body.force);
             } else {
                 if (body.useGravity) {
-                    body.velocity = body.velocity.add(gravityDirection.scale(body.mass * BlackholeDistance * gravityScale * delta));
+                    const newVelocity = body.velocity.add(gravityDirection.scale(body.mass * BlackholeDistance * gravityScale).scale(delta));
+                    if (newVelocity.length() < configZig.MAX_BODY_VELOCITY) {
+                        body.velocity = newVelocity;
+                    }
                 }
             }
 

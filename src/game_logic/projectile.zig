@@ -2,10 +2,12 @@ const std = @import("std");
 const math = std.math;
 const rl = @import("raylib");
 const PhysicsZig = @import("physics.zig");
+const Game = @import("game_play.zig").Game;
 const PhysicsBody = PhysicsZig.PhysicsBody;
 const PhysicSystem = PhysicsZig.PhysicsSystem;
 
 pub const Projectile = struct {
+    parent: *Game = undefined,
     body: PhysicsBody = .{
         .shape = .{
             .Circular = .{

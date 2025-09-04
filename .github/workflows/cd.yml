@@ -21,7 +21,7 @@ jobs:
     
     env:
       BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }} # Needs to be added through github
-      PROJECT_NAME: space-researcher
+      PROJECT_NAME: gravitonion-collector
       WEB_BUILD_DIR: zig-out/htmlout
       LINUX_BUILD_DIR: zig-out/linux
       WINDOWS_BUILD_DIR: zig-out/windows
@@ -122,12 +122,12 @@ jobs:
 
       - name: Push Web to Itch
         if: steps.buildWeb.outcome != 'failure'
-        run: ./butler push ${{ env.WEB_BUILD_DIR }} maiconspas/space-researcher:web
+        run: ./butler push ${{ env.WEB_BUILD_DIR }} maiconspas/gravitonion-collector:web
 
       - name: Push Linux to Itch
         if: steps.buildLinux.outcome != 'failure'
-        run: ./butler push ${{ env.LINUX_BUILD_DIR }} maiconspas/space-researcher:linux
+        run: ./butler push ${{ env.LINUX_BUILD_DIR }} maiconspas/gravitonion-collector:linux
 
       - name: Push Windows to Itch
         if: steps.buildWindows.outcome != 'failure'
-        run: ./butler push ${{ env.WINDOWS_BUILD_DIR }} maiconspas/space-researcher:windows
+        run: ./butler push ${{ env.WINDOWS_BUILD_DIR }} maiconspas/gravitonion-collector:windows

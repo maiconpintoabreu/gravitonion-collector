@@ -9,6 +9,7 @@ const PhysicsBody = PhysicsZig.PhysicsBody;
 const PhysicSystem = PhysicsZig.PhysicsSystem;
 
 pub const Asteroid = struct {
+    parent: *Game = undefined,
     body: PhysicsBody = .{
         .mass = 2,
         .useGravity = true,
@@ -20,7 +21,6 @@ pub const Asteroid = struct {
         .tag = .Asteroid,
     },
     isAlive: bool = false,
-    owner: *Game = undefined,
     textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
@@ -28,7 +28,7 @@ pub const Asteroid = struct {
     fn colliding(self: *Asteroid, physics: *PhysicSystem, data: *PhysicsBody) void {
         if (data.tag != .Asteroid) {
             if (data.tag == .PlayerBullet) {
-                self.owner.spawnPickupFromAsteroid(physics, self.*);
+                self.parent.spawnPickupFromAsteroid(physics, self.*);
             }
             physics.disableBody(self.body.id);
             self.isAlive = false;
@@ -74,11 +74,17 @@ pub const Asteroid = struct {
         const currentWidth = self.textureRec.width;
         const currentHeight = self.textureRec.height;
         if (!self.body.enabled) return;
-        self.texture.drawPro(self.textureRec, .{
-            .x = self.body.position.x,
-            .y = self.body.position.y,
-            .width = currentWidth,
-            .height = currentHeight,
-        }, .{ .x = currentWidth / 2, .y = currentHeight / 2 }, self.body.orient, .white);
+        self.texture.drawPro(
+            self.textureRec,
+            .{
+                .x = self.body.position.x,
+                .y = self.body.position.y,
+                .width = currentWidth,
+                .height = currentHeight,
+            },
+            .{ .x = currentWidth / 2, .y = currentHeight / 2 },
+            self.body.orient,
+            .white,
+        );
     }
 };

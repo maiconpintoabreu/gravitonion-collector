@@ -4,6 +4,8 @@ const rl = @import("raylib");
 const configZig = @import("../config.zig");
 const projectileZig = @import("projectile.zig");
 const PhysicsZig = @import("../game_logic/physics.zig");
+const Game = @import("game_play.zig").Game;
+const Item = @import("inventory/item.zig").Item;
 const math = std.math;
 const Projectile = projectileZig.Projectile;
 const PhysicsBody = PhysicsZig.PhysicsBody;
@@ -13,11 +15,14 @@ const MAX_HEALTH = 100;
 const MAX_POWER = 100;
 
 pub const Player = struct {
+    parent: *Game = undefined,
     bullets: [configZig.MAX_PROJECTILES]Projectile = @splat(.{}),
     isAlive: bool = true,
     isTurningLeft: bool = false,
     isTurningRight: bool = false,
     isAccelerating: bool = false,
+    isInvunerable: bool = false,
+    invunerableDuration: f32 = 0,
     body: PhysicsBody = .{
         .mass = 5,
         .useGravity = true,
@@ -46,13 +51,13 @@ pub const Player = struct {
 
     fn colliding(self: *Player, data: *PhysicsBody) void {
         switch (data.tag) {
-            .PickupItem => {
-                rl.traceLog(.info, "PowerUp Collected", .{});
-            },
+            .PickupItem => {},
             .Player => {},
             else => {
-                self.health = -1.0;
-                self.isAlive = false;
+                if (!self.isInvunerable) {
+                    self.health = -1.0;
+                    self.isAlive = false;
+                }
             },
         }
     }
@@ -94,12 +99,24 @@ pub const Player = struct {
         rl.setSoundVolume(self.shoot, 0.1);
         rl.traceLog(.info, "Player init Completed", .{});
     }
-    pub fn tick(self: *Player, _: f32) void {
+    pub fn tick(self: *Player, delta: f32) void {
+        if (self.isInvunerable) {
+            self.invunerableDuration -= delta;
+
+            if (self.invunerableDuration < 0) {
+                self.isInvunerable = false;
+            }
+        } else {
+            if (self.invunerableDuration > 0) {
+                self.isInvunerable = true;
+            }
+        }
         self.updateSlots(self.body);
 
         if (self.body.collidingWith) |otherBody| {
             self.colliding(otherBody);
         }
+
         // kill if not visible
         for (&self.bullets) |*bullet| {
             if (!bullet.isAlive) return;
@@ -109,6 +126,20 @@ pub const Player = struct {
             }
         }
     }
+
+    pub fn pickupItem(self: *Player, item: Item) void {
+        switch (item.type) {
+            .GunImprovement => |improvement| {
+                self.gunSpeed += improvement.gunSpeedIncrease;
+                rl.traceLog(.info, "Gun Speed Increased", .{});
+            },
+            .Shield => |shield| {
+                self.invunerableDuration += shield.shieldDuration;
+                rl.traceLog(.info, "Player is invunerable for %3.3fs", .{self.invunerableDuration});
+            },
+        }
+    }
+
     pub fn updateSlots(self: *Player, body: PhysicsBody) void {
         const direction = rl.Vector2{
             .x = math.sin(body.orient),

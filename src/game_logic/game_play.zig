@@ -78,10 +78,14 @@ pub const Game = struct {
     isPlaying: bool = false,
 
     pub fn init(self: *Game, physics: *PhysicSystem) rl.RaylibError!void {
+        // TODO: Move parent set to init when I have time
+        self.blackhole.parent = self;
+        self.player.parent = self;
+
         try self.blackhole.init(physics);
         try self.player.init(physics, std.mem.zeroes(rl.Vector2));
         if (builtin.is_test) return;
-        // self.restart();
+
         // Init asteroid to reuse texture
         const asteroidTexture: rl.Texture2D = try rl.loadTexture("resources/rock.png");
         const asteroidTextureCenter = rl.Vector2{
@@ -98,13 +102,14 @@ pub const Game = struct {
             asteroid.texture = asteroidTexture;
             asteroid.textureCenter = asteroidTextureCenter;
             asteroid.textureRec = asteroidTextureRec;
-            asteroid.owner = self;
+            asteroid.parent = self;
             asteroid.init(physics);
         }
         for (&self.pickups) |*pickup| {
             pickup.texture = asteroidTexture;
             pickup.textureCenter = asteroidTextureCenter;
             pickup.textureRec = asteroidTextureRec;
+            pickup.parent = self;
             pickup.init(physics);
         }
 
@@ -308,6 +313,7 @@ pub const Game = struct {
         for (&self.pickups) |*pickup| {
             if (!pickup.isAlive) {
                 pickup.isAlive = true;
+                pickup.generateRandomItem();
                 pickup.spawn(physics, asteroid.body);
                 return;
             }

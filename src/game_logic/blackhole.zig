@@ -4,6 +4,7 @@ const rl = @import("raylib");
 
 const configZig = @import("../config.zig");
 
+const Game = @import("game_play.zig").Game;
 const PhysicsZig = @import("physics.zig");
 const PhysicsShapeUnion = PhysicsZig.PhysicsShapeUnion;
 const PhysicsBody = PhysicsZig.PhysicsBody;
@@ -25,6 +26,7 @@ const BLACK_HOLE_PHASER_ROTATION_SPEED: f32 = 0.1;
 const BLACK_HOLE_PHASER_MAX_ROTATION: f32 = 360.0;
 
 pub const Blackhole = struct {
+    parent: *Game = undefined,
     body: PhysicsBody = .{},
     phaserBody: PhysicsBody = .{},
     size: f32 = BLACK_DEFAULT_SIZE,
@@ -73,6 +75,7 @@ pub const Blackhole = struct {
         };
         physics.addBody(&self.body);
         if (builtin.is_test) return;
+
         // Init Phaser
         const phaserImage = rl.Image.genColor(256 * 2, 10, .white);
         self.phaserTexture = try phaserImage.toTexture();
@@ -129,7 +132,7 @@ pub const Blackhole = struct {
                 physics.disableBody(self.phaserBody.id);
                 self.isPhasing = false;
             } else {
-                self.setSize(physics, self.size - (0.9 * self.size) * delta);
+                self.setSize(physics, self.size - (0.6 * self.size) * delta);
             }
         }
         if ((self.size > BLACK_HOLE_SIZE_PHASER_ACTIVE) and !self.isPhasing) {

@@ -1,4 +1,5 @@
-# space-researcher
+# Gravitonion Collector
+
 [![CD](https://github.com/maiconpintoabreu/space-researcher/actions/workflows/cd.yml/badge.svg)](https://github.com/maiconpintoabreu/space-researcher/actions/workflows/cd.yml)
 
 [![Itch.io](https://static.itch.io/images/badge-color.svg)](https://maiconspas.itch.io/space-researcher?password=1gam)
