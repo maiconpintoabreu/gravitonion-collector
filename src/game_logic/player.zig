@@ -10,6 +10,7 @@ const math = std.math;
 const Projectile = projectileZig.Projectile;
 const PhysicsBody = PhysicsZig.PhysicsBody;
 const PhysicSystem = PhysicsZig.PhysicsSystem;
+const Particle = @import("particle.zig").Particle;
 
 const MAX_HEALTH = 100;
 const MAX_POWER = 100;
@@ -17,6 +18,7 @@ const MAX_POWER = 100;
 pub const Player = struct {
     parent: *Game = undefined,
     bullets: [configZig.MAX_PROJECTILES]Projectile = @splat(.{}),
+    particles: [5]Particle = @splat(.{}),
     isAlive: bool = true,
     isTurningLeft: bool = false,
     isTurningRight: bool = false,
@@ -28,7 +30,7 @@ pub const Player = struct {
         .useGravity = true,
         .shape = .{
             .Circular = .{
-                .radius = 5,
+                .radius = 10,
             },
         },
         .enabled = true,
@@ -45,6 +47,7 @@ pub const Player = struct {
     power: f32 = MAX_POWER,
     gunSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     rightTurbineSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
+    middleTurbineSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     leftTurbineSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     shootingCd: f32 = 0,
     shoot: rl.Sound = std.mem.zeroes(rl.Sound),
@@ -71,7 +74,7 @@ pub const Player = struct {
         const playerTexture = try rl.loadTexture("resources/ship.png");
         const playerTextureCenter = rl.Vector2{
             .x = @as(f32, @floatFromInt(playerTexture.width)) / 2,
-            .y = @as(f32, @floatFromInt(playerTexture.height)) / 2 + 2,
+            .y = @as(f32, @floatFromInt(playerTexture.height)) / 2,
         };
         const playerTextureRec = rl.Rectangle{
             .x = 0,
@@ -116,6 +119,18 @@ pub const Player = struct {
         if (self.body.collidingWith) |otherBody| {
             self.colliding(otherBody);
         }
+        var isSpawningParticle = self.isAccelerating;
+        for (&self.particles) |*particle| {
+            if (!particle.isAlive) {
+                if (isSpawningParticle) {
+                    isSpawningParticle = false;
+                    particle.spawn(self.middleTurbineSlot, 0.2); // it cannot be more than 1.0
+                }
+            }
+            if (particle.isAlive) {
+                particle.tick(delta);
+            }
+        }
 
         // kill if not visible
         for (&self.bullets) |*bullet| {
@@ -145,15 +160,18 @@ pub const Player = struct {
             .x = math.sin(body.orient),
             .y = -math.cos(body.orient),
         };
-        self.gunSlot = body.position.add(direction.scale(8));
-        const back = body.position.add(.{ .x = 0, .y = 6 });
+        self.gunSlot = body.position.add(direction.scale(14));
+        const back = body.position.add(.{ .x = 0, .y = 14 });
 
+        self.middleTurbineSlot = body.position.add(back.subtract(body.position).rotate(
+            body.orient,
+        ));
         self.rightTurbineSlot = body.position.add(back.subtract(body.position).rotate(
-            body.orient - 0.5, // TODO: needs Adjust
+            body.orient - 0.9, // TODO: needs Adjust
         ));
 
         self.leftTurbineSlot = body.position.add(back.subtract(body.position).rotate(
-            body.orient + 0.5, // TODO: needs Adjust
+            body.orient + 0.9, // TODO: needs Adjust
         ));
     }
     pub fn teleport(self: *Player, physics: *PhysicSystem, position: rl.Vector2, orient: f32) void {
@@ -176,6 +194,11 @@ pub const Player = struct {
         if (!self.body.enabled) return;
         if (self.texture.id == 0) {
             return;
+        }
+        {
+            for (self.particles) |particle| {
+                if (particle.isAlive) particle.draw();
+            }
         }
         {
             // rl.beginBlendMode(.additive);
@@ -212,10 +235,10 @@ pub const Player = struct {
 
         // inverted
         if (self.isTurningRight or self.isAccelerating) {
-            rl.drawCircleV(self.leftTurbineSlot, 1, .yellow);
+            rl.drawCircleV(self.leftTurbineSlot, 1.5, .yellow);
         }
         if (self.isTurningLeft or self.isAccelerating) {
-            rl.drawCircleV(self.rightTurbineSlot, 1, .yellow);
+            rl.drawCircleV(self.rightTurbineSlot, 1.5, .yellow);
         }
 
         self.texture.drawPro(

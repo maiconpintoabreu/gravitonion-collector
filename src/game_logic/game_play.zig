@@ -46,12 +46,7 @@ pub const GameControllerType = enum {
 pub const Game = struct {
     asteroids: [configZig.MAX_ASTEROIDS]Asteroid = @splat(.{}),
     pickups: [configZig.MAX_PICKUPS]PickupItem = @splat(.{}),
-    camera: rl.Camera2D = .{
-        .offset = std.mem.zeroes(rl.Vector2),
-        .rotation = 0,
-        .target = std.mem.zeroes(rl.Vector2),
-        .zoom = 1,
-    },
+    camera: rl.Camera2D = std.mem.zeroes(rl.Camera2D),
     player: Player = .{},
     blackhole: Blackhole = .{},
     gameTime: f64 = 0.1,
@@ -295,8 +290,8 @@ pub const Game = struct {
         for (self.asteroids) |asteroid| {
             if (asteroid.isAlive) asteroid.draw();
         }
-        physics.debug();
         self.player.draw();
+        physics.debug();
     }
 
     fn spawnAsteroidRandom(self: *Game, physics: *PhysicSystem) void {
