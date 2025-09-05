@@ -11,6 +11,7 @@ const Blackhole = @import("blackhole.zig").Blackhole;
 
 const PhysicsZig = @import("physics.zig");
 const PhysicSystem = PhysicsZig.PhysicsSystem;
+const ResourceManagerZig = @import("../resource_manager.zig");
 
 const math = std.math;
 
@@ -46,7 +47,6 @@ pub const GameControllerType = enum {
 pub const Game = struct {
     asteroids: [configZig.MAX_ASTEROIDS]Asteroid = @splat(.{}),
     pickups: [configZig.MAX_PICKUPS]PickupItem = @splat(.{}),
-    powerUpTextures: [configZig.MAX_POWERUP_TEXTURES]rl.Texture2D = std.mem.zeroes([configZig.MAX_POWERUP_TEXTURES]rl.Texture2D),
     camera: rl.Camera2D = std.mem.zeroes(rl.Camera2D),
     player: Player = .{},
     blackhole: Blackhole = .{},
@@ -82,34 +82,12 @@ pub const Game = struct {
         try self.player.init(physics, std.mem.zeroes(rl.Vector2));
         if (builtin.is_test) return;
 
-        // TODO: Testing this for now
-        self.powerUpTextures[0] = try rl.loadTexture("resources/antigravity.png");
-        self.powerUpTextures[1] = try rl.loadTexture("resources/gunspeedimprovement.png");
-        self.powerUpTextures[2] = try rl.loadTexture("resources/shield.png");
-
         // Init asteroid to reuse texture
-        const asteroidTexture: rl.Texture2D = try rl.loadTexture("resources/rock.png");
-        const asteroidTextureCenter = rl.Vector2{
-            .x = @as(f32, @floatFromInt(asteroidTexture.width)) / 2,
-            .y = @as(f32, @floatFromInt(asteroidTexture.height)) / 2 + 2,
-        };
-        const asteroidTextureRec = rl.Rectangle{
-            .x = 0,
-            .y = 0,
-            .width = @as(f32, @floatFromInt(asteroidTexture.width)),
-            .height = @as(f32, @floatFromInt(asteroidTexture.height)),
-        };
         for (&self.asteroids) |*asteroid| {
-            asteroid.texture = asteroidTexture;
-            asteroid.textureCenter = asteroidTextureCenter;
-            asteroid.textureRec = asteroidTextureRec;
             asteroid.parent = self;
             asteroid.init(physics);
         }
         for (&self.pickups) |*pickup| {
-            pickup.texture = asteroidTexture;
-            pickup.textureCenter = asteroidTextureCenter;
-            pickup.textureRec = asteroidTextureRec;
             pickup.parent = self;
             pickup.init(physics);
         }
@@ -293,19 +271,26 @@ pub const Game = struct {
             self.blackhole.finalSize,
             if (self.blackhole.isDisturbed) .red else .black,
         );
+        const resourceManager = ResourceManagerZig.resourceManager;
         for (self.pickups) |pickupItem| {
             if (!pickupItem.isAlive) continue;
-            switch (pickupItem.item.type) {
-                .AntiGravity => {
-                    pickupItem.draw(self.powerUpTextures[0]);
+            const data: ResourceManagerZig.TextureData = switch (pickupItem.item.type) {
+                .AntiGravity => resourceManager.powerupGravityData,
+                .GunImprovement => resourceManager.powerupGunData,
+                .Shield => resourceManager.powerupShieldData,
+            };
+            resourceManager.textureSheet.drawPro(
+                data.rec,
+                .{
+                    .x = pickupItem.body.position.x,
+                    .y = pickupItem.body.position.y,
+                    .width = data.rec.width,
+                    .height = data.rec.height,
                 },
-                .GunImprovement => {
-                    pickupItem.draw(self.powerUpTextures[1]);
-                },
-                .Shield => {
-                    pickupItem.draw(self.powerUpTextures[2]);
-                },
-            }
+                data.center,
+                0.0,
+                .white,
+            );
         }
         for (self.asteroids) |asteroid| {
             if (asteroid.isAlive) asteroid.draw();
@@ -341,9 +326,6 @@ pub const Game = struct {
         if (rl.isSoundValid(self.blackhole.blackholeincreasing)) self.blackhole.blackholeincreasing.unload();
 
         // remove only first as they are all the same
-        if (self.asteroids[0].texture.id > 0) {
-            self.asteroids[0].texture.unload();
-        }
         self.blackhole.unload();
         self.player.unload();
     }

@@ -1,0 +1,160 @@
+{
+    "software": {
+        "name": "rTexPacker v5.0",
+        "url": "https://www.raylibtech.com/rtexpacker"
+    },
+    "atlas": {
+        "imagePath": ".json.png",
+        "width": 1024,
+        "height": 1024,
+        "spriteCount": 12,
+        "isFont": false,
+        "fontSize": 32
+    },
+    "sprites": [
+        {
+            "nameId": "playerLife3_red",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 662, "y": 0 },
+            "sourceSize": { "width": 32, "height": 26 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 32, "height": 26 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        },
+        {
+            "nameId": "playerLife2_red",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 563, "y": 0 },
+            "sourceSize": { "width": 37, "height": 26 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 37, "height": 26 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        },
+        {
+            "nameId": "playerLife1_orange",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 629, "y": 0 },
+            "sourceSize": { "width": 33, "height": 26 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 33, "height": 26 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        },
+        {
+            "nameId": "laserRed16",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 420, "y": 0 },
+            "sourceSize": { "width": 13, "height": 54 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 13, "height": 54 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        },
+        {
+            "nameId": "meteorBrown_small1",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 535, "y": 0 },
+            "sourceSize": { "width": 28, "height": 28 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 28, "height": 28 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        },
+        {
+            "nameId": "meteorBrown_small2",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 600, "y": 0 },
+            "sourceSize": { "width": 29, "height": 26 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 29, "height": 26 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        },
+        {
+            "nameId": "powerupGreen_bolt",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 433, "y": 0 },
+            "sourceSize": { "width": 34, "height": 33 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 34, "height": 33 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        },
+        {
+            "nameId": "powerupGreen_shield",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 467, "y": 0 },
+            "sourceSize": { "width": 34, "height": 33 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 34, "height": 33 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        },
+        {
+            "nameId": "powerupGreen_star",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 501, "y": 0 },
+            "sourceSize": { "width": 34, "height": 33 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 34, "height": 33 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        },
+        {
+            "nameId": "shield1",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 287, "y": 0 },
+            "sourceSize": { "width": 133, "height": 108 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 133, "height": 108 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        },
+        {
+            "nameId": "shield2",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 144, "y": 0 },
+            "sourceSize": { "width": 143, "height": 119 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 143, "height": 119 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        },
+        {
+            "nameId": "shield3",
+            "tag": "",
+            "origin": { "x": 0, "y": 0 },
+            "position": { "x": 0, "y": 0 },
+            "sourceSize": { "width": 144, "height": 137 },
+            "padding": 0,
+            "trimmed": false,
+            "trimRec": { "x": 0, "y": 0, "width": 144, "height": 137 },
+            "colliderType": 0,
+            "colliderInfo": { "x": 0, "y": 0, "sizeX": 0, "sizeY": 0 }
+        }
+    ]
+}

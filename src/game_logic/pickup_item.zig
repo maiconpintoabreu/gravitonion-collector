@@ -24,9 +24,6 @@ pub const PickupItem = struct {
     },
     item: Item = .{},
     isAlive: bool = false,
-    textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
-    textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
 
     fn colliding(self: *PickupItem, physics: *PhysicSystem, data: *PhysicsBody) void {
         if (data.tag == .Player) {

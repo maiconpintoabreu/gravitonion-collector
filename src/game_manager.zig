@@ -10,6 +10,7 @@ const GameState = gameZig.GameState;
 const Vector2i = gameZig.Vector2i;
 const PhysicsZig = @import("game_logic/physics.zig");
 const PhysicSystem = PhysicsZig.PhysicsSystem;
+const ResourceManagerZig = @import("resource_manager.zig");
 
 pub fn initGame(game: *Game, physics: *PhysicSystem, isFullscreen: bool) bool {
     if (isFullscreen) {
@@ -18,6 +19,12 @@ pub fn initGame(game: *Game, physics: *PhysicSystem, isFullscreen: bool) bool {
     rl.initWindow(game.screen.x, game.screen.y, "Space Researcher");
     rl.initAudioDevice();
     updateRatio(game);
+    ResourceManagerZig.resourceManager.init() catch |err| switch (err) {
+        else => {
+            rl.traceLog(.err, "Texture Manager init ERROR", .{});
+            return false;
+        },
+    };
     game.init(physics) catch |err| switch (err) {
         rl.RaylibError.LoadShader => {
             rl.traceLog(.err, "LoadShader Blackhole.fs ERROR", .{});
@@ -152,6 +159,7 @@ pub fn update(game: *Game, physics: *PhysicSystem) bool {
 
 pub fn closeGame(game: *Game) void {
     rl.closeAudioDevice();
+    ResourceManagerZig.resourceManager.unload();
     game.unload();
     menuZig.closeMenu(game);
 }

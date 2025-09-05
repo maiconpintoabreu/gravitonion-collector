@@ -30,5 +30,5 @@ pub const PLAYER_ROTATION_SPEED_DEFAULT = 200.0;
 pub const PLAYER_GUN_SPEED_DEFAULT = 5.0;
 
 // Debug
-pub const IS_DEBUG = true and builtin.mode == .Debug;
-pub const IS_DEBUG_MENU: bool = true and builtin.mode == .Debug;
+pub const IS_DEBUG = false and builtin.mode == .Debug;
+pub const IS_DEBUG_MENU: bool = false and builtin.mode == .Debug;

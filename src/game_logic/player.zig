@@ -11,6 +11,7 @@ const Projectile = projectileZig.Projectile;
 const PhysicsBody = PhysicsZig.PhysicsBody;
 const PhysicSystem = PhysicsZig.PhysicsSystem;
 const Particle = @import("particle.zig").Particle;
+const ResourceManagerZig = @import("../resource_manager.zig");
 
 const MAX_HEALTH = 100;
 const MAX_POWER = 100;
@@ -31,7 +32,7 @@ pub const Player = struct {
         .useGravity = true,
         .shape = .{
             .Circular = .{
-                .radius = 10,
+                .radius = 7,
             },
         },
         .enabled = true,
@@ -41,9 +42,6 @@ pub const Player = struct {
     speed: f32 = configZig.PLAYER_SPEED_DEFAULT,
     rotationSpeed: f32 = configZig.PLAYER_ROTATION_SPEED_DEFAULT,
     gunSpeed: f32 = configZig.PLAYER_GUN_SPEED_DEFAULT,
-    textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
-    textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
     health: f32 = MAX_HEALTH,
     power: f32 = MAX_POWER,
     gunSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
@@ -72,31 +70,8 @@ pub const Player = struct {
 
         // Avoid opengl calls while testing
         if (builtin.is_test) return;
-        const playerTexture = try rl.loadTexture("resources/ship.png");
-        const playerTextureCenter = rl.Vector2{
-            .x = @as(f32, @floatFromInt(playerTexture.width)) / 2,
-            .y = @as(f32, @floatFromInt(playerTexture.height)) / 2,
-        };
-        const playerTextureRec = rl.Rectangle{
-            .x = 0,
-            .y = 0,
-            .width = @as(f32, @floatFromInt(playerTexture.width)),
-            .height = @as(f32, @floatFromInt(playerTexture.height)),
-        };
-        self.textureCenter = playerTextureCenter;
-        self.texture = playerTexture;
-        self.textureRec = playerTextureRec;
 
-        const bulletTexture = try rl.loadTexture("resources/bullet.png");
-        const bulletTextureRec = rl.Rectangle{
-            .x = 0,
-            .y = 0,
-            .width = @as(f32, @floatFromInt(bulletTexture.width)),
-            .height = @as(f32, @floatFromInt(bulletTexture.height)),
-        };
         for (&self.bullets) |*bullet| {
-            bullet.texture = bulletTexture;
-            bullet.textureRec = bulletTextureRec;
             bullet.init(physics);
         }
         self.shoot = try rl.loadSound("resources/shoot.wav");
@@ -174,22 +149,22 @@ pub const Player = struct {
             .x = math.sin(body.orient),
             .y = -math.cos(body.orient),
         };
-        self.gunSlot = body.position.add(direction.scale(14));
-        const back = body.position.add(.{ .x = 0, .y = 14 });
+        self.gunSlot = body.position.add(direction.scale(8));
+        const back = body.position.add(.{ .x = 0, .y = 8 });
 
         self.middleTurbineSlot = body.position.add(body.position.add(.{
             .x = 0,
-            .y = 12,
+            .y = 7,
         }).subtract(body.position).rotate(
             body.orient,
         ));
 
         self.rightTurbineSlot = body.position.add(back.subtract(body.position).rotate(
-            body.orient - 0.9, // TODO: needs Adjust
+            body.orient - 0.8, // TODO: needs Adjust
         ));
 
         self.leftTurbineSlot = body.position.add(back.subtract(body.position).rotate(
-            body.orient + 0.9, // TODO: needs Adjust
+            body.orient + 0.8, // TODO: needs Adjust
         ));
     }
 
@@ -216,9 +191,7 @@ pub const Player = struct {
     pub fn draw(self: Player) void {
         if (self.body.id < 0) return;
         if (!self.body.enabled) return;
-        if (self.texture.id == 0) {
-            return;
-        }
+        const resourceManager = ResourceManagerZig.resourceManager;
         {
             for (self.particles) |particle| {
                 if (particle.isAlive) particle.draw();
@@ -230,23 +203,15 @@ pub const Player = struct {
             for (self.bullets) |projectile| {
                 if (projectile.body.enabled) {
                     const rotation: f32 = math.radiansToDegrees(projectile.body.orient);
-                    projectile.texture.drawPro(
-                        .{
-                            .x = 0,
-                            .y = 0,
-                            .width = @as(f32, @floatFromInt(projectile.texture.width)),
-                            .height = @as(f32, @floatFromInt(projectile.texture.height)),
-                        },
+                    resourceManager.bulletTexture.drawPro(
+                        resourceManager.bulletData.rec,
                         .{
                             .x = projectile.body.position.x,
                             .y = projectile.body.position.y,
-                            .width = @as(f32, @floatFromInt(projectile.texture.width)) / 2,
-                            .height = @as(f32, @floatFromInt(projectile.texture.height)) / 4,
+                            .width = resourceManager.bulletData.rec.width / 2,
+                            .height = resourceManager.bulletData.rec.height / 4,
                         },
-                        .{
-                            .x = @as(f32, @floatFromInt(projectile.texture.width)) / 4,
-                            .y = @as(f32, @floatFromInt(projectile.texture.height)) / 4,
-                        },
+                        resourceManager.bulletData.center,
                         rotation,
                         .white,
                     );
@@ -254,26 +219,26 @@ pub const Player = struct {
             }
         }
 
-        const currentWidth = self.textureRec.width;
-        const currentHeight = self.textureRec.height;
+        // const currentWidth = self.textureRec.width;
+        // const currentHeight = self.textureRec.height;
 
         // inverted
         if (self.isTurningRight or self.isAccelerating) {
-            rl.drawCircleV(self.leftTurbineSlot, 1.5, .yellow);
+            rl.drawCircleV(self.leftTurbineSlot, 1.0, .yellow);
         }
         if (self.isTurningLeft or self.isAccelerating) {
-            rl.drawCircleV(self.rightTurbineSlot, 1.5, .yellow);
+            rl.drawCircleV(self.rightTurbineSlot, 1.0, .yellow);
         }
 
-        self.texture.drawPro(
-            self.textureRec,
+        resourceManager.textureSheet.drawPro(
+            resourceManager.shipData.rec,
             .{
                 .x = self.body.position.x,
                 .y = self.body.position.y,
-                .width = currentWidth,
-                .height = currentHeight,
+                .width = resourceManager.shipData.rec.width,
+                .height = resourceManager.shipData.rec.height,
             },
-            self.textureCenter,
+            resourceManager.shipData.center,
             math.radiansToDegrees(self.body.orient),
             .white,
         );
@@ -294,13 +259,7 @@ pub const Player = struct {
     }
 
     pub fn unload(self: *Player) void {
-        if (self.texture.id > 0) {
-            self.texture.unload();
-        }
         // remove only first as they are all the same
-        if (self.bullets[0].texture.id > 0) {
-            self.bullets[0].texture.unload();
-        }
         if (rl.isSoundValid(self.shoot)) self.shoot.unload();
     }
 };

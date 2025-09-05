@@ -20,8 +20,6 @@ pub const Projectile = struct {
     rotation: f32 = 0,
     isAlive: bool = false,
     direction: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
-    texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
 
     fn colliding(self: *Projectile, physics: *PhysicSystem, data: *PhysicsBody) void {
         _ = data;

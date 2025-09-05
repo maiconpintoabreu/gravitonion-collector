@@ -7,6 +7,7 @@ const Game = @import("game_play.zig").Game;
 const PhysicsZig = @import("physics.zig");
 const PhysicsBody = PhysicsZig.PhysicsBody;
 const PhysicSystem = PhysicsZig.PhysicsSystem;
+const ResourceManagerZig = @import("../resource_manager.zig");
 
 pub const Asteroid = struct {
     parent: *Game = undefined,
@@ -21,9 +22,6 @@ pub const Asteroid = struct {
         .tag = .Asteroid,
     },
     isAlive: bool = false,
-    textureRec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
-    textureCenter: rl.Vector2 = std.mem.zeroes(rl.Vector2),
-    texture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
 
     fn colliding(self: *Asteroid, physics: *PhysicSystem, data: *PhysicsBody) void {
         if (data.tag != .Asteroid) {
@@ -70,19 +68,17 @@ pub const Asteroid = struct {
 
     pub fn draw(self: Asteroid) void {
         if (self.body.id < 0) return;
-        if (self.texture.id == 0) return;
-        const currentWidth = self.textureRec.width;
-        const currentHeight = self.textureRec.height;
         if (!self.body.enabled) return;
-        self.texture.drawPro(
-            self.textureRec,
+        const resourceManager = ResourceManagerZig.resourceManager;
+        resourceManager.textureSheet.drawPro(
+            resourceManager.asteroidData.rec,
             .{
                 .x = self.body.position.x,
                 .y = self.body.position.y,
-                .width = currentWidth,
-                .height = currentHeight,
+                .width = resourceManager.asteroidData.rec.width,
+                .height = resourceManager.asteroidData.rec.height,
             },
-            .{ .x = currentWidth / 2, .y = currentHeight / 2 },
+            resourceManager.asteroidData.center,
             self.body.orient,
             .white,
         );
