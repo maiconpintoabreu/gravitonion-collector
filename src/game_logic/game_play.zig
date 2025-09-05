@@ -46,6 +46,7 @@ pub const GameControllerType = enum {
 pub const Game = struct {
     asteroids: [configZig.MAX_ASTEROIDS]Asteroid = @splat(.{}),
     pickups: [configZig.MAX_PICKUPS]PickupItem = @splat(.{}),
+    powerUpTextures: [configZig.MAX_POWERUP_TEXTURES]rl.Texture2D = std.mem.zeroes([configZig.MAX_POWERUP_TEXTURES]rl.Texture2D),
     camera: rl.Camera2D = std.mem.zeroes(rl.Camera2D),
     player: Player = .{},
     blackhole: Blackhole = .{},
@@ -80,6 +81,11 @@ pub const Game = struct {
         try self.blackhole.init(physics);
         try self.player.init(physics, std.mem.zeroes(rl.Vector2));
         if (builtin.is_test) return;
+
+        // TODO: Testing this for now
+        self.powerUpTextures[0] = try rl.loadTexture("resources/antigravity.png");
+        self.powerUpTextures[1] = try rl.loadTexture("resources/gunspeedimprovement.png");
+        self.powerUpTextures[2] = try rl.loadTexture("resources/shield.png");
 
         // Init asteroid to reuse texture
         const asteroidTexture: rl.Texture2D = try rl.loadTexture("resources/rock.png");
@@ -287,6 +293,20 @@ pub const Game = struct {
             self.blackhole.finalSize,
             if (self.blackhole.isDisturbed) .red else .black,
         );
+        for (self.pickups) |pickupItem| {
+            if (!pickupItem.isAlive) continue;
+            switch (pickupItem.item.type) {
+                .AntiGravity => {
+                    pickupItem.draw(self.powerUpTextures[0]);
+                },
+                .GunImprovement => {
+                    pickupItem.draw(self.powerUpTextures[1]);
+                },
+                .Shield => {
+                    pickupItem.draw(self.powerUpTextures[2]);
+                },
+            }
+        }
         for (self.asteroids) |asteroid| {
             if (asteroid.isAlive) asteroid.draw();
         }

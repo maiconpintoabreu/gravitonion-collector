@@ -39,6 +39,10 @@ pub fn initGame(game: *Game, physics: *PhysicSystem, isFullscreen: bool) bool {
     game.gameState = GameState.MainMenu;
     const menuReady = menuZig.initMenu(game);
     game.camera.target = configZig.NATIVE_CENTER;
+    game.camera.offset = .{
+        .x = configZig.NATIVE_CENTER.x * game.virtualRatio.x,
+        .y = configZig.NATIVE_CENTER.y * game.virtualRatio.y,
+    };
     return menuReady;
 }
 

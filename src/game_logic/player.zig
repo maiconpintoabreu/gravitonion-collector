@@ -18,13 +18,14 @@ const MAX_POWER = 100;
 pub const Player = struct {
     parent: *Game = undefined,
     bullets: [configZig.MAX_PROJECTILES]Projectile = @splat(.{}),
-    particles: [5]Particle = @splat(.{}),
+    particles: [15]Particle = @splat(.{}),
     isAlive: bool = true,
     isTurningLeft: bool = false,
     isTurningRight: bool = false,
     isAccelerating: bool = false,
     isInvunerable: bool = false,
     invunerableDuration: f32 = 0,
+    antiGravityDuration: f32 = 0,
     body: PhysicsBody = .{
         .mass = 5,
         .useGravity = true,
@@ -102,7 +103,17 @@ pub const Player = struct {
         rl.setSoundVolume(self.shoot, 0.1);
         rl.traceLog(.info, "Player init Completed", .{});
     }
+
     pub fn tick(self: *Player, delta: f32) void {
+        if (self.body.useGravity and self.antiGravityDuration > 0) {
+            self.antiGravityDuration -= delta;
+
+            if (self.antiGravityDuration < 0) {
+                self.body.useGravity = false;
+            }
+        } else if (!self.body.useGravity) {
+            self.body.useGravity = true;
+        }
         if (self.isInvunerable) {
             self.invunerableDuration -= delta;
 
@@ -144,6 +155,9 @@ pub const Player = struct {
 
     pub fn pickupItem(self: *Player, item: Item) void {
         switch (item.type) {
+            .AntiGravity => |antiGravity| {
+                self.antiGravityDuration = antiGravity.antiGravityDuration;
+            },
             .GunImprovement => |improvement| {
                 self.gunSpeed += improvement.gunSpeedIncrease;
                 rl.traceLog(.info, "Gun Speed Increased", .{});
@@ -163,9 +177,13 @@ pub const Player = struct {
         self.gunSlot = body.position.add(direction.scale(14));
         const back = body.position.add(.{ .x = 0, .y = 14 });
 
-        self.middleTurbineSlot = body.position.add(back.subtract(body.position).rotate(
+        self.middleTurbineSlot = body.position.add(body.position.add(.{
+            .x = 0,
+            .y = 12,
+        }).subtract(body.position).rotate(
             body.orient,
         ));
+
         self.rightTurbineSlot = body.position.add(back.subtract(body.position).rotate(
             body.orient - 0.9, // TODO: needs Adjust
         ));
@@ -174,21 +192,27 @@ pub const Player = struct {
             body.orient + 0.9, // TODO: needs Adjust
         ));
     }
+
     pub fn teleport(self: *Player, physics: *PhysicSystem, position: rl.Vector2, orient: f32) void {
         physics.moveBody(self.body.id, position, orient);
     }
+
     pub fn getPosition(self: Player) rl.Vector2 {
         return self.body.position;
     }
+
     pub fn accelerate(self: *Player, physics: *PhysicSystem, delta: f32) void {
         physics.applyForceToBody(self.body.id, self.speed * delta);
     }
+
     pub fn turnLeft(self: *Player, physics: *PhysicSystem, delta: f32) void {
         physics.applyTorqueToBody(self.body.id, -self.rotationSpeed * delta);
     }
+
     pub fn turnRight(self: *Player, physics: *PhysicSystem, delta: f32) void {
         physics.applyTorqueToBody(self.body.id, self.rotationSpeed * delta);
     }
+
     pub fn draw(self: Player) void {
         if (self.body.id < 0) return;
         if (!self.body.enabled) return;

@@ -64,13 +64,13 @@ pub const PickupItem = struct {
         physics.enableBody(self.body.id);
     }
 
-    pub fn draw(self: PickupItem) void {
+    pub fn draw(self: PickupItem, texture: rl.Texture2D) void {
         if (self.body.id < 0) return;
-        if (self.texture.id == 0) return;
+        if (texture.id == 0) return;
         const currentWidth = self.textureRec.width;
         const currentHeight = self.textureRec.height;
         if (!self.body.enabled) return;
-        self.texture.drawPro(self.textureRec, .{
+        texture.drawPro(self.textureRec, .{
             .x = self.body.position.x,
             .y = self.body.position.y,
             .width = currentWidth,
