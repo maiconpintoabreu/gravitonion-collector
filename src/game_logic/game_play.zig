@@ -53,8 +53,6 @@ pub const Game = struct {
     gameTime: f64 = 0.1,
     font: rl.Font = std.mem.zeroes(rl.Font),
     controlTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
-    music: rl.Music = std.mem.zeroes(rl.Music),
-    destruction: rl.Sound = std.mem.zeroes(rl.Sound),
     gameState: GameState = GameState.MainMenu,
     gameControllerType: GameControllerType = GameControllerType.Keyboard,
     virtualRatio: rl.Vector2 = std.mem.zeroes(rl.Vector2),
@@ -91,13 +89,10 @@ pub const Game = struct {
             pickup.parent = self;
             pickup.init(physics);
         }
-
-        self.music = try rl.loadMusicStream("resources/ambient.mp3");
-        self.destruction = try rl.loadSound("resources/destruction.wav");
-        rl.setSoundVolume(self.destruction, 0.1);
+        const resourceManager = ResourceManagerZig.resourceManager;
 
         const screen = self.screen.toVector2();
-        rl.setShaderValue(self.blackhole.blackholeShader, self.blackhole.resolutionLoc, &screen, .vec2);
+        rl.setShaderValue(resourceManager.blackholeShader, resourceManager.blackholeData.resolutionLoc, &screen, .vec2);
 
         self.restart(physics);
         // Start with one asteroid
@@ -106,11 +101,12 @@ pub const Game = struct {
     }
 
     pub fn restart(self: *Game, physics: *PhysicSystem) void {
+        const resourceManager = ResourceManagerZig.resourceManager;
         self.currentScore = 0;
         self.gameTime = 0;
-        if (rl.isMusicValid(self.music)) {
-            rl.stopMusicStream(self.music);
-            rl.playMusicStream(self.music);
+        if (rl.isMusicValid(resourceManager.music)) {
+            rl.stopMusicStream(resourceManager.music);
+            rl.playMusicStream(resourceManager.music);
         }
 
         self.blackhole.setSize(physics, 0.6);
@@ -155,7 +151,8 @@ pub const Game = struct {
             self.isPlaying = true;
             return;
         }
-        rl.updateMusicStream(self.music);
+        const resourceManager = ResourceManagerZig.resourceManager;
+        rl.updateMusicStream(resourceManager.music);
         // Only change to keyboard if Touchscreen
         if (self.gameControllerType == GameControllerType.TouchScreen and rl.getKeyPressed() != .null) {
             self.gameControllerType = GameControllerType.Keyboard;
@@ -172,11 +169,11 @@ pub const Game = struct {
             self.player.shootingCd -= delta;
             const reducedTime = @as(f32, @floatCast(self.gameTime / 2));
 
-            rl.setShaderValue(self.blackhole.blackholeShader, self.blackhole.timeLoc, &reducedTime, .float);
-            rl.setShaderValue(self.blackhole.blackholePhaserShader, self.blackhole.timePhaserLoc, &reducedTime, .float);
+            rl.setShaderValue(resourceManager.blackholeShader, resourceManager.blackholeData.timeLoc, &reducedTime, .float);
+            rl.setShaderValue(resourceManager.blackholePhaserShader, resourceManager.blackholePhaserData.timePhaserLoc, &reducedTime, .float);
 
             const rotationSpeed: f32 = self.blackhole.speed;
-            rl.setShaderValue(self.blackhole.blackholeShader, self.blackhole.speedLoc, &rotationSpeed, .float);
+            rl.setShaderValue(resourceManager.blackholeShader, resourceManager.blackholeData.speedLoc, &rotationSpeed, .float);
             if (self.asteroidSpawnCd < 0) {
                 self.asteroidSpawnCd = math.clamp(
                     configZig.DEFAULT_ASTEROID_CD - self.blackhole.size * 2.0,
@@ -254,10 +251,11 @@ pub const Game = struct {
     }
 
     pub fn draw(self: Game, physics: *PhysicSystem) void {
+        const resourceManager = ResourceManagerZig.resourceManager;
         {
-            self.blackhole.blackholeShader.activate();
-            defer self.blackhole.blackholeShader.deactivate();
-            self.blackhole.blackholeTexture.draw(
+            resourceManager.blackholeShader.activate();
+            defer resourceManager.blackholeShader.deactivate();
+            resourceManager.blackholeTexture.draw(
                 0,
                 0,
                 .white,
@@ -271,7 +269,7 @@ pub const Game = struct {
             self.blackhole.finalSize,
             if (self.blackhole.isDisturbed) .red else .black,
         );
-        const resourceManager = ResourceManagerZig.resourceManager;
+
         for (self.pickups) |pickupItem| {
             if (!pickupItem.isAlive) continue;
             const data: ResourceManagerZig.TextureData = switch (pickupItem.item.type) {
@@ -321,9 +319,6 @@ pub const Game = struct {
     }
 
     pub fn unload(self: *Game) void {
-        if (rl.isMusicValid(self.music)) self.music.unload();
-        if (rl.isSoundValid(self.destruction)) self.destruction.unload();
-        if (rl.isSoundValid(self.blackhole.blackholeincreasing)) self.blackhole.blackholeincreasing.unload();
 
         // remove only first as they are all the same
         self.blackhole.unload();

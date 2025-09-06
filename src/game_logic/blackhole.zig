@@ -6,6 +6,7 @@ const configZig = @import("../config.zig");
 
 const Game = @import("game_play.zig").Game;
 const PhysicsZig = @import("physics.zig");
+const ResourceManagerZig = @import("../resource_manager.zig");
 const PhysicsShapeUnion = PhysicsZig.PhysicsShapeUnion;
 const PhysicsBody = PhysicsZig.PhysicsBody;
 const PhysicSystem = PhysicsZig.PhysicsSystem;
@@ -37,16 +38,6 @@ pub const Blackhole = struct {
     isPhasing: bool = false,
     isDisturbed: bool = false,
     isRotatingRight: bool = false,
-    phaserTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
-    blackholeincreasing: rl.Sound = std.mem.zeroes(rl.Sound),
-    blackholeShader: rl.Shader = std.mem.zeroes(rl.Shader),
-    blackholePhaserShader: rl.Shader = std.mem.zeroes(rl.Shader),
-    blackholeTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
-    resolutionLoc: i32 = 0,
-    timeLoc: i32 = 0,
-    radiusLoc: i32 = 0,
-    speedLoc: i32 = 0,
-    timePhaserLoc: i32 = 0,
     collisionpoints: [BLACK_HOLE_COLLISION_POINTS]rl.Vector2 = std.mem.zeroes([BLACK_HOLE_COLLISION_POINTS]rl.Vector2),
 
     fn colliding(self: *Blackhole, physics: *PhysicSystem, data: *PhysicsBody) void {
@@ -59,9 +50,6 @@ pub const Blackhole = struct {
     }
 
     pub fn init(self: *Blackhole, physics: *PhysicSystem) rl.RaylibError!void {
-        if (self.phaserTexture.id > 0) {
-            return;
-        }
         self.body = .{
             .position = configZig.NATIVE_CENTER,
             .shape = .{
@@ -76,11 +64,6 @@ pub const Blackhole = struct {
         physics.addBody(&self.body);
         if (builtin.is_test) return;
 
-        // Init Phaser
-        const phaserImage = rl.Image.genColor(256 * 2, 10, .white);
-        self.phaserTexture = try phaserImage.toTexture();
-        phaserImage.unload();
-
         self.phaserBody = .{
             .position = configZig.NATIVE_CENTER,
             .shape = .{
@@ -92,26 +75,6 @@ pub const Blackhole = struct {
             .tag = .Phaser,
         };
         physics.addBody(&self.phaserBody);
-
-        self.blackholeincreasing = try rl.loadSound("resources/blackholeincreasing.mp3");
-        self.blackholeShader = try rl.loadShader(
-            rl.textFormat("resources/shaders%s/blackhole.vs", .{shaderVersion}),
-            rl.textFormat("resources/shaders%s/blackhole.fs", .{shaderVersion}),
-        );
-        self.blackholePhaserShader = try rl.loadShader(
-            null,
-            rl.textFormat("resources/shaders%s/phaser.fs", .{shaderVersion}),
-        );
-        self.resolutionLoc = rl.getShaderLocation(self.blackholeShader, "resolution");
-        self.timeLoc = rl.getShaderLocation(self.blackholeShader, "time");
-        self.radiusLoc = rl.getShaderLocation(self.blackholeShader, "radius");
-        self.speedLoc = rl.getShaderLocation(self.blackholeShader, "speed");
-        self.timePhaserLoc = rl.getShaderLocation(self.blackholePhaserShader, "time");
-        const BlackholeImage = rl.genImageColor(configZig.NATIVE_WIDTH, configZig.NATIVE_HEIGHT, .white);
-        self.blackholeTexture = try BlackholeImage.toTexture();
-        BlackholeImage.unload();
-        const radius: f32 = 2.0;
-        rl.setShaderValue(self.blackholeShader, self.radiusLoc, &radius, .float);
 
         rl.traceLog(.info, "Blackhole init Completed", .{});
     }
@@ -181,21 +144,22 @@ pub const Blackhole = struct {
     }
     pub fn draw(self: Blackhole) void {
         const BlackholeBody = self.body;
+        const resourceManager = ResourceManagerZig.resourceManager;
         if (self.isPhasing) {
-            self.blackholePhaserShader.activate();
-            defer self.blackholePhaserShader.deactivate();
-            self.phaserTexture.drawPro(
+            resourceManager.blackholePhaserShader.activate();
+            defer resourceManager.blackholePhaserShader.deactivate();
+            resourceManager.phaserTexture.drawPro(
                 .{
                     .x = 0,
                     .y = 0,
-                    .width = @as(f32, @floatFromInt(self.phaserTexture.width)),
-                    .height = @as(f32, @floatFromInt(self.phaserTexture.height)),
+                    .width = @as(f32, @floatFromInt(resourceManager.phaserTexture.width)),
+                    .height = @as(f32, @floatFromInt(resourceManager.phaserTexture.height)),
                 },
                 .{
                     .x = self.collisionpoints[0].x,
                     .y = self.collisionpoints[0].y,
-                    .width = @as(f32, @floatFromInt(self.phaserTexture.width)),
-                    .height = @as(f32, @floatFromInt(self.phaserTexture.height)),
+                    .width = @as(f32, @floatFromInt(resourceManager.phaserTexture.width)),
+                    .height = @as(f32, @floatFromInt(resourceManager.phaserTexture.height)),
                 },
                 rl.Vector2.zero(),
                 math.radiansToDegrees(BlackholeBody.orient),
@@ -217,17 +181,6 @@ pub const Blackhole = struct {
         }
     }
     pub fn unload(self: *Blackhole) void {
-        if (self.blackholeTexture.id > 0) {
-            self.blackholeTexture.unload();
-        }
-        if (self.blackholeShader.id > 0) {
-            self.blackholeShader.unload();
-        }
-        if (self.blackholePhaserShader.id > 0) {
-            self.blackholePhaserShader.unload();
-        }
-        if (self.phaserTexture.id > 0) {
-            self.phaserTexture.unload();
-        }
+        _ = self;
     }
 };
