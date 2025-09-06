@@ -41,34 +41,70 @@ const ResourceManager = struct {
     // Other Textures
     phaserTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
     blackholeTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
+    backgroundTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
 
     shipData: TextureData = .{
-        .rec = .{ .x = 184.000, .y = 0.000, .width = 32.0, .height = 32.0 },
-        .center = .{ .x = 32.0 / 2.0, .y = 32.0 / 2.0 },
+        .rec = .{
+            .x = 205.000,
+            .y = 0.000,
+            .width = 32,
+            .height = 32,
+        },
+        .center = .{ .x = 32.0 * 0.5, .y = 32.0 * 0.5 },
     },
     asteroidData: TextureData = .{
-        .rec = .{ .x = 0.000, .y = 0.000, .width = 43.0, .height = 43.0 },
-        .center = .{ .x = 43.0 / 2.0, .y = 43.0 / 2.0 },
+        .rec = .{
+            .x = 0.000,
+            .y = 0.000,
+            .width = 64,
+            .height = 64,
+        },
+        .center = .{ .x = 64.0 * 0.5, .y = 64.0 * 0.5 - 5 },
     },
     shieldData: TextureData = .{
-        .rec = .{ .x = 145.000, .y = 0.000, .width = 39.0, .height = 32.0 },
-        .center = .{ .x = 39.0 / 2.0, .y = 32.0 / 2.0 },
+        .rec = .{
+            .x = 166.000,
+            .y = 0.000,
+            .width = 39,
+            .height = 32,
+        },
+        .center = .{ .x = 39.0 * 0.5, .y = 32.0 * 0.5 },
     },
     powerupGunData: TextureData = .{
-        .rec = .{ .x = 77.000, .y = 0.000, .width = 34.0, .height = 33.0 },
-        .center = .{ .x = 34.0 / 2.0, .y = 33.0 / 2.0 },
+        .rec = .{
+            .x = 98.000,
+            .y = 0.000,
+            .width = 34,
+            .height = 33,
+        },
+        .center = .{ .x = 34.0 * 0.5, .y = 33.0 * 0.5 },
     },
     powerupShieldData: TextureData = .{
-        .rec = .{ .x = 111.000, .y = 0.000, .width = 34.0, .height = 33.0 },
-        .center = .{ .x = 34.0 / 2.0, .y = 33.0 / 2.0 },
+        .rec = .{
+            .x = 132.000,
+            .y = 0.000,
+            .width = 34,
+            .height = 33,
+        },
+        .center = .{ .x = 34.0 * 0.5, .y = 33.0 * 0.5 },
     },
     powerupGravityData: TextureData = .{
-        .rec = .{ .x = 43.000, .y = 0.000, .width = 34.0, .height = 33.0 },
-        .center = .{ .x = 34.0 / 2.0, .y = 33.0 / 2.0 },
+        .rec = .{
+            .x = 64.000,
+            .y = 0.000,
+            .width = 34,
+            .height = 33,
+        },
+        .center = .{ .x = 34.0 * 0.5, .y = 33.0 * 0.5 },
     },
     bulletData: TextureData = .{
-        .rec = .{ .x = 216.000, .y = 0.000, .width = 16.0, .height = 16.0 },
-        .center = .{ .x = 16.0 / 2.0, .y = 16.0 / 2.0 },
+        .rec = .{
+            .x = 237.000,
+            .y = 0.000,
+            .width = 16,
+            .height = 16,
+        },
+        .center = .{ .x = 16.0 * 0.5, .y = 16.0 * 0.5 },
     },
     blackholeData: BlackholeData = .{},
     blackholePhaserData: BlackholePhaserData = .{},
@@ -202,6 +238,7 @@ const ResourceManager = struct {
         };
         rl.setShaderValue(self.blackholeShader, self.blackholeData.resolutionLoc, &screen, .vec2);
 
+        self.backgroundTexture = try rl.loadTexture("resources/neb.png");
         self.isInitialized = true;
     }
 
@@ -215,5 +252,6 @@ const ResourceManager = struct {
         self.phaserTexture.unload();
         self.music.unload();
         self.destruction.unload();
+        self.backgroundTexture.unload();
     }
 };

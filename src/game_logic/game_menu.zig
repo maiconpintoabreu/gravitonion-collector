@@ -3,6 +3,7 @@ const rl = @import("raylib");
 
 const configZig = @import("../config.zig");
 const gameZig = @import("game_play.zig");
+const ResourceManagerZig = @import("../resource_manager.zig");
 const Game = gameZig.Game;
 const GameState = gameZig.GameState;
 const GameControllerType = gameZig.GameControllerType;
@@ -145,6 +146,24 @@ pub fn drawFrame(game: *Game) void {
     rl.drawFPS(10, 10);
     switch (game.gameState) {
         GameState.MainMenu => {
+            const resourceManager = ResourceManagerZig.resourceManager;
+            resourceManager.backgroundTexture.drawPro(
+                .{
+                    .x = 0,
+                    .y = 0,
+                    .width = @as(f32, @floatFromInt(resourceManager.backgroundTexture.width)),
+                    .height = @as(f32, @floatFromInt(resourceManager.backgroundTexture.height)),
+                },
+                .{
+                    .x = 0,
+                    .y = 0,
+                    .width = @as(f32, @floatFromInt(800)),
+                    .height = @as(f32, @floatFromInt(450)),
+                },
+                .{ .x = 0, .y = 0 },
+                0,
+                .white,
+            );
             recTextButton.y = configZig.NATIVE_CENTER.y - height;
             if (uiTextbutton(
                 recTextButton,

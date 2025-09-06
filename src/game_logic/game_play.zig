@@ -76,6 +76,9 @@ pub const Game = struct {
         self.blackhole.parent = self;
         self.player.parent = self;
 
+        // Avoid opengl calls while testing
+        if (builtin.is_test) return;
+
         try self.blackhole.init(physics);
         try self.player.init(physics, std.mem.zeroes(rl.Vector2));
 
