@@ -39,11 +39,13 @@ pub const PickupItem = struct {
 
     pub fn generateRandomItem(self: *PickupItem) void {
         self.item = .{};
-        if (rand.boolean()) {
-            self.item.type = .{ .Shield = .{ .shieldDuration = 5 } };
-        } else {
-            self.item.type = .{ .GunImprovement = .{ .gunSpeedIncrease = 2.0 } };
-        }
+        const itemTypes: [3]ItemZig.ItemTypeUnion = .{
+            .{ .Shield = .{ .shieldDuration = 5 } },
+            .{ .GunImprovement = .{ .gunSpeedIncrease = 2.0 } },
+            .{ .AntiGravity = .{ .antiGravityDuration = 5.0 } },
+        };
+        const index = @as(usize, @intFromFloat(rand.float(f32) * 3.0));
+        self.item.type = itemTypes[index];
     }
 
     pub fn tick(self: *PickupItem, physics: *PhysicSystem) void {

@@ -11,7 +11,7 @@ pub const TextureData = struct {
 const ResourceManager = struct {
     isInitialized: bool = false,
     textureSheet: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
-    bulletTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
+
     shipData: TextureData = .{
         .rec = .{
             .x = 198.0,
@@ -74,7 +74,7 @@ const ResourceManager = struct {
     },
     powerupGravityData: TextureData = .{
         .rec = .{
-            .x = 111.0,
+            .x = 101.0,
             .y = 0.0,
             .width = 16.0,
             .height = 16.0,
@@ -85,8 +85,16 @@ const ResourceManager = struct {
         },
     },
     bulletData: TextureData = .{
-        .rec = std.mem.zeroes(rl.Rectangle),
-        .center = std.mem.zeroes(rl.Vector2),
+        .rec = .{
+            .x = 213.0,
+            .y = 0.0,
+            .width = 16.0,
+            .height = 16.0,
+        },
+        .center = .{
+            .x = 16.0 / 2.0,
+            .y = 16.0 / 2.0,
+        },
     },
 
     pub fn init(self: *ResourceManager) rl.RaylibError!void {
@@ -95,24 +103,10 @@ const ResourceManager = struct {
         // Loads Atlas
         self.textureSheet = try rl.loadTexture("resources/sheet.png");
 
-        // Loads anything else
-        self.bulletTexture = try rl.loadTexture("resources/bullet.png");
-        self.bulletData.rec = .{
-            .x = 0.0,
-            .y = 0.0,
-            .width = @as(f32, @floatFromInt(self.bulletTexture.width)),
-            .height = @as(f32, @floatFromInt(self.bulletTexture.height)),
-        };
-        self.bulletData.center = .{
-            .x = @as(f32, @floatFromInt(self.bulletTexture.width)) / 4,
-            .y = @as(f32, @floatFromInt(self.bulletTexture.height)) / 4,
-        };
-
         self.isInitialized = true;
     }
 
     pub fn unload(self: *ResourceManager) void {
         self.textureSheet.unload();
-        self.bulletTexture.unload();
     }
 };

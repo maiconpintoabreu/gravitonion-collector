@@ -203,15 +203,15 @@ pub const Player = struct {
             for (self.bullets) |projectile| {
                 if (projectile.body.enabled) {
                     const rotation: f32 = math.radiansToDegrees(projectile.body.orient);
-                    resourceManager.bulletTexture.drawPro(
+                    resourceManager.textureSheet.drawPro(
                         resourceManager.bulletData.rec,
                         .{
                             .x = projectile.body.position.x,
                             .y = projectile.body.position.y,
                             .width = resourceManager.bulletData.rec.width / 2,
-                            .height = resourceManager.bulletData.rec.height / 4,
+                            .height = resourceManager.bulletData.rec.height / 2,
                         },
-                        resourceManager.bulletData.center,
+                        resourceManager.bulletData.center.scale(0.5),
                         rotation,
                         .white,
                     );
@@ -223,10 +223,10 @@ pub const Player = struct {
         // const currentHeight = self.textureRec.height;
 
         // inverted
-        if (self.isTurningRight or self.isAccelerating) {
+        if (self.isTurningRight) {
             rl.drawCircleV(self.leftTurbineSlot, 1.0, .yellow);
         }
-        if (self.isTurningLeft or self.isAccelerating) {
+        if (self.isTurningLeft) {
             rl.drawCircleV(self.rightTurbineSlot, 1.0, .yellow);
         }
 
@@ -242,6 +242,25 @@ pub const Player = struct {
             math.radiansToDegrees(self.body.orient),
             .white,
         );
+        if (self.isInvunerable) {
+            resourceManager.textureSheet.drawPro(
+                resourceManager.shieldData.rec,
+                .{
+                    .x = self.body.position.x,
+                    .y = self.body.position.y,
+                    .width = resourceManager.shieldData.rec.width,
+                    .height = resourceManager.shieldData.rec.height,
+                },
+                resourceManager.shieldData.center,
+                math.radiansToDegrees(self.body.orient),
+                .{
+                    .r = 255,
+                    .g = 255,
+                    .b = 255,
+                    .a = @as(u8, @intFromFloat(math.clamp(255 * self.invunerableDuration / 2, 0, 255))),
+                },
+            );
+        }
     }
 
     pub fn shotBullet(self: *Player, physics: *PhysicSystem) void {
