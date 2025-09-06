@@ -17,7 +17,7 @@ pub const PickupItem = struct {
         .useGravity = false,
         .shape = .{
             .Circular = .{
-                .radius = 6,
+                .radius = 16,
             },
         },
         .tag = .PickupItem,

@@ -32,7 +32,7 @@ pub const Player = struct {
         .useGravity = true,
         .shape = .{
             .Circular = .{
-                .radius = 7,
+                .radius = 14,
             },
         },
         .enabled = true,
@@ -150,11 +150,11 @@ pub const Player = struct {
             .y = -math.cos(body.orient),
         };
         self.gunSlot = body.position.add(direction.scale(8));
-        const back = body.position.add(.{ .x = 0, .y = 8 });
+        const back = body.position.add(.{ .x = 0, .y = 14 });
 
         self.middleTurbineSlot = body.position.add(body.position.add(.{
             .x = 0,
-            .y = 7,
+            .y = 12,
         }).subtract(body.position).rotate(
             body.orient,
         ));
@@ -208,10 +208,10 @@ pub const Player = struct {
                         .{
                             .x = projectile.body.position.x,
                             .y = projectile.body.position.y,
-                            .width = resourceManager.bulletData.rec.width / 2,
-                            .height = resourceManager.bulletData.rec.height / 2,
+                            .width = resourceManager.bulletData.rec.width,
+                            .height = resourceManager.bulletData.rec.height,
                         },
-                        resourceManager.bulletData.center.scale(0.5),
+                        resourceManager.bulletData.center,
                         rotation,
                         .white,
                     );

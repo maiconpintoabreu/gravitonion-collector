@@ -44,6 +44,7 @@ pub const PhysicsBody = struct {
     position: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Physics body shape pivot
     velocity: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Current linear velocity applied to position
     force: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Current linear force (reset to 0 every step)
+    speedLimit: f32 = configZig.MAX_BODY_VELOCITY,
     angularVelocity: f32 = 0.0, // Current angular velocity applied to orient
     torque: f32 = 0.0, // Current angular force (reset to 0 every step)
     orient: f32 = 0.0, // Rotation in radians
@@ -150,13 +151,11 @@ pub const PhysicsSystem = struct {
                 body.velocity = body.velocity.add(body.force);
             } else {
                 if (body.useGravity) {
-                    const newVelocity = body.velocity.add(gravityDirection.scale(body.mass * BlackholeDistance * gravityScale).scale(delta));
-                    if (newVelocity.length() < configZig.MAX_BODY_VELOCITY) {
-                        body.velocity = newVelocity;
-                    }
+                    body.velocity = body.velocity.add(gravityDirection.scale(body.mass * BlackholeDistance * gravityScale).scale(delta));
                 }
             }
-
+            body.velocity.x = math.clamp(body.velocity.x, -body.speedLimit, body.speedLimit);
+            body.velocity.y = math.clamp(body.velocity.y, -body.speedLimit, body.speedLimit);
             body.position = body.position.add(body.velocity);
 
             if (body.isWrapable) {

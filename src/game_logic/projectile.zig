@@ -11,10 +11,11 @@ pub const Projectile = struct {
     body: PhysicsBody = .{
         .shape = .{
             .Circular = .{
-                .radius = 3,
+                .radius = 5,
             },
         },
         .tag = .PlayerBullet,
+        .speedLimit = 10,
     },
     speed: f32 = 20,
     rotation: f32 = 0,

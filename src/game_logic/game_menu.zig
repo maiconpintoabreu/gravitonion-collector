@@ -352,7 +352,9 @@ pub fn drawFrame(game: *Game) void {
                     );
                 }
                 rl.drawText(
-                    rl.textFormat("Player Gun Speed: %3.3f", .{game.player.gunSpeed}),
+                    rl.textFormat("Player Speed: %3.3f", .{
+                        game.player.body.velocity.length(),
+                    }),
                     10,
                     40 + fontSize * 4,
                     fontSize,

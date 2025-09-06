@@ -16,7 +16,7 @@ pub const Asteroid = struct {
         .useGravity = true,
         .shape = .{
             .Circular = .{
-                .radius = 6,
+                .radius = 16,
             },
         },
         .tag = .Asteroid,

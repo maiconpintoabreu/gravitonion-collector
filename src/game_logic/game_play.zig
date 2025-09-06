@@ -78,7 +78,6 @@ pub const Game = struct {
 
         try self.blackhole.init(physics);
         try self.player.init(physics, std.mem.zeroes(rl.Vector2));
-        if (builtin.is_test) return;
 
         // Init asteroid to reuse texture
         for (&self.asteroids) |*asteroid| {
@@ -89,10 +88,6 @@ pub const Game = struct {
             pickup.parent = self;
             pickup.init(physics);
         }
-        const resourceManager = ResourceManagerZig.resourceManager;
-
-        const screen = self.screen.toVector2();
-        rl.setShaderValue(resourceManager.blackholeShader, resourceManager.blackholeData.resolutionLoc, &screen, .vec2);
 
         self.restart(physics);
         // Start with one asteroid
