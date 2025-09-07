@@ -49,7 +49,6 @@ pub const Player = struct {
     middleTurbineSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     leftTurbineSlot: rl.Vector2 = std.mem.zeroes(rl.Vector2),
     shootingCd: f32 = 0,
-    shoot: rl.Sound = std.mem.zeroes(rl.Sound),
 
     fn colliding(self: *Player, data: *PhysicsBody) void {
         switch (data.tag) {
@@ -74,8 +73,7 @@ pub const Player = struct {
         for (&self.bullets) |*bullet| {
             bullet.init(physics);
         }
-        self.shoot = try rl.loadSound("resources/shoot.wav");
-        rl.setSoundVolume(self.shoot, 0.1);
+
         rl.traceLog(.info, "Player init Completed", .{});
     }
 
@@ -264,6 +262,7 @@ pub const Player = struct {
     }
 
     pub fn shotBullet(self: *Player, physics: *PhysicSystem) void {
+        const resourceManager = ResourceManagerZig.resourceManager;
         for (&self.bullets) |*bullet| {
             if (!bullet.isAlive) {
                 bullet.isAlive = true;
@@ -271,14 +270,13 @@ pub const Player = struct {
 
                 physics.applyForceToBody(bullet.body.id, self.gunSpeed);
                 physics.enableBody(bullet.body.id);
-                rl.playSound(self.shoot);
+                rl.playSound(resourceManager.shoot);
                 return;
             }
         }
     }
 
     pub fn unload(self: *Player) void {
-        // remove only first as they are all the same
-        if (rl.isSoundValid(self.shoot)) self.shoot.unload();
+        _ = self;
     }
 };

@@ -26,7 +26,6 @@ pub const Projectile = struct {
         _ = data;
         physics.disableBody(self.body.id);
         self.isAlive = false;
-        rl.traceLog(.info, "Projectile Colliding", .{});
     }
 
     // Init physics

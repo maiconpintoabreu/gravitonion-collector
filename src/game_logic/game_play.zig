@@ -236,29 +236,26 @@ pub const Game = struct {
             } else {
                 self.player.isAccelerating = false;
             }
-            self.currentTickLength += delta;
-            while (self.currentTickLength > configZig.PHYSICS_TICK_SPEED) {
-                self.currentTickLength -= configZig.PHYSICS_TICK_SPEED;
-                const gravityScale: f32 = if (self.blackhole.isDisturbed) 100.0 else 0.4;
-                physics.tick(configZig.PHYSICS_TICK_SPEED, gravityScale);
-                if (self.player.health <= 0.00) {
-                    self.gameOver();
-                    return;
-                }
-                self.blackhole.tick(physics, configZig.PHYSICS_TICK_SPEED);
-                for (&self.player.bullets) |*bullet| {
-                    if (!bullet.isAlive) continue;
-                    bullet.tick(physics);
-                }
-                self.player.tick(configZig.PHYSICS_TICK_SPEED);
-                for (&self.asteroids) |*asteroid| {
-                    if (!asteroid.isAlive) continue;
-                    asteroid.tick(physics);
-                }
-                for (&self.pickups) |*pickup| {
-                    if (!pickup.isAlive) continue;
-                    pickup.tick(physics, delta);
-                }
+
+            const gravityScale: f32 = if (self.blackhole.isDisturbed) 100.0 else 0.4;
+            physics.tick(delta, gravityScale);
+            if (self.player.health <= 0.00) {
+                self.gameOver();
+                return;
+            }
+            self.blackhole.tick(physics, delta);
+            for (&self.player.bullets) |*bullet| {
+                if (!bullet.isAlive) continue;
+                bullet.tick(physics);
+            }
+            self.player.tick(delta);
+            for (&self.asteroids) |*asteroid| {
+                if (!asteroid.isAlive) continue;
+                asteroid.tick(physics);
+            }
+            for (&self.pickups) |*pickup| {
+                if (!pickup.isAlive) continue;
+                pickup.tick(physics, delta);
             }
         }
     }

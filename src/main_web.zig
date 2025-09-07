@@ -20,6 +20,9 @@ pub fn main() anyerror!void {
     );
     defer rl.closeWindow(); // Close window and OpenGL context
     defer gameManager.closeGame(&game);
+    const newScreen = game.screen.toVector2().scale(@as(f32, @floatCast(std.os.emscripten.emscripten_get_device_pixel_ratio())));
+    game.screen.x = @as(i32, @intFromFloat(newScreen.x));
+    game.screen.y = @as(i32, @intFromFloat(newScreen.y));
     rl.setConfigFlags(rl.ConfigFlags{
         .window_resizable = true,
     });

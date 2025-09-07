@@ -37,6 +37,7 @@ pub fn build(b: *std.Build) !void {
         link_step.addArg("src/minshell.html");
         link_step.addArg("--embed-file");
         link_step.addArg("resources/");
+        link_step.addArg("--emrun");
 
         b.getInstallStep().dependOn(&link_step.step);
         const run_step = try rlz.emcc.emscriptenRunStep(b);

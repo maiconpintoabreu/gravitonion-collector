@@ -46,7 +46,6 @@ pub const Blackhole = struct {
         } else if (data.tag == .PlayerBullet) {
             self.setSize(physics, self.size + 0.02);
         }
-        rl.traceLog(.info, "Blackhole Colliding", .{});
     }
 
     pub fn init(self: *Blackhole, physics: *PhysicSystem) rl.RaylibError!void {
