@@ -146,7 +146,7 @@ pub fn update(game: *Game, physics: *PhysicSystem) bool {
                 game.camera.begin();
                 defer game.camera.end();
                 rl.clearBackground(configZig.BACKGROUND_COLOR);
-                game.draw(physics);
+                // game.draw(physics);
                 menuZig.drawFrame(game);
             }
         },

@@ -143,10 +143,9 @@ pub fn drawFrame(game: *Game) void {
         .width = width,
         .height = height,
     };
-    rl.drawFPS(10, 10);
+    const resourceManager = ResourceManagerZig.resourceManager;
     switch (game.gameState) {
         GameState.MainMenu => {
-            const resourceManager = ResourceManagerZig.resourceManager;
             resourceManager.backgroundTexture.drawPro(
                 .{
                     .x = 0,
@@ -186,12 +185,23 @@ pub fn drawFrame(game: *Game) void {
             }
         },
         GameState.Pause, GameState.GameOver => {
-            rl.drawRectangle(0, 0, game.screen.x, game.screen.y, rl.Color{
-                .r = 0,
-                .g = 0,
-                .b = 0,
-                .a = 100,
-            });
+            resourceManager.backgroundTexture.drawPro(
+                .{
+                    .x = 0,
+                    .y = 0,
+                    .width = @as(f32, @floatFromInt(resourceManager.backgroundTexture.width)),
+                    .height = @as(f32, @floatFromInt(resourceManager.backgroundTexture.height)),
+                },
+                .{
+                    .x = 0,
+                    .y = 0,
+                    .width = @as(f32, @floatFromInt(800)),
+                    .height = @as(f32, @floatFromInt(450)),
+                },
+                .{ .x = 0, .y = 0 },
+                0,
+                .white,
+            );
             if (game.highestScore > 0) {
                 uiText(
                     rl.Rectangle{
@@ -386,6 +396,7 @@ pub fn drawFrame(game: *Game) void {
             unreachable;
         },
     }
+    rl.drawFPS(10, 10);
 }
 
 fn actionbutton(button: rl.Vector2, buttonSize: f32, camera: rl.Camera2D) bool {
