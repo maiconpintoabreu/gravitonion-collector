@@ -28,7 +28,7 @@ pub const Asteroid = struct {
             if (data.tag == .PlayerBullet) {
                 self.parent.spawnPickupFromAsteroid(physics, self.*);
             }
-            physics.disableBody(self.body.id);
+            self.unSpawn(physics);
             self.isAlive = false;
         }
     }

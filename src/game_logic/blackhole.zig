@@ -95,7 +95,7 @@ pub const Blackhole = struct {
                 physics.disableBody(self.phaserBody.id);
                 self.isPhasing = false;
             } else {
-                self.setSize(physics, self.size - (0.6 * self.size) * delta);
+                self.setSize(physics, self.size - (0.1 * (self.size + 1)) * delta);
             }
         }
         if ((self.size > BLACK_HOLE_SIZE_PHASER_ACTIVE) and !self.isPhasing) {

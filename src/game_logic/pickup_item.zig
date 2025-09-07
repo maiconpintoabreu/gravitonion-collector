@@ -24,12 +24,16 @@ pub const PickupItem = struct {
     },
     item: Item = .{},
     isAlive: bool = false,
+    lifeTime: f32 = configZig.PICKUP_LIFETIME_DURATION,
 
     fn colliding(self: *PickupItem, physics: *PhysicSystem, data: *PhysicsBody) void {
         if (data.tag == .Player) {
-            physics.disableBody(self.body.id);
+            self.unSpawn(physics);
             self.isAlive = false;
             self.parent.player.pickupItem(self.item);
+        } else if (data.tag == .Phaser) {
+            self.unSpawn(physics);
+            self.isAlive = false;
         }
     }
 
@@ -48,7 +52,13 @@ pub const PickupItem = struct {
         self.item.type = itemTypes[index];
     }
 
-    pub fn tick(self: *PickupItem, physics: *PhysicSystem) void {
+    pub fn tick(self: *PickupItem, physics: *PhysicSystem, delta: f32) void {
+        self.lifeTime -= delta;
+        if (self.lifeTime <= 0.0) {
+            self.isAlive = false;
+            self.unSpawn(physics);
+            return;
+        }
         if (self.body.collidingWith) |otherBody| {
             self.colliding(physics, otherBody);
         }

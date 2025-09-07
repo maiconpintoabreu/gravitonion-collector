@@ -113,6 +113,10 @@ pub const Game = struct {
 
         self.player.isAlive = true;
         self.player.health = 100.0;
+        self.player.body.speedLimit = configZig.MAX_BODY_VELOCITY;
+        self.player.body.useGravity = true;
+        self.player.isInvunerable = false;
+
         self.player.teleport(
             physics,
             rl.Vector2{
@@ -124,11 +128,19 @@ pub const Game = struct {
 
         physics.reset(.PlayerBullet);
         physics.reset(.Asteroid);
+        physics.reset(.PickupItem);
+
         for (&self.asteroids) |*asteroid| {
             asteroid.isAlive = false;
         }
-        for (&self.player.bullets) |*bullets| {
-            bullets.isAlive = false;
+        for (&self.player.bullets) |*bullet| {
+            bullet.isAlive = false;
+        }
+        for (&self.player.particles) |*particle| {
+            particle.isAlive = false;
+        }
+        for (&self.pickups) |*pickup| {
+            pickup.isAlive = false;
         }
         physics.disableBody(self.blackhole.phaserBody.id);
         self.player.updateSlots(self.player.body);
@@ -235,14 +247,17 @@ pub const Game = struct {
                 }
                 self.blackhole.tick(physics, configZig.PHYSICS_TICK_SPEED);
                 for (&self.player.bullets) |*bullet| {
+                    if (!bullet.isAlive) continue;
                     bullet.tick(physics);
                 }
                 self.player.tick(configZig.PHYSICS_TICK_SPEED);
                 for (&self.asteroids) |*asteroid| {
+                    if (!asteroid.isAlive) continue;
                     asteroid.tick(physics);
                 }
                 for (&self.pickups) |*pickup| {
-                    pickup.tick(physics);
+                    if (!pickup.isAlive) continue;
+                    pickup.tick(physics, delta);
                 }
             }
         }
@@ -309,6 +324,7 @@ pub const Game = struct {
         for (&self.pickups) |*pickup| {
             if (!pickup.isAlive) {
                 pickup.isAlive = true;
+                pickup.lifeTime = configZig.PICKUP_LIFETIME_DURATION;
                 pickup.generateRandomItem();
                 pickup.spawn(physics, asteroid.body);
                 return;

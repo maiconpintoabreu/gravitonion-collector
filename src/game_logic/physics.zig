@@ -267,6 +267,14 @@ pub const PhysicsSystem = struct {
                             else => {},
                         }
                     },
+                    .PickupItem => {
+                        switch (rightBody.tag) {
+                            .Phaser => {
+                                shouldCollide = true;
+                            },
+                            else => {},
+                        }
+                    },
                     else => {},
                 }
                 if (!shouldCollide) {
