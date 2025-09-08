@@ -81,6 +81,7 @@ fn updateRatio(game: *Game) void {
 }
 
 pub fn update(game: *Game, physics: *PhysicSystem) bool {
+    if (game.gameState == .Quit) return false;
     if (rl.windowShouldClose()) {
         return false;
     }

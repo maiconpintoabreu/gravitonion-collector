@@ -34,5 +34,13 @@ pub fn main() anyerror!void {
     }
 }
 export fn updateFrame() void {
+    if (game.gameState == .Quit) {
+        rl.beginDrawing();
+        rl.clearBackground(.black);
+        const fontSize: i32 = @divFloor(game.screen.y, 10);
+        rl.drawText("Thanks!", 10, @divFloor(game.screen.y, 2) - @divFloor(fontSize, 2), fontSize, .white);
+        rl.endDrawing();
+        return;
+    }
     _ = gameManager.update(&game, &physics);
 }
