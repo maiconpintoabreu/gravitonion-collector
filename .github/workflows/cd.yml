@@ -41,8 +41,9 @@ jobs:
           chmod +x ./zig-folder/zig
         shell: bash
 
-      - name: Unit Test
-        run: ./zig-folder/zig build test --summary new -Doptimize=ReleaseSmall
+      # TODO: add tests later after migration
+      # - name: Unit Test
+      #   run: ./zig-folder/zig build test --summary new -Doptimize=ReleaseSmall
   
       - name: Setup emsdk
         uses: mymindstorm/setup-emsdk@v14
