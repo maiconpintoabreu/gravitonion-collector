@@ -59,6 +59,30 @@ pub fn build(b: *std.Build) !void {
             .name = ProjectName,
             .root_module = exe_mod,
         });
+
+        const test_filters = b.option([]const []const u8, "test-filter", "Skip tests that do not match any filter") orelse &[0][]const u8{};
+
+        const test_step = b.addTest(.{
+            .name = "gravitonion_collector",
+            .filters = test_filters,
+            .root_module = b.createModule(
+                .{
+                    .root_source_file = b.path("src/main_test.zig"),
+                    .optimize = optimize,
+                    .target = target,
+                },
+            ),
+        });
+
+        exe.linkLibrary(raylib_artifact);
+        exe.root_module.addImport("raylib", raylib);
+
+        test_step.linkLibrary(raylib_artifact);
+        test_step.root_module.addImport("raylib", raylib);
+
+        const test_cmd = b.addRunArtifact(test_step);
+        const run_test_step = b.step("test", "Test gravitonion_collector");
+        run_test_step.dependOn(&test_cmd.step);
         b.installArtifact(exe);
 
         const run_cmd = b.addRunArtifact(exe);

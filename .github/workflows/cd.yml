@@ -30,6 +30,13 @@ jobs:
       - name: Checkout Project
         uses: actions/checkout@v4.2.1
 
+      - name: Cache build/zig-cache
+        uses: actions/cache@v3
+        with:
+          path: ${{github.workspace}}/.zig-cache
+          key: .zig-cache
+          restore-keys: .zig-cache
+
       - name: Setup Environment
         run: | 
           sudo apt-get update -qq
@@ -42,11 +49,11 @@ jobs:
         shell: bash
 
       # TODO: add tests later after migration
-      # - name: Unit Test
-      #   run: ./zig-folder/zig build test --summary new -Doptimize=ReleaseSmall
+      - name: Unit Test
+        run: ./zig-folder/zig build test --summary new -Doptimize=ReleaseSmall
 
-      - name: Build Web Project
-        id: buildWeb
+      - name: Work around 
+        id: buildWebWorkAround
         continue-on-error: true
         run: |
           ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall -fno-incremental
@@ -54,7 +61,7 @@ jobs:
           cp LICENSE ${{ env.WEB_BUILD_DIR }}
 
       - name: Build Web Project
-        id: buildWeb2
+        id: buildWeb
         continue-on-error: true
         run: |
           ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall -fno-incremental
@@ -78,7 +85,7 @@ jobs:
           cp LICENSE ${{ env.WINDOWS_BUILD_DIR }}
 
       - name: Upload Web Artifacts
-        if: steps.buildWeb.outcome != 'failure' || steps.buildWeb2.outcome != 'failure'
+        if: steps.buildWeb.outcome != 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PROJECT_NAME }}-web
@@ -109,7 +116,7 @@ jobs:
         run: ./butler login
 
       - name: Push Web to Itch
-        if: steps.buildWeb.outcome != 'failure' || steps.buildWeb2.outcome != 'failure'
+        if: steps.buildWeb.outcome != 'failure'
         run: ./butler push ${{ env.WEB_BUILD_DIR }} maiconspas/gravitonion-collector:web
 
       - name: Push Linux to Itch
