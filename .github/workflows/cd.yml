@@ -22,7 +22,7 @@ jobs:
     env:
       BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }} # Needs to be added through github
       PROJECT_NAME: gravitonion-collector
-      WEB_BUILD_DIR: zig-out/htmlout
+      WEB_BUILD_DIR: zig-out/web
       LINUX_BUILD_DIR: zig-out/linux
       WINDOWS_BUILD_DIR: zig-out/windows
 
@@ -44,19 +44,11 @@ jobs:
       # TODO: add tests later after migration
       # - name: Unit Test
       #   run: ./zig-folder/zig build test --summary new -Doptimize=ReleaseSmall
-  
-      - name: Setup emsdk
-        uses: mymindstorm/setup-emsdk@v14
-        with:
-          # Make sure to set a version number!
-          version: 4.0.9
-          actions-cache-folder: 'emsdk-cache'
 
       - name: Build Web Project
         id: buildWeb
         continue-on-error: true
         run: |
-          ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall # to fail first for now
           ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall
           cp README.md ${{ env.WEB_BUILD_DIR }}
           cp LICENSE ${{ env.WEB_BUILD_DIR }}
