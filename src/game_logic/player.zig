@@ -82,8 +82,8 @@ pub const Player = struct {
             self.antiGravityDuration -= delta;
 
             if (self.antiGravityDuration < 0) {
-                self.body.useGravity = false;
-            }
+                self.body.useGravity = true;
+            } else self.body.useGravity = false;
         } else if (!self.body.useGravity) {
             self.body.useGravity = true;
         }
