@@ -49,7 +49,15 @@ jobs:
         id: buildWeb
         continue-on-error: true
         run: |
-          ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall
+          ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall -fno-incremental
+          cp README.md ${{ env.WEB_BUILD_DIR }}
+          cp LICENSE ${{ env.WEB_BUILD_DIR }}
+
+      - name: Build Web Project
+        id: buildWeb2
+        continue-on-error: true
+        run: |
+          ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall -fno-incremental
           cp README.md ${{ env.WEB_BUILD_DIR }}
           cp LICENSE ${{ env.WEB_BUILD_DIR }}
           
@@ -70,7 +78,7 @@ jobs:
           cp LICENSE ${{ env.WINDOWS_BUILD_DIR }}
 
       - name: Upload Web Artifacts
-        if: steps.buildWeb.outcome != 'failure'
+        if: steps.buildWeb.outcome != 'failure' || steps.buildWeb2.outcome != 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PROJECT_NAME }}-web
@@ -101,7 +109,7 @@ jobs:
         run: ./butler login
 
       - name: Push Web to Itch
-        if: steps.buildWeb.outcome != 'failure'
+        if: steps.buildWeb.outcome != 'failure' || steps.buildWeb2.outcome != 'failure'
         run: ./butler push ${{ env.WEB_BUILD_DIR }} maiconspas/gravitonion-collector:web
 
       - name: Push Linux to Itch
