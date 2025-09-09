@@ -7,47 +7,42 @@
 
   <title>Space Researcher</title>
 
-  <meta name="title" content="maicon game">
-  <meta name="description" content="New maicon videogame, developed using raylib videogames library">
+  <meta name="title" content="Gravitonion Collector">
+  <meta name="description" content="SpaceShip Game(Asteroid like) focused on surviving a blackhole increasing a shooting phasers">
   <meta name="keywords"
-    content="raylib, programming, examples, html5, C, zig, library, learn, games, videogames">
-  <meta name="viewport" content="width=device-width">
+    content="raylib, programming, space, survivor, html5, C, zig, library, learn, games, videogames">
+  <meta name="viewport" content="height=device-height">
 
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="maicon game">
+  <meta property="og:title" content="Gravitonion Collector">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image" content="https://img.itch.zone/aW1nLzIxNTQxODAzLmpwZw==/347x500/A4GAQS.jpg">
   <meta property="og:image:alt"
-    content="New maicon videogame, developed using raylib videogames library" />
-  <meta property="og:site_name" content="raylib - example">
+    content="SpaceShip Game(Asteroid like) focused on surviving a blackhole increasing a shooting phasers" />
+  <meta property="og:site_name" content="Gravitonion Collector">
   <meta property="og:url" content="https://www.raylib.com/games.html">
   <meta property="og:description"
-    content="New maicon videogame, developed using raylib videogames library">
+    content="SpaceShip Game(Asteroid like) focused on surviving a blackhole increasing a shooting phasers">
 
   <meta name="bluesky:card" content="summary_large_image">
   <meta name="bluesky:site" content="@maiconpinto.bsky.social">
-  <meta name="bluesky:title" content="maicon game">
+  <meta name="bluesky:title" content="Gravitonion Collector">
   <meta name="bluesky:image" content="https://img.itch.zone/aW1nLzIxNTQxODAzLmpwZw==/347x500/A4GAQS.jpg">
   <meta name="bluesky:image:alt"
-    content="New maicon videogame, developed using raylib videogames library">
+    content="SpaceShip Game(Asteroid like) focused on surviving a blackhole increasing a shooting phasers">
   <meta name="bluesky:url" content="https://www.raylib.com/games.html">
   <meta name="bluesky:description"
-    content="New maicon videogame, developed using raylib videogames library">
+    content="SpaceShip Game(Asteroid like) focused on surviving a blackhole increasing a shooting phasers">
 
 <link type="image/jpeg" href="https://img.itch.zone/aW1nLzIxNTQxODAzLmpwZw==/32x32%23/Ua%2BUip.jpg" rel="icon">
 
   <style>
-      body { font-family: arial; margin: 0; padding: none; background-color: black; }
-      .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
-      div.emscripten { text-align: center; }
+      body { margin: 0px; overflow: hidden; background-color: black; }
+      canvas.emscripten { margin: auto; border: 0px none; background-color: black; }
       .spinner {
-        position: absolute;
         height: 30px;
         width: 30px;
-        margin: 0;
-        margin-top: 20px;
-        margin-left: 20px;
-        vertical-align: top;
+        margin: auto;
         -webkit-animation: rotation .8s linear infinite;
         -moz-animation: rotation .8s linear infinite;
         -o-animation: rotation .8s linear infinite;
@@ -99,10 +94,9 @@
 </head>
 
 <body>
-    <div class="emscripten_border">
-  <div class="spinner" id='spinner'></div>
-      <canvas class=emscripten id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas>
-    </div>
+  <div style="height: 100vh; width: 100%; display: flex; align-items: center;">
+    <div class="spinner" id='spinner'></div>
+    <canvas class=emscripten id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas>
   </div>
   <p id="output" />
   <script>
@@ -116,9 +110,7 @@
       })(),
       canvas: (function () {
         var canvas = document.getElementById('canvas');
-        // As a default initial behavior, pop up an alert when webgl context is lost.
-        // To make your application robust, you may want to override this behavior before shipping!
-        // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+        
         canvas.addEventListener("webglcontextlost", function (e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
         return canvas;
       })(),

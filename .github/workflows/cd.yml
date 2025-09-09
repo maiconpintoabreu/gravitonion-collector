@@ -30,28 +30,14 @@ jobs:
       - name: Checkout Project
         uses: actions/checkout@v4.2.1
 
-      - name: Cache build/emsdk-cache
-        uses: actions/cache@v3
-        with:
-          path: ${{github.workspace}}/emsdk
-          key: emsdk
-          restore-keys: emsdk
-
-      - name: Cache build/zig-cache
-        uses: actions/cache@v3
-        with:
-          path: ${{github.workspace}}/.zig-cache
-          key: .zig-cache
-          restore-keys: .zig-cache
-
       - name: Setup Environment
         run: | 
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends python3 libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libwayland-dev libxkbcommon-dev cmake wget
-          wget --no-verbose https://ziglang.org/download/0.14.1/zig-x86_64-linux-0.14.1.tar.xz
+          wget --no-verbose https://ziglang.org/download/0.15.1/zig-x86_64-linux-0.15.1.tar.xz
           mkdir -p zig-folder
-          tar xf zig-x86_64-linux-0.14.1.tar.xz -C ./zig-folder  --strip-components=1
-          rm ./zig-x86_64-linux-0.14.1.tar.xz
+          tar xf zig-x86_64-linux-0.15.1.tar.xz -C ./zig-folder  --strip-components=1
+          rm ./zig-x86_64-linux-0.15.1.tar.xz
           chmod +x ./zig-folder/zig
         shell: bash
 
@@ -69,7 +55,8 @@ jobs:
         id: buildWeb
         continue-on-error: true
         run: |
-          ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall --sysroot ${EMSDK}/upstream/emscripten
+          ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall # to fail first for now
+          ./zig-folder/zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall
           cp README.md ${{ env.WEB_BUILD_DIR }}
           cp LICENSE ${{ env.WEB_BUILD_DIR }}
           

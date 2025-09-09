@@ -1,3 +1,4 @@
+const ProjectName = "gravitonion_collector";
 const std = @import("std");
 const rlz = @import("raylib_zig");
 
@@ -12,88 +13,57 @@ pub fn build(b: *std.Build) !void {
     const raylib = raylib_dep.module("raylib");
     const raylib_artifact = raylib_dep.artifact("raylib");
 
+    const exe_mod = b.createModule(.{
+        .root_source_file = if (target.query.os_tag == .emscripten) b.path("src/main_web.zig") else b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    exe_mod.addImport("raylib", raylib);
+    exe_mod.linkLibrary(raylib_artifact);
+
+    const run_step = b.step("run", "Run the app");
+
     //web exports are completely separate
     if (target.query.os_tag == .emscripten) {
-        const exe_lib = try rlz.emcc.compileForEmscripten(
+        const emsdk = rlz.emsdk;
+        const wasm = b.addLibrary(.{
+            .name = "index",
+            .root_module = exe_mod,
+        });
+
+        const install_dir: std.Build.InstallDir = .{ .custom = "web" };
+        const emcc_flags = emsdk.emccDefaultFlags(b.allocator, .{ .optimize = optimize });
+        const emcc_settings = emsdk.emccDefaultSettings(b.allocator, .{ .optimize = optimize });
+
+        const emcc_step = emsdk.emccStep(b, raylib_artifact, wasm, .{
+            .optimize = optimize,
+            .flags = emcc_flags,
+            .settings = emcc_settings,
+            .shell_file_path = b.path("src/minshell.html"),
+            .install_dir = install_dir,
+            .embed_paths = &.{.{ .src_path = "resources/" }},
+        });
+        b.getInstallStep().dependOn(emcc_step);
+
+        const html_filename = try std.fmt.allocPrint(b.allocator, "index.html", .{});
+        const emrun_step = emsdk.emrunStep(
             b,
-            "gravitonion_collector",
-            "src/main_web.zig",
-            target,
-            optimize,
+            b.getInstallPath(install_dir, html_filename),
+            &.{},
         );
 
-        exe_lib.linkLibrary(raylib_artifact);
-        exe_lib.root_module.addImport("raylib", raylib);
+        emrun_step.dependOn(emcc_step);
+        run_step.dependOn(emrun_step);
+    } else {
+        const exe = b.addExecutable(.{
+            .name = ProjectName,
+            .root_module = exe_mod,
+        });
+        b.installArtifact(exe);
 
-        // Note that raylib itself is not actually added to the exe_lib output file, so it also needs to be linked with emscripten.
-        const link_step = try rlz.emcc.linkWithEmscripten(
-            b,
-            &[_]*std.Build.Step.Compile{ exe_lib, raylib_artifact },
-        );
-        //this lets your program access files like "resources/my-image.png":
-        // link_step.addArg("--emrun");
-        link_step.addArg("-sERROR_ON_UNDEFINED_SYMBOLS=0");
-        link_step.addArg("--shell-file");
-        link_step.addArg("src/minshell.html");
-        link_step.addArg("--embed-file");
-        link_step.addArg("resources/");
-        link_step.addArg("--emrun");
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.step.dependOn(b.getInstallStep());
 
-        b.getInstallStep().dependOn(&link_step.step);
-        const run_step = try rlz.emcc.emscriptenRunStep(b);
-        run_step.addArg("--no_browser");
-        run_step.step.dependOn(&link_step.step);
-        const run_option = b.step("run", "Run gravitonion_collector");
-        run_option.dependOn(&run_step.step);
-        return;
+        run_step.dependOn(&run_cmd.step);
     }
-
-    const exe = b.addExecutable(.{
-        .name = "gravitonion_collector",
-        .root_module = b.createModule(
-            .{
-                .root_source_file = b.path("src/main.zig"),
-                .optimize = optimize,
-                .target = target,
-            },
-        ),
-    });
-    const test_filters = b.option([]const []const u8, "test-filter", "Skip tests that do not match any filter") orelse &[0][]const u8{};
-
-    const test_step = b.addTest(.{
-        .name = "gravitonion_collector",
-        .filters = test_filters,
-        .root_module = b.createModule(
-            .{
-                .root_source_file = b.path("src/main_test.zig"),
-                .optimize = optimize,
-                .target = target,
-            },
-        ),
-    });
-
-    const content_path = "resources/";
-    const install_content_step = b.addInstallDirectory(.{
-        .source_dir = b.path(content_path),
-        .install_dir = .prefix,
-        .install_subdir = "resources/",
-    });
-    exe.step.dependOn(&install_content_step.step);
-    test_step.step.dependOn(&install_content_step.step);
-
-    exe.linkLibrary(raylib_artifact);
-    exe.root_module.addImport("raylib", raylib);
-
-    test_step.linkLibrary(raylib_artifact);
-    test_step.root_module.addImport("raylib", raylib);
-
-    const run_cmd = b.addRunArtifact(exe);
-    const run_step = b.step("run", "Run gravitonion_collector");
-    run_step.dependOn(&run_cmd.step);
-
-    const test_cmd = b.addRunArtifact(test_step);
-    const run_test_step = b.step("test", "Test gravitonion_collector");
-    run_test_step.dependOn(&test_cmd.step);
-
-    b.installArtifact(exe);
 }
