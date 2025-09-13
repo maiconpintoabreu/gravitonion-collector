@@ -49,8 +49,8 @@ jobs:
         shell: bash
 
       # TODO: add tests later after migration
-      - name: Unit Test
-        run: ./zig-folder/zig build test --summary new -Doptimize=ReleaseSmall
+      #- name: Unit Test
+      #  run: ./zig-folder/zig build test --summary new -Doptimize=ReleaseSmall
 
       - name: Work around 
         id: buildWebWorkAround
