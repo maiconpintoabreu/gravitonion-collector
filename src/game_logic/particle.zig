@@ -14,11 +14,13 @@ pub const Particle = struct {
             }
         }
     }
+
     pub fn spawn(self: *Particle, position: rl.Vector2, duration: f32) void {
         self.isAlive = true;
         self.timeToDie = std.math.clamp(duration, 0.01, 1.0);
         self.position = position;
     }
+
     pub fn draw(self: Particle) void {
         if (self.timeToDie < 0.01) return;
 

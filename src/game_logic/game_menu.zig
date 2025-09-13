@@ -380,12 +380,32 @@ pub fn drawFrame(game: *Game) void {
                         .white,
                     );
                 }
+                const gameStructSizeBit: i32 = @sizeOf(Game);
+                const gameStructSizeKB: f32 = @as(f32, @floatFromInt(gameStructSizeBit)) * 0.000125;
                 rl.drawText(
-                    rl.textFormat("Player Speed: %3.3f", .{
-                        game.player.body.velocity.length(),
+                    rl.textFormat("Game Struct Size: %3.3fKB", .{
+                        gameStructSizeKB,
                     }),
                     10,
                     40 + fontSize * 4,
+                    fontSize,
+                    .white,
+                );
+                rl.drawText(
+                    rl.textFormat("GameObjects: %i", .{
+                        game.gameObjectsAmount,
+                    }),
+                    10,
+                    40 + fontSize * 5,
+                    fontSize,
+                    .white,
+                );
+                rl.drawText(
+                    rl.textFormat("PhysicBodys: %i", .{
+                        game.physics.physicsBodyCount,
+                    }),
+                    10,
+                    40 + fontSize * 6,
                     fontSize,
                     .white,
                 );

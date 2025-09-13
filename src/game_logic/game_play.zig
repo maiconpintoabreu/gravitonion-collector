@@ -8,9 +8,12 @@ const Player = @import("player.zig").Player;
 const Asteroid = @import("asteroid.zig").Asteroid;
 const PickupItem = @import("pickup_item.zig").PickupItem;
 const Blackhole = @import("blackhole.zig").Blackhole;
+const Particle = @import("particle.zig").Particle;
+const Projectile = @import("projectile.zig").Projectile;
 
 const PhysicsZig = @import("physics.zig");
-const PhysicSystem = PhysicsZig.PhysicsSystem;
+const PhysicsSystem = PhysicsZig.PhysicsSystem;
+const PhysicsBody = PhysicsZig.PhysicsBody;
 const ResourceManagerZig = @import("../resource_manager.zig");
 
 const math = std.math;
@@ -44,12 +47,21 @@ pub const GameControllerType = enum {
     TouchScreen,
 };
 
+pub const GameObject = union(enum) {
+    Player: Player,
+    Asteroid: Asteroid,
+    PickupItem: PickupItem,
+    Blackhole: Blackhole,
+    Projectile: Projectile,
+};
+
 pub const Game = struct {
-    asteroids: [configZig.MAX_ASTEROIDS]Asteroid = @splat(.{}),
-    pickups: [configZig.MAX_PICKUPS]PickupItem = @splat(.{}),
+    physics: PhysicsSystem = .{},
+    gameObjectsAmount: usize = undefined,
+    gameObjects: [configZig.MAX_GAME_OBJECTS]GameObject = undefined,
     camera: rl.Camera2D = std.mem.zeroes(rl.Camera2D),
-    player: Player = .{},
-    blackhole: Blackhole = .{},
+    player: *Player = undefined,
+    blackhole: *Blackhole = undefined,
     gameTime: f64 = 0.1,
     font: rl.Font = std.mem.zeroes(rl.Font),
     controlTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
@@ -71,54 +83,46 @@ pub const Game = struct {
     highestScore: f32 = 0,
     isPlaying: bool = false,
 
-    pub fn init(self: *Game, physics: *PhysicSystem) rl.RaylibError!void {
-        // TODO: Move parent set to init when I have time
-        self.blackhole.parent = self;
-        self.player.parent = self;
+    pub fn init(self: *Game) rl.RaylibError!void {
+
+        // Adding default gameobjects
+        self.gameObjectsAmount = 0;
+        self.gameObjects[self.gameObjectsAmount] = .{ .Player = .{ .parent = self } };
+        self.player = &self.gameObjects[self.gameObjectsAmount].Player;
+        try self.gameObjects[self.gameObjectsAmount].Player.init(&self.physics, std.mem.zeroes(rl.Vector2));
+        self.gameObjectsAmount += 1;
+
+        self.gameObjects[self.gameObjectsAmount] = .{ .Blackhole = .{ .parent = self } };
+        self.blackhole = &self.gameObjects[self.gameObjectsAmount].Blackhole;
+        try self.gameObjects[self.gameObjectsAmount].Blackhole.init(&self.physics);
+        self.gameObjectsAmount += 1;
 
         // Avoid opengl calls while testing
         if (builtin.is_test) return;
 
-        try self.blackhole.init(physics);
-        try self.player.init(physics, std.mem.zeroes(rl.Vector2));
-
-        // Init asteroid to reuse texture
-        for (&self.asteroids) |*asteroid| {
-            asteroid.parent = self;
-            asteroid.init(physics);
-        }
-        for (&self.pickups) |*pickup| {
-            pickup.parent = self;
-            pickup.init(physics);
-        }
-
-        self.restart(physics);
-        // Start with one asteroid
-        self.spawnAsteroidRandom(physics);
         rl.traceLog(.info, "Game init Completed", .{});
     }
 
-    pub fn restart(self: *Game, physics: *PhysicSystem) void {
+    pub fn restart(self: *Game) void {
         const resourceManager = ResourceManagerZig.resourceManager;
         self.currentScore = 0;
+        self.gameObjectsAmount = 2;
         self.gameTime = 0;
         if (rl.isMusicValid(resourceManager.music)) {
             rl.stopMusicStream(resourceManager.music);
             rl.playMusicStream(resourceManager.music);
         }
 
-        self.blackhole.setSize(physics, 0.6);
+        self.blackhole.setSize(&self.physics, 0.6);
         self.blackhole.isPhasing = false;
         self.isPlaying = false;
 
         self.player.isAlive = true;
         self.player.health = 100.0;
-        self.player.body.speedLimit = configZig.MAX_BODY_VELOCITY;
-        self.player.body.useGravity = true;
         self.player.isInvunerable = false;
 
         self.player.teleport(
-            physics,
+            &self.physics,
             rl.Vector2{
                 .x = 50,
                 .y = configZig.NATIVE_HEIGHT / 2, // Put the player beside the Blackhole
@@ -126,24 +130,9 @@ pub const Game = struct {
             0.0,
         );
 
-        physics.reset(.PlayerBullet);
-        physics.reset(.Asteroid);
-        physics.reset(.PickupItem);
+        self.physics.reset();
 
-        for (&self.asteroids) |*asteroid| {
-            asteroid.isAlive = false;
-        }
-        for (&self.player.bullets) |*bullet| {
-            bullet.isAlive = false;
-        }
-        for (&self.player.particles) |*particle| {
-            particle.isAlive = false;
-        }
-        for (&self.pickups) |*pickup| {
-            pickup.isAlive = false;
-        }
-        physics.disableBody(self.blackhole.phaserBody.id);
-        self.player.updateSlots(self.player.body);
+        // self.player.updateSlots(self.player.body);
     }
 
     pub fn gameOver(self: *Game) void {
@@ -153,7 +142,7 @@ pub const Game = struct {
         self.gameState = GameState.GameOver;
     }
 
-    pub fn tick(self: *Game, physics: *PhysicSystem, delta: f32) void {
+    pub fn tick(self: *Game, delta: f32) void {
         if (rl.isKeyReleased(rl.KeyboardKey.escape)) {
             self.gameState = GameState.Pause;
         }
@@ -175,7 +164,7 @@ pub const Game = struct {
             self.gameTime += @as(f64, delta);
             self.currentScore += 20 / self.blackhole.size * delta; // TODO: add distance on calculation
             self.asteroidSpawnCd -= delta;
-            self.blackhole.setSize(physics, self.blackhole.size + 0.05 * delta);
+            self.blackhole.setSize(&self.physics, self.blackhole.size + 0.05 * delta);
             self.player.shootingCd -= delta;
             const reducedTime = @as(f32, @floatCast(self.gameTime / 2));
 
@@ -190,34 +179,34 @@ pub const Game = struct {
                     0.2,
                     50,
                 );
-                self.spawnAsteroidRandom(physics);
+                self.spawnAsteroidRandom();
             }
             // Input
             if (rl.isKeyDown(.space) or rl.isGamepadButtonDown(0, .right_face_down) or self.isShooting) {
                 if (self.player.shootingCd < 0) {
                     self.player.shootingCd = configZig.DEFAULT_SHOOTING_CD;
-                    self.player.shotBullet(physics);
+                    self.player.shotBullet(&self.physics);
                 }
             }
             const gamepadSide = rl.getGamepadAxisMovement(0, .left_x);
             if (gamepadSide < -0.01) {
                 rl.traceLog(.info, "left", .{});
                 self.player.isTurningLeft = true;
-                self.player.turnLeft(physics, gamepadSide * delta);
+                self.player.turnLeft(&self.physics, gamepadSide * delta);
             } else if (gamepadSide > 0.01) {
                 rl.traceLog(.info, "right", .{});
                 self.player.isTurningRight = true;
-                self.player.turnRight(physics, gamepadSide * delta);
+                self.player.turnRight(&self.physics, gamepadSide * delta);
             } else {
                 if (rl.isKeyDown(.left) or rl.isGamepadButtonDown(0, .left_face_left) or self.isTouchLeft) {
                     self.player.isTurningLeft = true;
-                    self.player.turnLeft(physics, delta);
+                    self.player.turnLeft(&self.physics, delta);
                 } else {
                     self.player.isTurningLeft = false;
                 }
                 if (rl.isKeyDown(.right) or rl.isGamepadButtonDown(0, .left_face_right) or self.isTouchRight) {
                     self.player.isTurningRight = true;
-                    self.player.turnRight(physics, delta);
+                    self.player.turnRight(&self.physics, delta);
                 } else {
                     self.player.isTurningRight = false;
                 }
@@ -226,41 +215,58 @@ pub const Game = struct {
             if (rl.isGamepadButtonDown(0, .right_trigger_2)) {
                 self.player.isAccelerating = true;
                 if (builtin.cpu.arch.isWasm()) {
-                    self.player.accelerate(physics, delta);
+                    self.player.accelerate(&self.physics, delta);
                 } else {
-                    self.player.accelerate(physics, gamepadAceleration * delta);
+                    self.player.accelerate(&self.physics, gamepadAceleration * delta);
                 }
             } else if (rl.isKeyDown(.up) or self.isTouchUp) {
                 self.player.isAccelerating = true;
-                self.player.accelerate(physics, delta);
+                self.player.accelerate(&self.physics, delta);
             } else {
                 self.player.isAccelerating = false;
             }
 
             const gravityScale: f32 = if (self.blackhole.isDisturbed) 100.0 else 0.4;
-            physics.tick(delta, gravityScale);
+            self.physics.tick(delta, gravityScale);
+            var gameObjectIndex: usize = self.gameObjectsAmount - 1;
+            while (true) {
+                switch (self.gameObjects[gameObjectIndex]) {
+                    .Player => {
+                        self.gameObjects[gameObjectIndex].Player.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
+                    },
+                    .Blackhole => {
+                        self.gameObjects[gameObjectIndex].Blackhole.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
+                    },
+                    .Asteroid => {
+                        self.gameObjects[gameObjectIndex].Asteroid.tick(&self.physics);
+                        if (!self.gameObjects[gameObjectIndex].Asteroid.isAlive) {
+                            self.unSpawn(self.gameObjects[gameObjectIndex].Asteroid.id, self.gameObjects[gameObjectIndex].Asteroid.bodyId);
+                        }
+                    },
+                    .Projectile => {
+                        self.gameObjects[gameObjectIndex].Projectile.tick(&self.physics);
+                        if (!self.gameObjects[gameObjectIndex].Projectile.isAlive) {
+                            self.unSpawn(self.gameObjects[gameObjectIndex].Projectile.id, self.gameObjects[gameObjectIndex].Projectile.bodyId);
+                        }
+                    },
+                    .PickupItem => {
+                        self.gameObjects[gameObjectIndex].PickupItem.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
+                        if (!self.gameObjects[gameObjectIndex].PickupItem.isAlive) {
+                            self.unSpawn(self.gameObjects[gameObjectIndex].PickupItem.id, self.gameObjects[gameObjectIndex].PickupItem.bodyId);
+                        }
+                    },
+                }
+                if (gameObjectIndex == 0) break;
+                gameObjectIndex -= 1;
+            }
             if (self.player.health <= 0.00) {
                 self.gameOver();
                 return;
             }
-            self.blackhole.tick(physics, delta);
-            for (&self.player.bullets) |*bullet| {
-                if (!bullet.isAlive) continue;
-                bullet.tick(physics);
-            }
-            self.player.tick(delta);
-            for (&self.asteroids) |*asteroid| {
-                if (!asteroid.isAlive) continue;
-                asteroid.tick(physics);
-            }
-            for (&self.pickups) |*pickup| {
-                if (!pickup.isAlive) continue;
-                pickup.tick(physics, delta);
-            }
         }
     }
 
-    pub fn draw(self: Game, physics: *PhysicSystem) void {
+    pub fn draw(self: Game) void {
         const resourceManager = ResourceManagerZig.resourceManager;
         {
             resourceManager.blackholeShader.activate();
@@ -272,7 +278,7 @@ pub const Game = struct {
             );
         }
         if (self.isPlaying) {
-            self.blackhole.draw();
+            self.blackhole.draw(self.physics);
         }
         rl.drawCircleV(
             configZig.NATIVE_CENTER,
@@ -280,52 +286,81 @@ pub const Game = struct {
             if (self.blackhole.isDisturbed) .red else .black,
         );
 
-        for (self.pickups) |pickupItem| {
-            if (!pickupItem.isAlive) continue;
-            const data: ResourceManagerZig.TextureData = switch (pickupItem.item.type) {
-                .AntiGravity => resourceManager.powerupGravityData,
-                .GunImprovement => resourceManager.powerupGunData,
-                .Shield => resourceManager.powerupShieldData,
-            };
-            resourceManager.textureSheet.drawPro(
-                data.rec,
-                .{
-                    .x = pickupItem.body.position.x,
-                    .y = pickupItem.body.position.y,
-                    .width = data.rec.width,
-                    .height = data.rec.height,
-                },
-                data.center,
-                0.0,
-                .white,
-            );
-        }
-        for (self.asteroids) |asteroid| {
-            if (asteroid.isAlive) asteroid.draw();
-        }
-        self.player.draw();
-        physics.debug();
-    }
-
-    fn spawnAsteroidRandom(self: *Game, physics: *PhysicSystem) void {
-        for (&self.asteroids) |*asteroid| {
-            if (!asteroid.isAlive) {
-                asteroid.isAlive = true;
-                asteroid.spawn(physics);
-                return;
+        for (0..self.gameObjectsAmount) |i| {
+            switch (self.gameObjects[i]) {
+                .Player => {},
+                .Blackhole => {},
+                inline else => |object| object.draw(self.physics),
             }
         }
+
+        self.player.draw(self.physics);
+        self.physics.debug();
     }
 
-    pub fn spawnPickupFromAsteroid(self: *Game, physics: *PhysicSystem, asteroid: Asteroid) void {
-        for (&self.pickups) |*pickup| {
-            if (!pickup.isAlive) {
-                pickup.isAlive = true;
-                pickup.lifeTime = configZig.PICKUP_LIFETIME_DURATION;
-                pickup.generateRandomItem();
-                pickup.spawn(physics, asteroid.body);
-                return;
-            }
+    // TODO: handle error
+    fn spawnAsteroidRandom(self: *Game) void {
+        if (self.gameObjectsAmount == configZig.MAX_GAME_OBJECTS) unreachable;
+        self.gameObjects[self.gameObjectsAmount] = .{ .Asteroid = .{
+            .id = self.gameObjectsAmount,
+            .parent = self,
+        } };
+        self.gameObjects[self.gameObjectsAmount].Asteroid.init(&self.physics);
+        self.gameObjectsAmount += 1;
+    }
+
+    // TODO: handle error
+    pub fn spawnPickupFromAsteroid(self: *Game, asteroid: Asteroid) void {
+        if (self.gameObjectsAmount == configZig.MAX_GAME_OBJECTS) unreachable;
+        self.gameObjects[self.gameObjectsAmount] = .{ .PickupItem = .{
+            .id = self.gameObjectsAmount,
+            .parent = self,
+            .lifeTime = configZig.PICKUP_LIFETIME_DURATION,
+        } };
+        self.gameObjects[self.gameObjectsAmount].PickupItem.init(&self.physics, self.physics.getBody(asteroid.bodyId).position);
+        self.gameObjectsAmount += 1;
+    }
+
+    pub fn spawnProjectile(self: *Game, position: rl.Vector2, orient: f32, speed: f32) void {
+        if (self.gameObjectsAmount == configZig.MAX_GAME_OBJECTS) unreachable;
+        self.gameObjects[self.gameObjectsAmount] = .{ .Projectile = .{
+            .id = self.gameObjectsAmount,
+            .parent = self,
+        } };
+        self.gameObjects[self.gameObjectsAmount].Projectile.init(&self.physics);
+        self.gameObjects[self.gameObjectsAmount].Projectile.teleport(&self.physics, position, orient);
+
+        self.physics.applyForceToBody(self.gameObjects[self.gameObjectsAmount].Projectile.bodyId, speed);
+
+        const resourceManager = ResourceManagerZig.resourceManager;
+        self.gameObjectsAmount += 1;
+        rl.playSound(resourceManager.shoot);
+    }
+
+    // TODO: handle error
+    pub fn unSpawn(self: *Game, id: usize, bodyId: usize) void {
+        if (id >= configZig.MAX_GAME_OBJECTS) unreachable;
+        if (id < 2) unreachable; // Cannot remove Player, Blackhole
+        if (bodyId < 3) unreachable; // Cannot remove Player, Blackhole or Phaser
+        self.gameObjectsAmount -= 1;
+        if (self.gameObjectsAmount < 3) return;
+        _ = self.physics.removeBody(bodyId);
+
+        self.gameObjects[id] = self.gameObjects[self.gameObjectsAmount];
+        switch (self.gameObjects[id]) {
+            .Asteroid => {
+                self.gameObjects[id].Asteroid.id = id;
+                self.gameObjects[id].Asteroid.bodyId = bodyId;
+            },
+            .Projectile => {
+                self.gameObjects[id].Projectile.id = id;
+                self.gameObjects[id].Projectile.bodyId = bodyId;
+            },
+            .PickupItem => {
+                self.gameObjects[id].PickupItem.id = id;
+                self.gameObjects[id].PickupItem.bodyId = bodyId;
+            },
+            else => unreachable,
         }
     }
 

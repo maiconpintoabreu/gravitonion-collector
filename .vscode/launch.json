@@ -2,11 +2,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(lldb) Launch",
             "type": "lldb",
             "request": "launch",
+            "name": "Launch",
             "program": "${workspaceFolder}/zig-out/bin/gravitonion_collector",
-            "preLaunchTask": "build",
-        }
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build"
+        },
     ]
 }

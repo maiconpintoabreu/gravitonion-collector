@@ -17,7 +17,9 @@ pub const MAX_PROJECTILES = 30; // enough for now
 pub const MAX_ASTEROIDS = 10;
 pub const MAX_PICKUPS = 10;
 pub const MAX_POWERUP_TEXTURES = 3;
-pub const MAX_PHYSICS_OBJECTS: comptime_int = MAX_PROJECTILES + MAX_ASTEROIDS + MAX_PICKUPS + 3;
+pub const MAX_PLAYER_PARTICLES = 15;
+pub const MAX_GAME_OBJECTS: comptime_int = MAX_PROJECTILES + MAX_ASTEROIDS + MAX_PICKUPS + MAX_PLAYER_PARTICLES + 3;
+pub const MAX_PHYSICS_OBJECTS: comptime_int = MAX_GAME_OBJECTS;
 pub const MAX_PHYSICS_POLYGON_POINTS = 4;
 pub const DEFAULT_ASTEROID_CD = 5;
 pub const DEFAULT_SHOOTING_CD = 0.2;
@@ -29,6 +31,7 @@ pub const PICKUP_LIFETIME_DURATION = 10.0;
 pub const PLAYER_SPEED_DEFAULT = 2.0;
 pub const PLAYER_ROTATION_SPEED_DEFAULT = 200.0;
 pub const PLAYER_GUN_SPEED_DEFAULT = 5.0;
+pub const BULLET_SPEED_DEFAULT = 10.0;
 
 // Debug
 pub const IS_DEBUG = true and builtin.mode == .Debug;

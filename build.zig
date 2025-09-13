@@ -32,8 +32,9 @@ pub fn build(b: *std.Build) !void {
         });
 
         const install_dir: std.Build.InstallDir = .{ .custom = "web" };
-        const emcc_flags = emsdk.emccDefaultFlags(b.allocator, .{ .optimize = optimize });
-        const emcc_settings = emsdk.emccDefaultSettings(b.allocator, .{ .optimize = optimize });
+        var emcc_flags = emsdk.emccDefaultFlags(b.allocator, .{ .optimize = optimize });
+        const emcc_settings = emsdk.emccDefaultSettings(b.allocator, .{ .optimize = optimize, .es3 = false });
+        emcc_flags.put("-sSTACK_SIZE=131072", {}) catch unreachable;
 
         const emcc_step = emsdk.emccStep(b, raylib_artifact, wasm, .{
             .optimize = optimize,
@@ -58,6 +59,8 @@ pub fn build(b: *std.Build) !void {
         const exe = b.addExecutable(.{
             .name = ProjectName,
             .root_module = exe_mod,
+            .use_llvm = if (optimize == .Debug) true else false,
+            .use_lld = if (optimize == .Debug) true else false,
         });
 
         const test_filters = b.option([]const []const u8, "test-filter", "Skip tests that do not match any filter") orelse &[0][]const u8{};

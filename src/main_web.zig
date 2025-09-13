@@ -40,8 +40,7 @@ export fn updateFrame() void {
         const fontSize: i32 = @divFloor(game.screen.y, 10);
         rl.drawText("Thanks!", 10, @divFloor(game.screen.y, 2) - @divFloor(fontSize, 2), fontSize, .white);
         rl.endDrawing();
-        std.os.emscripten.emscripten_cancel_main_loop();
         return;
     }
-    _ = gameManager.update(&game, &physics);
+    if (!gameManager.update(&game, &physics)) game.gameState = .Quit;
 }

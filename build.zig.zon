@@ -41,8 +41,8 @@
             .hash = "raylib_zig-5.6.0-dev-KE8RELMzBQBrG2nDjgoLezzb3sG35oOTW21fOUe9oBRb",
         },
         .emsdk = .{
-            .url = "git+https://github.com/emscripten-core/emsdk?ref=4.0.9#3bcf1dcd01f040f370e10fe673a092d9ed79ebb5",
-            .hash = "N-V-__8AAJl1DwBezhYo_VE6f53mPVm00R-Fk28NPW7P14EQ",
+            .url = "https://github.com/emscripten-core/emsdk/archive/refs/tags/4.0.3.tar.gz",
+            .hash = "N-V-__8AAOG3BQCJ9cn-N2swm2o5cLmDhmdHmtwNngOChK78",
         },
     },
     .paths = .{

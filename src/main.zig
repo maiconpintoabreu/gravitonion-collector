@@ -10,7 +10,6 @@ const PhysicSystem = PhysicsZig.PhysicsSystem;
 
 pub fn main() anyerror!void {
     var game: Game = .{};
-    var physics: PhysicSystem = .{};
     rl.setTraceLogLevel(if (buildin.mode == .Debug) .all else .err);
     rl.traceLog(
         rl.TraceLogLevel.info,
@@ -26,7 +25,7 @@ pub fn main() anyerror!void {
         .window_highdpi = true,
     });
 
-    if (gameManager.initGame(&game, &physics, isFullScreen)) {
+    if (gameManager.initGame(&game, isFullScreen)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(configZig.MIN_WINDOW_SIZE_WIDTH, configZig.MIN_WINDOW_SIZE_HEIGHT);
         if (isFullScreen) {
@@ -39,6 +38,6 @@ pub fn main() anyerror!void {
         else
             60;
         rl.setTargetFPS(fps);
-        while (gameManager.update(&game, &physics)) {}
+        while (gameManager.update(&game)) {}
     }
 }

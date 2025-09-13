@@ -6,43 +6,46 @@ const configZig = @import("../config.zig");
 const Game = @import("game_play.zig").Game;
 const PhysicsZig = @import("physics.zig");
 const PhysicsBody = PhysicsZig.PhysicsBody;
+const CollisionData = PhysicsZig.CollisionData;
 const PhysicSystem = PhysicsZig.PhysicsSystem;
 const ResourceManagerZig = @import("../resource_manager.zig");
 
 pub const Asteroid = struct {
+    id: usize = undefined,
     parent: *Game = undefined,
-    body: PhysicsBody = .{
-        .mass = 2,
-        .useGravity = true,
-        .shape = .{
-            .Circular = .{
-                .radius = 24,
-            },
-        },
-        .tag = .Asteroid,
-    },
-    isAlive: bool = false,
+    bodyId: usize = undefined,
+    isAlive: bool = true,
 
-    fn colliding(self: *Asteroid, physics: *PhysicSystem, data: *PhysicsBody) void {
+    fn colliding(self: *Asteroid, data: CollisionData) void {
         if (data.tag != .Asteroid) {
             if (data.tag == .PlayerBullet) {
-                self.parent.spawnPickupFromAsteroid(physics, self.*);
+                self.parent.spawnPickupFromAsteroid(self.*);
             }
-            self.unSpawn(physics);
             self.isAlive = false;
         }
     }
 
     pub fn init(self: *Asteroid, physics: *PhysicSystem) void {
-        physics.addBody(&self.body);
+        var body: PhysicsBody = .{
+            .enabled = true,
+            .mass = 2,
+            .useGravity = true,
+            .shape = .{
+                .Circular = .{
+                    .radius = 24,
+                },
+            },
+            .tag = .Asteroid,
+        };
+        self.bodyId = physics.addBody(&body);
+        self.spawn(physics);
     }
     pub fn tick(self: *Asteroid, physics: *PhysicSystem) void {
-        if (self.body.collidingWith) |otherBody| {
-            self.colliding(physics, otherBody);
+        const body = physics.getBody(self.bodyId);
+        if (body.collidingData) |otherBody| {
+            self.colliding(otherBody);
+            physics.resetBody(body.id);
         }
-    }
-    pub fn unSpawn(self: Asteroid, physics: *PhysicSystem) void {
-        physics.disableBody(self.body.id);
     }
 
     pub fn spawn(self: Asteroid, physics: *PhysicSystem) void {
@@ -62,24 +65,26 @@ pub const Asteroid = struct {
             }
             moveTo.x = rand.float(f32) * configZig.NATIVE_WIDTH;
         }
-        physics.moveBody(self.body.id, moveTo, 0.0);
-        physics.enableBody(self.body.id);
+        physics.moveBody(self.bodyId, moveTo, 0.0);
     }
 
-    pub fn draw(self: Asteroid) void {
-        if (self.body.id < 0) return;
-        if (!self.body.enabled) return;
+    pub fn draw(self: Asteroid, physics: PhysicSystem) void {
+        if (self.bodyId < 0) return;
+        if (!self.isAlive) return;
+
+        const body = physics.getBody(self.bodyId);
+
         const resourceManager = ResourceManagerZig.resourceManager;
         resourceManager.textureSheet.drawPro(
             resourceManager.asteroidData.rec,
             .{
-                .x = self.body.position.x,
-                .y = self.body.position.y,
+                .x = body.position.x,
+                .y = body.position.y,
                 .width = resourceManager.asteroidData.rec.width,
                 .height = resourceManager.asteroidData.rec.height,
             },
             resourceManager.asteroidData.center,
-            self.body.orient,
+            body.orient,
             .white,
         );
     }

@@ -6,39 +6,43 @@ const configZig = @import("../config.zig");
 const PhysicsZig = @import("physics.zig");
 const Game = @import("game_play.zig").Game;
 const PhysicsBody = PhysicsZig.PhysicsBody;
+const CollisionData = PhysicsZig.CollisionData;
 const PhysicSystem = PhysicsZig.PhysicsSystem;
 const ItemZig = @import("inventory/item.zig");
 const Item = ItemZig.Item;
+const ResourceManagerZig = @import("../resource_manager.zig");
 
 pub const PickupItem = struct {
+    id: usize = undefined,
     parent: *Game = undefined,
-    body: PhysicsBody = .{
-        .mass = 2,
-        .useGravity = false,
-        .shape = .{
-            .Circular = .{
-                .radius = 16,
-            },
-        },
-        .tag = .PickupItem,
-    },
+    bodyId: usize = undefined,
     item: Item = .{},
-    isAlive: bool = false,
+    isAlive: bool = true,
     lifeTime: f32 = configZig.PICKUP_LIFETIME_DURATION,
 
-    fn colliding(self: *PickupItem, physics: *PhysicSystem, data: *PhysicsBody) void {
+    fn colliding(self: *PickupItem, data: CollisionData) void {
         if (data.tag == .Player) {
-            self.unSpawn(physics);
             self.isAlive = false;
             self.parent.player.pickupItem(self.item);
         } else if (data.tag == .Phaser) {
-            self.unSpawn(physics);
             self.isAlive = false;
         }
     }
 
-    pub fn init(self: *PickupItem, physics: *PhysicSystem) void {
-        physics.addBody(&self.body);
+    pub fn init(self: *PickupItem, physics: *PhysicSystem, initialPosition: rl.Vector2) void {
+        var body: PhysicsBody = .{
+            .position = initialPosition,
+            .mass = 2,
+            .useGravity = false,
+            .shape = .{
+                .Circular = .{
+                    .radius = 16,
+                },
+            },
+            .tag = .PickupItem,
+        };
+        self.bodyId = physics.addBody(&body);
+        self.generateRandomItem();
     }
 
     pub fn generateRandomItem(self: *PickupItem) void {
@@ -56,34 +60,33 @@ pub const PickupItem = struct {
         self.lifeTime -= delta;
         if (self.lifeTime <= 0.0) {
             self.isAlive = false;
-            self.unSpawn(physics);
             return;
         }
-        if (self.body.collidingWith) |otherBody| {
-            self.colliding(physics, otherBody);
+        const body = physics.getBody(self.bodyId);
+        if (body.collidingData) |otherBody| {
+            self.colliding(otherBody);
+            physics.resetBody(body.id);
         }
-    }
-
-    pub fn unSpawn(self: PickupItem, physics: *PhysicSystem) void {
-        physics.disableBody(self.body.id);
     }
 
     pub fn spawn(self: PickupItem, physics: *PhysicSystem, body: PhysicsBody) void {
-        physics.moveBody(self.body.id, body.position, body.orient);
-        physics.enableBody(self.body.id);
+        physics.moveBody(self.bodyId, body.position, body.orient);
+        physics.enableBody(self.bodyId);
     }
 
-    pub fn draw(self: PickupItem, texture: rl.Texture2D) void {
-        if (self.body.id < 0) return;
-        if (texture.id == 0) return;
-        const currentWidth = self.textureRec.width;
-        const currentHeight = self.textureRec.height;
-        if (!self.body.enabled) return;
-        texture.drawPro(self.textureRec, .{
-            .x = self.body.position.x,
-            .y = self.body.position.y,
+    pub fn draw(self: PickupItem, physics: PhysicSystem) void {
+        if (!self.isAlive) return;
+        const textureData = self.item.getTextureData();
+        const currentWidth = textureData.rec.width;
+        const currentHeight = textureData.rec.height;
+        const body = physics.getBody(self.bodyId);
+
+        const resourceManager = ResourceManagerZig.resourceManager;
+        resourceManager.textureSheet.drawPro(textureData.rec, .{
+            .x = body.position.x,
+            .y = body.position.y,
             .width = currentWidth,
             .height = currentHeight,
-        }, .{ .x = currentWidth / 2, .y = currentHeight / 2 }, self.body.orient, .white);
+        }, textureData.center, 0.0, .white);
     }
 };

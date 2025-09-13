@@ -10,6 +10,17 @@ pub const PhysicsBodyTagEnum = enum {
     Blackhole,
     Phaser,
     PickupItem,
+
+    pub fn getName(self: PhysicsBodyTagEnum) c_int {
+        return switch (self) {
+            .Player => 0,
+            .Asteroid => 1,
+            .PlayerBullet => 2,
+            .Blackhole => 3,
+            .Phaser => 4,
+            .PickupItem => 5,
+        };
+    }
 };
 
 pub const PhysicsShapeCircular = struct {
@@ -38,6 +49,13 @@ pub const PhysicsShapeUnion = union(enum) {
     Polygon: PhysicsShapePolygon,
 };
 
+pub const CollisionData = struct {
+    tag: PhysicsBodyTagEnum = undefined,
+    position: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Physics body shape pivot
+    velocity: rl.Vector2 = std.mem.zeroes(rl.Vector2), // Current linear velocity applied to position
+    mass: f32 = 0.0, // Physics body mass
+};
+
 pub const PhysicsBody = struct {
     id: usize = undefined,
     tag: PhysicsBodyTagEnum = undefined,
@@ -51,30 +69,24 @@ pub const PhysicsBody = struct {
     mass: f32 = 0.0, // Physics body mass
     useGravity: bool = false, // Apply gravity force to dynamics
     isColliding: bool = false,
-    collidingWith: ?*PhysicsBody = null,
+    collidingData: ?CollisionData = null,
     shape: PhysicsShapeUnion = undefined,
-    enabled: bool = false,
+    enabled: bool = true,
     isWrapable: bool = false,
     isVisible: bool = true,
 };
+
 pub const PhysicsSystem = struct {
     physicsBodyCount: usize = 0,
     currentId: i32 = 0,
-    physicsBodyList: [configZig.MAX_PHYSICS_OBJECTS]*PhysicsBody = undefined,
+    physicsBodyList: [configZig.MAX_PHYSICS_OBJECTS]PhysicsBody = undefined,
 
-    pub fn resetById(self: *PhysicsSystem, id: usize) void {
-        self.physicsBodyList[id].isColliding = false;
-    }
+    pub fn reset(self: *PhysicsSystem) void {
+        self.physicsBodyCount = 3;
 
-    pub fn reset(self: *PhysicsSystem, tag: PhysicsBodyTagEnum) void {
-        for (0..self.physicsBodyCount) |i| {
-            var body = self.physicsBodyList[i];
-            if (body.tag == tag) {
-                body.enabled = false;
-                body.isColliding = false;
-                body.collidingWith = null;
-            }
-        }
+        self.physicsBodyList[0].speedLimit = configZig.MAX_BODY_VELOCITY;
+        self.physicsBodyList[0].useGravity = true;
+        self.physicsBodyList[2].enabled = false;
     }
 
     pub fn changeBodyShape(self: *PhysicsSystem, id: usize, shape: PhysicsShapeUnion) void {
@@ -84,25 +96,18 @@ pub const PhysicsSystem = struct {
     // TODO: change EnableDesable system to resort the array to keep only enabled bodies on the beginning
     // may need to change id system
     pub fn enableBody(self: *PhysicsSystem, id: usize) void {
-        var body = self.physicsBodyList[id];
-        if (body.tag == .PlayerBullet) {
-            body.enabled = true;
-        } else if (body.tag == .Asteroid) {
-            body.enabled = true;
-        } else {
-            body.enabled = true;
-        }
+        self.physicsBodyList[id].enabled = true;
     }
 
     pub fn disableBody(self: *PhysicsSystem, id: usize) void {
-        var body = self.physicsBodyList[id];
+        var body = &self.physicsBodyList[id];
         body.enabled = false;
         body.isColliding = false;
-        body.collidingWith = null;
+        body.collidingData = null;
     }
 
     pub fn moveBody(self: *PhysicsSystem, id: usize, position: rl.Vector2, orient: f32) void {
-        var body = self.physicsBodyList[id];
+        const body = &self.physicsBodyList[id];
         body.position = position;
         body.orient = orient;
         body.velocity = std.mem.zeroes(rl.Vector2);
@@ -111,7 +116,7 @@ pub const PhysicsSystem = struct {
 
     // Apply force will project the body forward by orient
     pub fn applyForceToBody(self: *PhysicsSystem, id: usize, force: f32) void {
-        var body = self.physicsBodyList[id];
+        const body = &self.physicsBodyList[id];
         const direction = rl.Vector2{
             .x = math.sin(body.orient),
             .y = -math.cos(body.orient),
@@ -124,20 +129,41 @@ pub const PhysicsSystem = struct {
         self.physicsBodyList[id].torque += torque;
     }
 
-    pub fn addBody(self: *PhysicsSystem, body: *PhysicsBody) void {
+    pub fn getBody(self: PhysicsSystem, id: usize) PhysicsBody {
+        return self.physicsBodyList[id];
+    }
+
+    pub fn resetBody(self: *PhysicsSystem, id: usize) void {
+        self.physicsBodyList[id].collidingData = null;
+        self.physicsBodyList[id].isColliding = false;
+    }
+
+    pub fn setUseGravityBody(self: *PhysicsSystem, id: usize, value: bool) void {
+        self.physicsBodyList[id].useGravity = value;
+    }
+
+    pub fn addBody(self: *PhysicsSystem, initBody: *PhysicsBody) usize {
+        var body: PhysicsBody = initBody.*;
         body.id = self.physicsBodyCount;
         self.physicsBodyList[self.physicsBodyCount] = body;
         self.physicsBodyCount += 1;
+        return body.id;
+    }
+
+    pub fn removeBody(self: *PhysicsSystem, id: usize) usize {
+        if (self.physicsBodyCount == 0) return 0;
+        self.physicsBodyCount -= 1;
+        if (id < self.physicsBodyCount) {
+            self.physicsBodyList[self.physicsBodyCount].id = id;
+            self.physicsBodyList[id] = self.physicsBodyList[self.physicsBodyCount];
+        }
+        return self.physicsBodyCount;
     }
 
     pub fn tick(self: *PhysicsSystem, delta: f32, gravityScale: f32) void {
         for (0..self.physicsBodyCount) |i| {
-            var body = self.physicsBodyList[i];
+            var body = &self.physicsBodyList[i];
             if (!body.enabled) continue;
-
-            // reset body
-            body.isColliding = false;
-            body.collidingWith = null;
 
             const gravityDirection = configZig.NATIVE_CENTER.subtract(body.position).normalize();
             body.angularVelocity = body.torque * 1 * (delta / 2.0);
@@ -216,11 +242,11 @@ pub const PhysicsSystem = struct {
     // TODO: Improve it if needed
     fn checkCollisions(self: *PhysicsSystem) void {
         for (0..self.physicsBodyCount) |i| {
-            const leftBody = self.physicsBodyList[i];
+            const leftBody = &self.physicsBodyList[i];
             if (!leftBody.enabled) continue;
             for (0..self.physicsBodyCount) |j| {
                 if (i == j) continue;
-                const rightBody = self.physicsBodyList[j];
+                const rightBody = &self.physicsBodyList[j];
                 if (!rightBody.enabled) continue;
                 // check tag combination to see if can collide
                 var shouldCollide = false;
@@ -284,12 +310,16 @@ pub const PhysicsSystem = struct {
                     .Circular => |leftShape| {
                         switch (rightBody.shape) {
                             .Circular => |rightShape| {
-                                if (rl.checkCollisionCircles(
-                                    leftBody.position,
-                                    leftShape.radius,
-                                    rightBody.position,
-                                    rightShape.radius,
-                                )) {
+                                var collision = false;
+
+                                const dx: f32 = rightBody.position.x - leftBody.position.x; // X distance between centers
+                                const dy: f32 = rightBody.position.y - leftBody.position.y; // Y distance between centers
+
+                                const distanceSquared: f32 = dx * dx + dy * dy; // Distance between centers squared
+                                const radiusSum: f32 = leftShape.radius + rightShape.radius;
+
+                                collision = (distanceSquared <= (radiusSum * radiusSum));
+                                if (collision) {
                                     setCollision(leftBody, rightBody);
                                 }
                             },
@@ -359,8 +389,18 @@ pub const PhysicsSystem = struct {
 
     fn setCollision(bodyFrom: *PhysicsBody, bodyTo: *PhysicsBody) void {
         bodyFrom.isColliding = true;
-        bodyFrom.collidingWith = bodyTo;
+        bodyFrom.collidingData = .{
+            .tag = bodyTo.tag,
+            .position = bodyTo.position,
+            .velocity = bodyTo.velocity,
+            .mass = bodyTo.mass,
+        };
         bodyTo.isColliding = true;
-        bodyTo.collidingWith = bodyFrom;
+        bodyTo.collidingData = .{
+            .tag = bodyFrom.tag,
+            .position = bodyFrom.position,
+            .velocity = bodyFrom.velocity,
+            .mass = bodyFrom.mass,
+        };
     }
 };

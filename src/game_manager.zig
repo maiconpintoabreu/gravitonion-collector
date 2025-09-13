@@ -12,7 +12,7 @@ const PhysicsZig = @import("game_logic/physics.zig");
 const PhysicSystem = PhysicsZig.PhysicsSystem;
 const ResourceManagerZig = @import("resource_manager.zig");
 
-pub fn initGame(game: *Game, physics: *PhysicSystem, isFullscreen: bool) bool {
+pub fn initGame(game: *Game, isFullscreen: bool) bool {
     if (isFullscreen) {
         game.screen = .zero();
     }
@@ -25,7 +25,7 @@ pub fn initGame(game: *Game, physics: *PhysicSystem, isFullscreen: bool) bool {
             return false;
         },
     };
-    game.init(physics) catch |err| switch (err) {
+    game.init() catch |err| switch (err) {
         rl.RaylibError.LoadShader => {
             rl.traceLog(.err, "LoadShader Blackhole.fs ERROR", .{});
             return false;
@@ -80,7 +80,7 @@ fn updateRatio(game: *Game) void {
     rl.setMouseScale(1 / game.virtualRatio.x, 1 / game.virtualRatio.y);
 }
 
-pub fn update(game: *Game, physics: *PhysicSystem) bool {
+pub fn update(game: *Game) bool {
     if (game.gameState == .Quit) return false;
     if (rl.windowShouldClose()) {
         return false;
@@ -104,20 +104,20 @@ pub fn update(game: *Game, physics: *PhysicSystem) bool {
                 menuZig.drawFrame(game);
             }
             if (game.gameState == GameState.Playing) {
-                game.restart(physics);
+                game.restart();
                 game.currentTickLength = 0.0;
             }
         },
         GameState.Playing => {
             menuZig.updateFrame(game);
-            game.tick(physics, delta);
+            game.tick(delta);
             rl.beginDrawing();
             defer rl.endDrawing();
             rl.clearBackground(configZig.BACKGROUND_COLOR);
             {
                 game.camera.begin();
                 defer game.camera.end();
-                game.draw(physics);
+                game.draw();
                 menuZig.drawFrame(game);
             }
         },
@@ -132,7 +132,7 @@ pub fn update(game: *Game, physics: *PhysicSystem) bool {
                 menuZig.drawFrame(game);
             }
             if (game.gameState == GameState.Playing) {
-                game.restart(physics);
+                game.restart();
             }
         },
         GameState.Pause => {
@@ -147,7 +147,7 @@ pub fn update(game: *Game, physics: *PhysicSystem) bool {
                 game.camera.begin();
                 defer game.camera.end();
                 rl.clearBackground(configZig.BACKGROUND_COLOR);
-                // game.draw(physics);
+
                 menuZig.drawFrame(game);
             }
         },
