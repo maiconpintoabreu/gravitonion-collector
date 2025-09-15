@@ -45,7 +45,7 @@ const ResourceManager = struct {
 
     shipData: TextureData = .{
         .rec = .{
-            .x = 205.000,
+            .x = 295.000,
             .y = 0.000,
             .width = 32,
             .height = 32,
@@ -63,7 +63,7 @@ const ResourceManager = struct {
     },
     shieldData: TextureData = .{
         .rec = .{
-            .x = 166.000,
+            .x = 256.000,
             .y = 0.000,
             .width = 39,
             .height = 32,
@@ -72,34 +72,34 @@ const ResourceManager = struct {
     },
     powerupGunData: TextureData = .{
         .rec = .{
-            .x = 98.000,
+            .x = 128.000,
             .y = 0.000,
-            .width = 34,
-            .height = 33,
+            .width = 64,
+            .height = 64,
         },
-        .center = .{ .x = 34.0 * 0.5, .y = 33.0 * 0.5 },
+        .center = .{ .x = 64 * 0.5, .y = 64 * 0.5 },
     },
     powerupShieldData: TextureData = .{
         .rec = .{
-            .x = 132.000,
+            .x = 192.000,
             .y = 0.000,
-            .width = 34,
-            .height = 33,
+            .width = 64,
+            .height = 64,
         },
-        .center = .{ .x = 34.0 * 0.5, .y = 33.0 * 0.5 },
+        .center = .{ .x = 64 * 0.5, .y = 64 * 0.5 },
     },
     powerupGravityData: TextureData = .{
         .rec = .{
             .x = 64.000,
             .y = 0.000,
-            .width = 34,
-            .height = 33,
+            .width = 64,
+            .height = 64,
         },
-        .center = .{ .x = 34.0 * 0.5, .y = 33.0 * 0.5 },
+        .center = .{ .x = 64 * 0.5, .y = 64 * 0.5 },
     },
     bulletData: TextureData = .{
         .rec = .{
-            .x = 237.000,
+            .x = 327.000,
             .y = 0.000,
             .width = 16,
             .height = 16,
@@ -113,9 +113,9 @@ const ResourceManager = struct {
         if (self.isInitialized) return;
         if (!rl.fileExists("resources/sheet.png")) {
             const asteroidImage = try rl.loadImage("default_resources/asteroid1.png");
-            const powerupGravityImage = try rl.loadImage("default_resources/powerupGravity.png");
-            const powerupGunImage = try rl.loadImage("default_resources/powerupGun.png");
-            const powerupShieldImage = try rl.loadImage("default_resources/powerupShield.png");
+            const powerupGravityImage = try rl.loadImage("default_resources/PowerUpBullets4.png");
+            const powerupGunImage = try rl.loadImage("default_resources/PowerUpBullets4.png");
+            const powerupShieldImage = try rl.loadImage("default_resources/PowerUpBullets4.png");
             const shieldImage = try rl.loadImage("default_resources/shield1.png");
             const shipImage = try rl.loadImage("default_resources/ship.png");
             const bulletImage = try rl.loadImage("default_resources/bullet.png");
