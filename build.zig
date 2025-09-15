@@ -77,8 +77,14 @@ pub fn build(b: *std.Build) !void {
             ),
         });
 
-        exe.linkLibrary(raylib_artifact);
-        exe.root_module.addImport("raylib", raylib);
+        const content_path = "resources/";
+        const install_content_step = b.addInstallDirectory(.{
+            .source_dir = b.path(content_path),
+            .install_dir = .prefix,
+            .install_subdir = "resources/",
+        });
+        exe.step.dependOn(&install_content_step.step);
+        test_step.step.dependOn(&install_content_step.step);
 
         test_step.linkLibrary(raylib_artifact);
         test_step.root_module.addImport("raylib", raylib);

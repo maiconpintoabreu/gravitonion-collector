@@ -74,6 +74,7 @@ pub const PhysicsBody = struct {
     enabled: bool = true,
     isWrapable: bool = false,
     isVisible: bool = true,
+    isAlive: bool = true,
 };
 
 pub const PhysicsSystem = struct {
@@ -144,25 +145,28 @@ pub const PhysicsSystem = struct {
 
     pub fn addBody(self: *PhysicsSystem, initBody: *PhysicsBody) usize {
         var body: PhysicsBody = initBody.*;
+        for (0..self.physicsBodyCount) |i| {
+            if (!self.physicsBodyList[i].isAlive) {
+                body.id = i;
+                self.physicsBodyList[i] = body;
+                return i;
+            }
+        }
         body.id = self.physicsBodyCount;
         self.physicsBodyList[self.physicsBodyCount] = body;
         self.physicsBodyCount += 1;
         return body.id;
     }
 
-    pub fn removeBody(self: *PhysicsSystem, id: usize) usize {
-        if (self.physicsBodyCount == 0) return 0;
-        self.physicsBodyCount -= 1;
-        if (id < self.physicsBodyCount) {
-            self.physicsBodyList[self.physicsBodyCount].id = id;
-            self.physicsBodyList[id] = self.physicsBodyList[self.physicsBodyCount];
-        }
-        return self.physicsBodyCount;
+    pub fn removeBody(self: *PhysicsSystem, id: usize) void {
+        if (self.physicsBodyCount == 0) return;
+        self.physicsBodyList[id].isAlive = false;
     }
 
     pub fn tick(self: *PhysicsSystem, delta: f32, gravityScale: f32) void {
         for (0..self.physicsBodyCount) |i| {
             var body = &self.physicsBodyList[i];
+            if (!body.isAlive) continue;
             if (!body.enabled) continue;
 
             const gravityDirection = configZig.NATIVE_CENTER.subtract(body.position).normalize();
@@ -228,6 +232,7 @@ pub const PhysicsSystem = struct {
         if (configZig.IS_DEBUG) {
             for (0..self.physicsBodyCount) |i| {
                 const body = self.physicsBodyList[i];
+                if (!body.isAlive) continue;
                 if (!body.enabled) continue;
 
                 const color = if (body.isColliding) rl.Color.white else rl.Color.yellow;
@@ -243,10 +248,12 @@ pub const PhysicsSystem = struct {
     fn checkCollisions(self: *PhysicsSystem) void {
         for (0..self.physicsBodyCount) |i| {
             const leftBody = &self.physicsBodyList[i];
+            if (!leftBody.isAlive) continue;
             if (!leftBody.enabled) continue;
             for (0..self.physicsBodyCount) |j| {
                 if (i == j) continue;
                 const rightBody = &self.physicsBodyList[j];
+                if (!rightBody.isAlive) continue;
                 if (!rightBody.enabled) continue;
                 // check tag combination to see if can collide
                 var shouldCollide = false;

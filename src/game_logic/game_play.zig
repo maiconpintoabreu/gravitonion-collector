@@ -347,21 +347,18 @@ pub const Game = struct {
         if (bodyId < 3) unreachable; // Cannot remove Player, Blackhole or Phaser
         self.gameObjectsAmount -= 1;
         if (self.gameObjectsAmount < 3) return;
-        _ = self.physics.removeBody(bodyId);
+        self.physics.removeBody(bodyId);
 
         self.gameObjects[id] = self.gameObjects[self.gameObjectsAmount];
         switch (self.gameObjects[id]) {
             .Asteroid => {
                 self.gameObjects[id].Asteroid.id = id;
-                self.gameObjects[id].Asteroid.bodyId = bodyId;
             },
             .Projectile => {
                 self.gameObjects[id].Projectile.id = id;
-                self.gameObjects[id].Projectile.bodyId = bodyId;
             },
             .PickupItem => {
                 self.gameObjects[id].PickupItem.id = id;
-                self.gameObjects[id].PickupItem.bodyId = bodyId;
             },
             else => unreachable,
         }
