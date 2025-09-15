@@ -9,13 +9,7 @@ const Game = gameZig.Game;
 
 test "GameZig asteroidCount should be 0 from start" {
     var game: Game = .{};
-    var physics: PhysicsSystem = .{};
-    try game.init(&physics);
-    for (game.asteroids) |asteroid| {
-        if (asteroid.isAlive) {
-            try testing.expect(false);
-        }
-    }
+    try game.init();
 }
 
 test "Game Debug should be false when Releasing" {

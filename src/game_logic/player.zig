@@ -19,7 +19,6 @@ const MAX_POWER = 100;
 
 pub const Player = struct {
     parent: *Game = undefined,
-    bullets: [configZig.MAX_PROJECTILES]Projectile = @splat(.{}),
     particles: [15]Particle = @splat(.{}),
     isAlive: bool = true,
     isTurningLeft: bool = false,

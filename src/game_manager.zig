@@ -111,6 +111,10 @@ pub fn update(game: *Game) bool {
         GameState.Playing => {
             menuZig.updateFrame(game);
             game.tick(delta);
+            while (game.currentTickLength >= configZig.PHYSICS_TICK_SPEED) {
+                game.currentTickLength -= configZig.PHYSICS_TICK_SPEED;
+                game.physicsTick(configZig.PHYSICS_TICK_SPEED);
+            }
             rl.beginDrawing();
             defer rl.endDrawing();
             rl.clearBackground(configZig.BACKGROUND_COLOR);

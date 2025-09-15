@@ -14,24 +14,27 @@ test "projectileZig init" {
 test "projectileZig Physics Body init" {
     var physics: PhysicsSystem = .{};
     var projectile: Projectile = .{};
-    try testing.expect(projectile.body.id >= 0);
+    try testing.expect(projectile.bodyId >= 0);
 
     projectile.init(&physics);
-    try testing.expect(projectile.body.id > -1);
+    try testing.expect(projectile.bodyId > -1);
 }
 
 test "projectileZig Physics Body enable/desable" {
     var physics: PhysicsSystem = .{};
     var projectile: Projectile = .{};
-    try testing.expect(projectile.body.id >= 0);
+    try testing.expect(projectile.bodyId >= 0);
 
     projectile.init(&physics);
-    try testing.expect(projectile.body.id > -1);
-    try testing.expect(projectile.body.enabled == false);
+    try testing.expect(projectile.bodyId > -1);
+    var body = physics.getBody(projectile.bodyId);
+    try testing.expect(body.enabled == true);
 
-    physics.enableBody(projectile.body.id);
-    try testing.expect(projectile.body.enabled == true);
+    physics.disableBody(body.id);
+    body = physics.getBody(projectile.bodyId);
+    try testing.expect(body.enabled == false);
 
-    physics.disableBody(projectile.body.id);
-    try testing.expect(projectile.body.enabled == false);
+    physics.enableBody(body.id);
+    body = physics.getBody(projectile.bodyId);
+    try testing.expect(body.enabled == true);
 }

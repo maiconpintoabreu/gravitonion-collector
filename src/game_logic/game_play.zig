@@ -143,6 +143,7 @@ pub const Game = struct {
     }
 
     pub fn tick(self: *Game, delta: f32) void {
+        self.currentTickLength += delta;
         if (rl.isKeyReleased(rl.KeyboardKey.escape)) {
             self.gameState = GameState.Pause;
         }
@@ -225,44 +226,46 @@ pub const Game = struct {
             } else {
                 self.player.isAccelerating = false;
             }
-
-            const gravityScale: f32 = if (self.blackhole.isDisturbed) 100.0 else 0.4;
-            self.physics.tick(delta, gravityScale);
-            var gameObjectIndex: usize = self.gameObjectsAmount - 1;
-            while (true) {
-                switch (self.gameObjects[gameObjectIndex]) {
-                    .Player => {
-                        self.gameObjects[gameObjectIndex].Player.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
-                    },
-                    .Blackhole => {
-                        self.gameObjects[gameObjectIndex].Blackhole.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
-                    },
-                    .Asteroid => {
-                        self.gameObjects[gameObjectIndex].Asteroid.tick(&self.physics);
-                        if (!self.gameObjects[gameObjectIndex].Asteroid.isAlive) {
-                            self.unSpawn(self.gameObjects[gameObjectIndex].Asteroid.id, self.gameObjects[gameObjectIndex].Asteroid.bodyId);
-                        }
-                    },
-                    .Projectile => {
-                        self.gameObjects[gameObjectIndex].Projectile.tick(&self.physics);
-                        if (!self.gameObjects[gameObjectIndex].Projectile.isAlive) {
-                            self.unSpawn(self.gameObjects[gameObjectIndex].Projectile.id, self.gameObjects[gameObjectIndex].Projectile.bodyId);
-                        }
-                    },
-                    .PickupItem => {
-                        self.gameObjects[gameObjectIndex].PickupItem.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
-                        if (!self.gameObjects[gameObjectIndex].PickupItem.isAlive) {
-                            self.unSpawn(self.gameObjects[gameObjectIndex].PickupItem.id, self.gameObjects[gameObjectIndex].PickupItem.bodyId);
-                        }
-                    },
-                }
-                if (gameObjectIndex == 0) break;
-                gameObjectIndex -= 1;
-            }
             if (self.player.health <= 0.00) {
                 self.gameOver();
                 return;
             }
+        }
+    }
+
+    pub fn physicsTick(self: *Game, delta: f32) void {
+        const gravityScale: f32 = if (self.blackhole.isDisturbed) 100.0 else 0.4;
+        self.physics.tick(delta, gravityScale);
+        var gameObjectIndex: usize = self.gameObjectsAmount - 1;
+        while (true) {
+            switch (self.gameObjects[gameObjectIndex]) {
+                .Player => {
+                    self.gameObjects[gameObjectIndex].Player.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
+                },
+                .Blackhole => {
+                    self.gameObjects[gameObjectIndex].Blackhole.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
+                },
+                .Asteroid => {
+                    self.gameObjects[gameObjectIndex].Asteroid.tick(&self.physics);
+                    if (!self.gameObjects[gameObjectIndex].Asteroid.isAlive) {
+                        self.unSpawn(self.gameObjects[gameObjectIndex].Asteroid.id, self.gameObjects[gameObjectIndex].Asteroid.bodyId);
+                    }
+                },
+                .Projectile => {
+                    self.gameObjects[gameObjectIndex].Projectile.tick(&self.physics);
+                    if (!self.gameObjects[gameObjectIndex].Projectile.isAlive) {
+                        self.unSpawn(self.gameObjects[gameObjectIndex].Projectile.id, self.gameObjects[gameObjectIndex].Projectile.bodyId);
+                    }
+                },
+                .PickupItem => {
+                    self.gameObjects[gameObjectIndex].PickupItem.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
+                    if (!self.gameObjects[gameObjectIndex].PickupItem.isAlive) {
+                        self.unSpawn(self.gameObjects[gameObjectIndex].PickupItem.id, self.gameObjects[gameObjectIndex].PickupItem.bodyId);
+                    }
+                },
+            }
+            if (gameObjectIndex == 0) break;
+            gameObjectIndex -= 1;
         }
     }
 

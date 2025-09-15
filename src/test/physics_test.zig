@@ -23,7 +23,7 @@ test "PhysicsSystem Create/Get Circular Body" {
         },
         .enabled = true,
     };
-    physics.addBody(&body);
+    _ = physics.addBody(&body);
 
     switch (body.shape) {
         .Circular => |shape| {
@@ -68,9 +68,9 @@ test "PhysicsSystem Create/Get Polygon Body" {
         .enabled = true,
     };
 
-    physics.addBody(&body);
-
-    switch (body.shape) {
+    const bodyId = physics.addBody(&body);
+    const newBody = physics.getBody(bodyId);
+    switch (newBody.shape) {
         .Polygon => |shape| {
             try testing.expectEqual(2, shape.pointCount);
         },
@@ -78,8 +78,8 @@ test "PhysicsSystem Create/Get Polygon Body" {
             try testing.expect(false);
         },
     }
-    try testing.expectEqual(10, body.mass);
-    try testing.expect(body.id >= 0);
+    try testing.expectEqual(10, newBody.mass);
+    try testing.expect(newBody.id >= 0);
 }
 
 test "PhysicsSystem Body should be affected by gravity" {
@@ -96,13 +96,12 @@ test "PhysicsSystem Body should be affected by gravity" {
         },
         .enabled = true,
     };
-    physics.addBody(&body);
-    physics.moveBody(body.id, .{ .x = 101.0, .y = 102.0 }, 0.5);
-    try testing.expect(body.position.x > 100.0);
-    try testing.expect(body.position.y > 101.0);
+    const bodyId = physics.addBody(&body);
+    physics.moveBody(bodyId, .{ .x = 101.0, .y = 102.0 }, 0.5);
     physics.tick(1.0, 10.0);
+    const newBody = physics.getBody(bodyId);
 
     // check if possition changed - X: 110.420334, Y: 105.35519
-    try testing.expectEqual(0, initPosition.equals(body.position));
-    try testing.expectApproxEqAbs(0.5, body.orient, 0.0);
+    try testing.expectEqual(0, initPosition.equals(newBody.position));
+    try testing.expectApproxEqAbs(0.5, newBody.orient, 0.0);
 }

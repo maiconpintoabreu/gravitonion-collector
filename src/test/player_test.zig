@@ -11,11 +11,6 @@ test "PlayerZig bulletsCount should be 0 from start" {
     var physics: PhysicsSystem = .{};
     var player: Player = .{};
     try player.init(&physics, .zero());
-    for (player.bullets) |bullet| {
-        if (bullet.isAlive) {
-            try testing.expect(false);
-        }
-    }
 }
 
 test "PlayerZig init" {
@@ -27,17 +22,17 @@ test "PlayerZig init" {
 test "PlayerZig Physics Body init" {
     var physics: PhysicsSystem = .{};
     var player: Player = .{};
-    try testing.expect(player.body.id >= 0);
+    try testing.expect(player.bodyId >= 0);
     try player.init(&physics, .zero());
-    try testing.expect(player.body.id > -1);
+    try testing.expect(player.bodyId > -1);
 }
 
 test "PlayerZig Move Player to start position" {
     var physics: PhysicsSystem = .{};
     var player: Player = .{};
-    try testing.expect(player.body.id >= 0);
+    try testing.expect(player.bodyId >= 0);
     try player.init(&physics, .zero());
-    try testing.expect(player.body.id > -1);
+    try testing.expect(player.bodyId > -1);
 
     player.teleport(
         &physics,
