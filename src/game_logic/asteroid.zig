@@ -14,37 +14,51 @@ pub const Asteroid = struct {
     id: usize = undefined,
     parent: *Game = undefined,
     bodyId: usize = undefined,
+    shouldDie: bool = false,
     isAlive: bool = true,
+    type: i8 = 0,
+    constantRotationSpeed: f32 = 10,
 
     fn colliding(self: *Asteroid, data: CollisionData) void {
+        if (self.shouldDie) return;
         if (data.tag != .Asteroid) {
             if (data.tag == .PlayerBullet) {
                 self.parent.spawnPickupFromAsteroid(self.*);
             }
-            self.isAlive = false;
+            self.shouldDie = true;
         }
     }
 
     pub fn init(self: *Asteroid, physics: *PhysicSystem) void {
+        self.type = rand.intRangeLessThan(i8, 0, 2);
         var body: PhysicsBody = .{
             .enabled = true,
             .mass = 2,
             .useGravity = true,
             .shape = .{
                 .Circular = .{
-                    .radius = 24,
+                    .radius = if (self.type == 0) 24 else 20,
                 },
             },
             .tag = .Asteroid,
         };
         self.bodyId = physics.addBody(&body);
+        if (rand.boolean()) {
+            self.constantRotationSpeed = rand.float(f32) * 100;
+        } else {
+            self.constantRotationSpeed = rand.float(f32) * -100;
+        }
         self.spawn(physics);
     }
     pub fn tick(self: *Asteroid, physics: *PhysicSystem) void {
+        if (self.shouldDie) return;
         const body = physics.getBody(self.bodyId);
         if (body.collidingData) |otherBody| {
             self.colliding(otherBody);
             physics.resetBody(body.id);
+        }
+        if (self.isAlive) {
+            physics.applyTorqueToBody(self.bodyId, self.constantRotationSpeed);
         }
     }
 
@@ -69,21 +83,26 @@ pub const Asteroid = struct {
     }
 
     pub fn draw(self: Asteroid, physics: PhysicSystem) void {
-        if (self.bodyId < 0) return;
+        if (self.shouldDie) return;
         if (!self.isAlive) return;
+        if (self.bodyId < 0) return;
 
         const body = physics.getBody(self.bodyId);
 
         const resourceManager = ResourceManagerZig.resourceManager;
+        const data = switch (self.type) {
+            0 => resourceManager.asteroid1Data,
+            else => resourceManager.asteroid2Data,
+        };
         resourceManager.textureSheet.drawPro(
-            resourceManager.asteroidData.rec,
+            data.rec,
             .{
                 .x = body.position.x,
                 .y = body.position.y,
-                .width = resourceManager.asteroidData.rec.width,
-                .height = resourceManager.asteroidData.rec.height,
+                .width = data.rec.width,
+                .height = data.rec.height,
             },
-            resourceManager.asteroidData.center,
+            data.center,
             body.orient,
             .white,
         );

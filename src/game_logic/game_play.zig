@@ -143,7 +143,6 @@ pub const Game = struct {
     }
 
     pub fn tick(self: *Game, delta: f32) void {
-        self.currentTickLength += delta;
         if (rl.isKeyReleased(rl.KeyboardKey.escape)) {
             self.gameState = GameState.Pause;
         }
@@ -162,6 +161,7 @@ pub const Game = struct {
         }
         if (self.gameState == GameState.Playing and self.isPlaying) {
             // Tick
+            self.currentTickLength += delta;
             self.gameTime += @as(f64, delta);
             self.currentScore += 20 / self.blackhole.size * delta; // TODO: add distance on calculation
             self.asteroidSpawnCd -= delta;
@@ -247,19 +247,22 @@ pub const Game = struct {
                 },
                 .Asteroid => {
                     self.gameObjects[gameObjectIndex].Asteroid.tick(&self.physics);
-                    if (!self.gameObjects[gameObjectIndex].Asteroid.isAlive) {
+                    if (self.gameObjects[gameObjectIndex].Asteroid.shouldDie) {
+                        self.gameObjects[gameObjectIndex].Asteroid.isAlive = false;
                         self.unSpawn(self.gameObjects[gameObjectIndex].Asteroid.id, self.gameObjects[gameObjectIndex].Asteroid.bodyId);
                     }
                 },
                 .Projectile => {
                     self.gameObjects[gameObjectIndex].Projectile.tick(&self.physics);
-                    if (!self.gameObjects[gameObjectIndex].Projectile.isAlive) {
+                    if (self.gameObjects[gameObjectIndex].Projectile.shouldDie) {
+                        self.gameObjects[gameObjectIndex].Projectile.isAlive = false;
                         self.unSpawn(self.gameObjects[gameObjectIndex].Projectile.id, self.gameObjects[gameObjectIndex].Projectile.bodyId);
                     }
                 },
                 .PickupItem => {
                     self.gameObjects[gameObjectIndex].PickupItem.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
-                    if (!self.gameObjects[gameObjectIndex].PickupItem.isAlive) {
+                    if (self.gameObjects[gameObjectIndex].PickupItem.shouldDie) {
+                        self.gameObjects[gameObjectIndex].PickupItem.isAlive = false;
                         self.unSpawn(self.gameObjects[gameObjectIndex].PickupItem.id, self.gameObjects[gameObjectIndex].PickupItem.bodyId);
                     }
                 },

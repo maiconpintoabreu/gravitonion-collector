@@ -22,17 +22,14 @@ pub fn main() anyerror!void {
     const isBorderlessWindowed = buildin.mode != std.builtin.OptimizeMode.Debug;
     rl.setConfigFlags(rl.ConfigFlags{
         .window_resizable = isFullScreen or isBorderlessWindowed,
+        .fullscreen_mode = isFullScreen,
+        .borderless_windowed_mode = isBorderlessWindowed,
         .window_highdpi = true,
     });
 
     if (gameManager.initGame(&game, isFullScreen)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(configZig.MIN_WINDOW_SIZE_WIDTH, configZig.MIN_WINDOW_SIZE_HEIGHT);
-        if (isFullScreen) {
-            rl.toggleFullscreen();
-        } else if (isBorderlessWindowed) {
-            rl.toggleBorderlessWindowed();
-        }
         const fps = if (rl.getMonitorRefreshRate(rl.getCurrentMonitor()) != 0)
             rl.getMonitorRefreshRate(rl.getCurrentMonitor())
         else

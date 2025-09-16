@@ -174,7 +174,7 @@ pub const PhysicsSystem = struct {
             body.orient += body.angularVelocity;
 
             // Increases gravity by how close it is
-            const BlackholeDistance = (1 / (body.position.distance(configZig.NATIVE_CENTER) + 0.1)) * 100.0;
+            const BlackholeDistance = (0.5 / (body.position.distance(configZig.NATIVE_CENTER) + 0.1)) * 100.0;
 
             // Calculate force or Calculate gravity
             if (body.force.length() > 0) {

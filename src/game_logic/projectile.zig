@@ -14,12 +14,14 @@ pub const Projectile = struct {
     bodyId: usize = undefined,
     speed: f32 = 20,
     rotation: f32 = 0,
+    shouldDie: bool = false,
     isAlive: bool = true,
     direction: rl.Vector2 = std.mem.zeroes(rl.Vector2),
 
     fn colliding(self: *Projectile, data: CollisionData) void {
+        if (self.shouldDie) return;
         _ = data;
-        self.isAlive = false;
+        self.shouldDie = true;
     }
 
     // Init physics
@@ -41,6 +43,7 @@ pub const Projectile = struct {
     }
 
     pub fn tick(self: *Projectile, physics: *PhysicSystem) void {
+        if (self.shouldDie) return;
         const body: PhysicsBody = physics.getBody(self.bodyId);
         self.isAlive = body.isVisible;
         if (body.collidingData) |otherBody| {
@@ -50,6 +53,7 @@ pub const Projectile = struct {
     }
 
     pub fn draw(self: Projectile, physics: PhysicSystem) void {
+        if (self.shouldDie) return;
         if (!self.isAlive) return;
 
         const body: PhysicsBody = physics.getBody(self.bodyId);

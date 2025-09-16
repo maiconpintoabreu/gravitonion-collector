@@ -381,7 +381,8 @@ pub fn drawFrame(game: *Game) void {
                     );
                 }
                 const gameStructSizeBit: i32 = @sizeOf(Game);
-                const gameStructSizeKB: f32 = @as(f32, @floatFromInt(gameStructSizeBit)) * 0.000125;
+                const resourceManagerSizeBit: i32 = @sizeOf(ResourceManagerZig.ResourceManager);
+                const gameStructSizeKB: f32 = @as(f32, @floatFromInt(gameStructSizeBit + resourceManagerSizeBit)) * 0.000125;
                 rl.drawText(
                     rl.textFormat("Game Struct Size: %3.3fKB", .{
                         gameStructSizeKB,

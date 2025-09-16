@@ -17,15 +17,17 @@ pub const PickupItem = struct {
     parent: *Game = undefined,
     bodyId: usize = undefined,
     item: Item = .{},
+    shouldDie: bool = false,
     isAlive: bool = true,
     lifeTime: f32 = configZig.PICKUP_LIFETIME_DURATION,
 
     fn colliding(self: *PickupItem, data: CollisionData) void {
+        if (self.shouldDie) return;
         if (data.tag == .Player) {
-            self.isAlive = false;
+            self.shouldDie = true;
             self.parent.player.pickupItem(self.item);
         } else if (data.tag == .Phaser) {
-            self.isAlive = false;
+            self.shouldDie = true;
         }
     }
 
@@ -57,9 +59,10 @@ pub const PickupItem = struct {
     }
 
     pub fn tick(self: *PickupItem, physics: *PhysicSystem, delta: f32) void {
+        if (self.shouldDie) return;
         self.lifeTime -= delta;
         if (self.lifeTime <= 0.0) {
-            self.isAlive = false;
+            self.shouldDie = true;
             return;
         }
         const body = physics.getBody(self.bodyId);
