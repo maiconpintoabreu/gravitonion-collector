@@ -22,7 +22,6 @@ const BLACK_HOLE_PHASER_MIN_DURATION: f32 = 1;
 const BLACK_HOLE_COLLISION_POINTS = 4;
 const BLACK_HOLE_SIZE_PHASER_ACTIVE = 1.5;
 
-const BLACK_DEFAULT_SIZE = 0.6;
 const BLACK_HOLE_SCALE = 20;
 const BLACK_HOLE_PHASER_ROTATION_SPEED: f32 = 0.1;
 const BLACK_HOLE_PHASER_MAX_ROTATION: f32 = 360.0;
@@ -31,9 +30,9 @@ pub const Blackhole = struct {
     parent: *Game = undefined,
     bodyId: usize = 0,
     phaserBodyId: usize = 0,
-    size: f32 = BLACK_DEFAULT_SIZE,
-    finalSize: f32 = BLACK_DEFAULT_SIZE * BLACK_HOLE_SCALE,
-    speed: f32 = BLACK_DEFAULT_SIZE,
+    size: f32 = configZig.BLACK_HOLE_SIZE_DEFAULT,
+    finalSize: f32 = configZig.BLACK_HOLE_SIZE_DEFAULT * BLACK_HOLE_SCALE,
+    speed: f32 = configZig.BLACK_HOLE_SIZE_DEFAULT,
     phasersCD: f32 = BLACK_HOLE_PHASER_CD,
     phasersMinDuration: f32 = BLACK_HOLE_PHASER_MIN_DURATION,
     isPhasing: bool = false,
@@ -93,8 +92,8 @@ pub const Blackhole = struct {
             physics.applyTorqueToBody(body.id, -1);
         }
         if (self.isPhasing) {
-            if (self.size < BLACK_DEFAULT_SIZE) {
-                self.setSize(physics, BLACK_DEFAULT_SIZE);
+            if (self.size < configZig.BLACK_HOLE_SIZE_DEFAULT) {
+                self.setSize(physics, configZig.BLACK_HOLE_SIZE_DEFAULT);
                 physics.disableBody(self.phaserBodyId);
                 self.isPhasing = false;
             } else {

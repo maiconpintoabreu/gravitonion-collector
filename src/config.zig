@@ -23,6 +23,7 @@ pub const DEFAULT_SHOOTING_CD = 0.2;
 pub const PHYSICS_TICK_SPEED = 0.02;
 pub const MAX_BODY_VELOCITY = 2;
 pub const PICKUP_LIFETIME_DURATION = 10.0;
+pub const BLACK_HOLE_SIZE_DEFAULT = 0.6;
 
 // Player consts
 pub const PLAYER_SPEED_DEFAULT = 2.0;

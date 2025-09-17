@@ -30,12 +30,9 @@ fn concat(allocator: Allocator, a: []const u8, b: []const u8, l: []const u8) []u
             unreachable;
         },
     };
-    rl.traceLog(.info, "a: 0 to %i", .{a.len});
     @memcpy(result[0..a.len], a);
     const combLen = a.len + l.len;
-    rl.traceLog(.info, "l: %i to %i", .{ a.len, combLen });
     @memcpy(result[a.len..combLen], l);
-    rl.traceLog(.info, "b: %i to %i", .{ combLen, combLen + b.len });
     @memcpy(result[combLen..], b);
     return result;
 }
@@ -129,6 +126,7 @@ pub const ResourceManager = struct {
             const maxWidth = leftImage.width * 4;
 
             var sheetImage = rl.Image.genColor(maxWidth, sunHeight, .blank);
+            defer sheetImage.unload();
 
             var currentPosition: rl.Vector2 = .zero();
 
@@ -291,12 +289,12 @@ pub const ResourceManager = struct {
         self.blackholePhaserData.timePhaserLoc = rl.getShaderLocation(self.blackholePhaserShader, "time");
 
         const BlackholeImage = rl.genImageColor(configZig.NATIVE_WIDTH, configZig.NATIVE_HEIGHT, .white);
+        defer BlackholeImage.unload();
         self.blackholeTexture = try BlackholeImage.toTexture();
-        BlackholeImage.unload();
 
         const phaserImage = rl.Image.genColor(256 * 2, 10, .white);
+        defer phaserImage.unload();
         self.phaserTexture = try phaserImage.toTexture();
-        phaserImage.unload();
 
         const radius: f32 = 2.0;
         rl.setShaderValue(self.blackholeShader, self.blackholeData.radiusLoc, &radius, .float);

@@ -112,7 +112,7 @@ pub const Game = struct {
             rl.playMusicStream(resourceManager.music);
         }
 
-        self.blackhole.setSize(&self.physics, 0.6);
+        self.blackhole.setSize(&self.physics, configZig.BLACK_HOLE_SIZE_DEFAULT);
         self.blackhole.isPhasing = false;
         self.isPlaying = false;
 

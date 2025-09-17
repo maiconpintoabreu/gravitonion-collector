@@ -173,7 +173,10 @@ pub const PhysicsSystem = struct {
     pub fn tick(self: *PhysicsSystem, delta: f32, gravityScale: f32) void {
         for (0..self.physicsBodyCount) |i| {
             var body = &self.physicsBodyList[i];
-            if (!body.isAlive) continue;
+            if (!body.isAlive) {
+                if (i == self.physicsBodyCount - 1) self.physicsBodyCount -= 1;
+                continue;
+            }
             if (!body.enabled) continue;
 
             const gravityDirection = configZig.NATIVE_CENTER.subtract(body.position).normalize();

@@ -7,6 +7,8 @@
 
 Player needs to protect the Blackhole from the asteroids so it does not go too big and stay close from it so the scientists are able to collect information of it.
 
+## `Memory Usage`: `86 MiB`
+
 
 ## TODO:
 * UI to show the power (with power mechanics)
