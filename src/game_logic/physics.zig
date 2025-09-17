@@ -74,7 +74,7 @@ pub const PhysicsBody = struct {
     enabled: bool = true,
     isWrapable: bool = false,
     isVisible: bool = true,
-    isAlive: bool = true,
+    isAlive: bool = false,
 };
 
 pub const PhysicsSystem = struct {
@@ -145,10 +145,12 @@ pub const PhysicsSystem = struct {
 
     pub fn addBody(self: *PhysicsSystem, initBody: *PhysicsBody) usize {
         var body: PhysicsBody = initBody.*;
+        body.isAlive = true;
         for (0..self.physicsBodyCount) |i| {
             if (!self.physicsBodyList[i].isAlive) {
                 body.id = i;
                 self.physicsBodyList[i] = body;
+                rl.traceLog(.info, "reusing", .{});
                 return i;
             }
         }
@@ -160,7 +162,12 @@ pub const PhysicsSystem = struct {
 
     pub fn removeBody(self: *PhysicsSystem, id: usize) void {
         if (self.physicsBodyCount == 0) return;
+        if (id == self.physicsBodyCount - 1) {
+            self.physicsBodyCount -= 1;
+            rl.traceLog(.info, "Removing last body", .{});
+        }
         self.physicsBodyList[id].isAlive = false;
+        rl.traceLog(.info, "Removing body: %i", .{id});
     }
 
     pub fn tick(self: *PhysicsSystem, delta: f32, gravityScale: f32) void {

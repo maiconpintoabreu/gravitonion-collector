@@ -45,7 +45,7 @@ pub const Projectile = struct {
     pub fn tick(self: *Projectile, physics: *PhysicSystem) void {
         if (self.shouldDie) return;
         const body: PhysicsBody = physics.getBody(self.bodyId);
-        self.isAlive = body.isVisible;
+        self.shouldDie = !body.isVisible;
         if (body.collidingData) |otherBody| {
             self.colliding(otherBody);
             physics.resetBody(body.id);
