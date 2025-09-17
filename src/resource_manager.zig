@@ -88,6 +88,11 @@ pub const ResourceManager = struct {
     shieldData: TextureData = .{ .rec = .{ .x = 0.000, .y = 128.000, .width = 39, .height = 32 }, .center = .{ .x = 19.500, .y = 16.000 } },
     shipData: TextureData = .{ .rec = .{ .x = 0.000, .y = 160.000, .width = 32, .height = 32 }, .center = .{ .x = 16.000, .y = 16.000 } },
     bulletData: TextureData = .{ .rec = .{ .x = 0.000, .y = 192.000, .width = 16, .height = 16 }, .center = .{ .x = 8.000, .y = 8.000 } },
+    uiButtomLeftData: TextureData = .{ .rec = .{ .x = 0.000, .y = 208.000, .width = 64, .height = 64 }, .center = .{ .x = 32.000, .y = 32.000 } },
+    uiButtomRightData: TextureData = .{ .rec = .{ .x = 64.000, .y = 208.000, .width = 64, .height = 64 }, .center = .{ .x = 32.000, .y = 32.000 } },
+    uiButtomAccelerateData: TextureData = .{ .rec = .{ .x = 128.000, .y = 208.000, .width = 64, .height = 64 }, .center = .{ .x = 32.000, .y = 32.000 } },
+    uiButtomShootData: TextureData = .{ .rec = .{ .x = 192.000, .y = 208.000, .width = 64, .height = 64 }, .center = .{ .x = 32.000, .y = 32.000 } },
+    uiButtomPauseData: TextureData = .{ .rec = .{ .x = 0.000, .y = 272.000, .width = 32, .height = 16 }, .center = .{ .x = 16.000, .y = 8.000 } },
     blackholeData: BlackholeData = .{},
     blackholePhaserData: BlackholePhaserData = .{},
 
@@ -95,23 +100,33 @@ pub const ResourceManager = struct {
         if (self.isInitialized) return;
         if (!rl.fileExists("resources/sheet.png")) {
             const asteroid1Image = try rl.loadImage("default_resources/asteroid1.png");
-            const asteroid2Image = try rl.loadImage("default_resources/asteroid2.png");
-            const powerupGravityImage = try rl.loadImage("default_resources/powerupGravity.png");
-            const powerupGunImage = try rl.loadImage("default_resources/powerupGun.png");
-            const powerupShieldImage = try rl.loadImage("default_resources/powerupShield.png");
-            const shieldImage = try rl.loadImage("default_resources/shield1.png");
-            const shipImage = try rl.loadImage("default_resources/ship.png");
-            const bulletImage = try rl.loadImage("default_resources/bullet.png");
             defer asteroid1Image.unload();
+            const asteroid2Image = try rl.loadImage("default_resources/asteroid2.png");
             defer asteroid2Image.unload();
+            const powerupGravityImage = try rl.loadImage("default_resources/powerupGravity.png");
             defer powerupGravityImage.unload();
+            const powerupGunImage = try rl.loadImage("default_resources/powerupGun.png");
             defer powerupGunImage.unload();
+            const powerupShieldImage = try rl.loadImage("default_resources/powerupShield.png");
             defer powerupShieldImage.unload();
+            const shieldImage = try rl.loadImage("default_resources/shield1.png");
             defer shieldImage.unload();
+            const shipImage = try rl.loadImage("default_resources/ship.png");
             defer shipImage.unload();
+            const bulletImage = try rl.loadImage("default_resources/bullet.png");
             defer bulletImage.unload();
-            const sunHeight = asteroid1Image.height + powerupGravityImage.height + shieldImage.height + shipImage.height + bulletImage.height;
-            const maxWidth = asteroid1Image.width * 3;
+            const leftImage = try rl.loadImage("default_resources/ui_left.png");
+            defer leftImage.unload();
+            const rightImage = try rl.loadImage("default_resources/ui_right.png");
+            defer rightImage.unload();
+            const upImage = try rl.loadImage("default_resources/ui_up.png");
+            defer upImage.unload();
+            const shootImage = try rl.loadImage("default_resources/ui_shoot.png");
+            defer shootImage.unload();
+            const pauseImage = try rl.loadImage("default_resources/ui_pause.png");
+            defer pauseImage.unload();
+            const sunHeight = asteroid1Image.height + powerupGravityImage.height + shieldImage.height + shipImage.height + bulletImage.height + leftImage.height + pauseImage.height;
+            const maxWidth = leftImage.width * 4;
 
             var sheetImage = rl.Image.genColor(maxWidth, sunHeight, .blank);
 
@@ -182,6 +197,48 @@ pub const ResourceManager = struct {
                 bulletImage,
                 currentPosition,
                 "bullet",
+            );
+            currentPosition.x = 0.0;
+            currentPosition.y += @as(f32, @floatFromInt(bulletImage.height));
+
+            createSheetItem(
+                &sheetImage,
+                leftImage,
+                currentPosition,
+                "ui_left",
+            );
+            currentPosition.x += @as(f32, @floatFromInt(leftImage.width));
+
+            createSheetItem(
+                &sheetImage,
+                rightImage,
+                currentPosition,
+                "ui_right",
+            );
+            currentPosition.x += @as(f32, @floatFromInt(rightImage.width));
+
+            createSheetItem(
+                &sheetImage,
+                upImage,
+                currentPosition,
+                "ui_up",
+            );
+            currentPosition.x += @as(f32, @floatFromInt(upImage.width));
+
+            createSheetItem(
+                &sheetImage,
+                shootImage,
+                currentPosition,
+                "ui_shoot",
+            );
+            currentPosition.x = 0.0;
+            currentPosition.y += @as(f32, @floatFromInt(leftImage.height));
+
+            createSheetItem(
+                &sheetImage,
+                pauseImage,
+                currentPosition,
+                "ui_pause",
             );
             // const breakLine = "\n";
             // var buffer: [2000]u8 = undefined;

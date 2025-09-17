@@ -64,7 +64,6 @@ pub const Game = struct {
     blackhole: *Blackhole = undefined,
     gameTime: f64 = 0.1,
     font: rl.Font = std.mem.zeroes(rl.Font),
-    controlTexture: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
     gameState: GameState = GameState.MainMenu,
     gameControllerType: GameControllerType = GameControllerType.Keyboard,
     virtualRatio: rl.Vector2 = std.mem.zeroes(rl.Vector2),

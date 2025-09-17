@@ -9,7 +9,6 @@ const PhysicsZig = @import("game_logic/physics.zig");
 const PhysicSystem = PhysicsZig.PhysicsSystem;
 
 var game: Game = .{};
-var physics: PhysicSystem = .{};
 
 pub fn main() anyerror!void {
     rl.setTraceLogLevel(if (buildin.mode == .Debug) .all else .err);
@@ -27,7 +26,7 @@ pub fn main() anyerror!void {
         .window_resizable = true,
     });
 
-    if (gameManager.initGame(&game, &physics, false)) {
+    if (gameManager.initGame(&game, false)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(configZig.MIN_WINDOW_SIZE_WIDTH, configZig.MIN_WINDOW_SIZE_HEIGHT);
         std.os.emscripten.emscripten_set_main_loop(updateFrame, 0, 1);
@@ -42,5 +41,5 @@ export fn updateFrame() void {
         rl.endDrawing();
         return;
     }
-    if (!gameManager.update(&game, &physics)) game.gameState = .Quit;
+    if (!gameManager.update(&game)) game.gameState = .Quit;
 }

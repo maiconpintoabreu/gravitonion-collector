@@ -24,7 +24,6 @@ void main() {
     // Texel color fetching from texture sampler
     vec2 st = fragTexCoord;
 
-
     // Calculate final fragment color
     gl_FragColor = vec4(1.0,1.0,1.0,random(st.x + st.y + time));
 }

@@ -13,45 +13,6 @@ const BUTTON_BACKGROUND_HOVER: rl.Color = .light_gray;
 const BUTTON_WIDTH = 140;
 
 pub fn initMenu(game: *Game) bool {
-    var controlImage: rl.Image = rl.genImageColor(
-        16 * 4,
-        16,
-        rl.Color.blank,
-    );
-    rl.imageDrawTriangle(
-        &controlImage,
-        rl.Vector2{ .x = 9, .y = 2 },
-        rl.Vector2{ .x = 9, .y = 12 },
-        rl.Vector2{ .x = 4, .y = 7 },
-        rl.Color.white,
-    );
-    rl.imageDrawTriangle(
-        &controlImage,
-        rl.Vector2{ .x = 16 + 7, .y = 2 },
-        rl.Vector2{ .x = 16 + 16 - 4, .y = 7 },
-        rl.Vector2{ .x = 16 + 7, .y = 12 },
-        rl.Color.white,
-    );
-    rl.imageDrawTriangle(
-        &controlImage,
-        rl.Vector2{ .x = 32 + 8, .y = 5 },
-        rl.Vector2{ .x = 32 + 13, .y = 10 },
-        rl.Vector2{ .x = 32 + 3, .y = 10 },
-        rl.Color.white,
-    );
-    rl.imageDrawText(&controlImage, "x", 48 + 3, -3, 20, rl.Color.white);
-    game.controlTexture = controlImage.toTexture() catch |err| switch (err) {
-        rl.RaylibError.LoadTexture => {
-            rl.traceLog(.err, "LoadTexture controller ERROR", .{});
-            return false;
-        },
-        else => {
-            rl.traceLog(.err, "ERROR", .{});
-            return false;
-        },
-    };
-    controlImage.unload();
-
     game.font = rl.getFontDefault() catch |err| switch (err) {
         else => {
             return false;
@@ -63,9 +24,6 @@ pub fn closeMenu(game: *Game) void {
     if (game.font.isReady()) {
         game.font.unload();
     }
-    if (game.controlTexture.id > 0) {
-        game.controlTexture.unload();
-    }
 }
 pub fn updateFrame(game: *Game) void {
     if (rl.isKeyReleased(.escape)) {
@@ -76,58 +34,6 @@ pub fn updateFrame(game: *Game) void {
             inline else => return,
         }
         return;
-    }
-    if (game.gameState == .GameOver) return;
-
-    if (game.gameControllerType == GameControllerType.TouchScreen) {
-        if (actionbutton(
-            .{
-                .x = 40,
-                .y = configZig.NATIVE_HEIGHT - 80,
-            },
-            30,
-            game.camera,
-        )) {
-            game.isTouchLeft = true;
-        } else {
-            game.isTouchLeft = false;
-        }
-        if (actionbutton(
-            .{
-                .x = (100 + 30),
-                .y = configZig.NATIVE_HEIGHT - 80,
-            },
-            30,
-            game.camera,
-        )) {
-            game.isTouchRight = true;
-        } else {
-            game.isTouchRight = false;
-        }
-        if (actionbutton(
-            .{
-                .x = configZig.NATIVE_WIDTH - 60,
-                .y = configZig.NATIVE_HEIGHT - 80,
-            },
-            30,
-            game.camera,
-        )) {
-            game.isTouchUp = true;
-        } else {
-            game.isTouchUp = false;
-        }
-        if (actionbutton(
-            .{
-                .x = configZig.NATIVE_WIDTH - 60,
-                .y = configZig.NATIVE_HEIGHT - 150,
-            },
-            30,
-            game.camera,
-        )) {
-            game.isShooting = true;
-        } else {
-            game.isShooting = false;
-        }
     }
 }
 
@@ -279,42 +185,58 @@ pub fn drawFrame(game: *Game) void {
                     }
                 }
                 if (game.gameControllerType == GameControllerType.TouchScreen) {
-                    uibuttonIcon(
+                    if (uibuttonIcon(
                         .{
                             .x = 40,
                             .y = configZig.NATIVE_HEIGHT - 80,
                         },
-                        30,
-                        game.controlTexture,
-                        0,
-                    );
-                    uibuttonIcon(
+                        resourceManager.textureSheet,
+                        resourceManager.uiButtomLeftData,
+                        game.camera,
+                    )) {
+                        game.isTouchLeft = true;
+                    } else {
+                        game.isTouchLeft = false;
+                    }
+                    if (uibuttonIcon(
                         .{
                             .x = (100 + 30),
                             .y = configZig.NATIVE_HEIGHT - 80,
                         },
-                        30,
-                        game.controlTexture,
-                        1,
-                    );
-                    uibuttonIcon(
+                        resourceManager.textureSheet,
+                        resourceManager.uiButtomRightData,
+                        game.camera,
+                    )) {
+                        game.isTouchRight = true;
+                    } else {
+                        game.isTouchRight = false;
+                    }
+                    if (uibuttonIcon(
                         .{
                             .x = configZig.NATIVE_WIDTH - 60,
                             .y = configZig.NATIVE_HEIGHT - 80,
                         },
-                        30,
-                        game.controlTexture,
-                        2,
-                    );
-                    uibuttonIcon(
+                        resourceManager.textureSheet,
+                        resourceManager.uiButtomAccelerateData,
+                        game.camera,
+                    )) {
+                        game.isTouchUp = true;
+                    } else {
+                        game.isTouchUp = false;
+                    }
+                    if (uibuttonIcon(
                         .{
                             .x = configZig.NATIVE_WIDTH - 60,
                             .y = configZig.NATIVE_HEIGHT - 150,
                         },
-                        30,
-                        game.controlTexture,
-                        3,
-                    );
+                        resourceManager.textureSheet,
+                        resourceManager.uiButtomShootData,
+                        game.camera,
+                    )) {
+                        game.isShooting = true;
+                    } else {
+                        game.isShooting = false;
+                    }
                 }
             } else if (game.gameControllerType != GameControllerType.Joystick) {
                 game.gameControllerType = GameControllerType.Joystick;
@@ -436,22 +358,27 @@ fn actionbutton(button: rl.Vector2, buttonSize: f32, camera: rl.Camera2D) bool {
     return false;
 }
 
-fn uibuttonIcon(button: rl.Vector2, buttonSize: f32, texture: rl.Texture2D, icon: f32) void {
-    const buttonEdge = rl.Vector2{ .x = button.x - buttonSize / 2, .y = button.y - buttonSize / 2 };
-
-    rl.drawCircleV(button, buttonSize, .{
-        .r = BUTTON_BACKGROUND_NORMAL.r,
-        .g = BUTTON_BACKGROUND_NORMAL.g,
-        .b = BUTTON_BACKGROUND_NORMAL.b,
-        .a = 200,
-    });
+fn uibuttonIcon(button: rl.Vector2, texture: rl.Texture2D, icon: ResourceManagerZig.TextureData, camera: rl.Camera2D) bool {
     texture.drawPro(
-        rl.Rectangle{ .x = 16 * icon, .y = 0, .width = 16, .height = 16 },
-        .{ .x = buttonEdge.x, .y = buttonEdge.y, .width = buttonSize, .height = buttonSize },
-        rl.Vector2.zero(),
+        icon.rec,
+        .{ .x = button.x, .y = button.y, .width = icon.rec.width, .height = icon.rec.height },
+        icon.center,
         0,
         rl.Color.white,
     );
+
+    // remove mouse to use only touch values
+    const touchCount = @as(usize, @intCast(rl.getTouchPointCount()));
+    for (0..touchCount) |touchIndex| {
+        if (rl.checkCollisionPointCircle(
+            rl.getScreenToWorld2D(rl.getTouchPosition(@intCast(touchIndex)), camera),
+            button,
+            icon.rec.height,
+        )) {
+            return true;
+        }
+    }
+    return false;
 }
 
 fn uiTextbutton(button: rl.Rectangle, text: [:0]const u8, font: rl.Font, fontSize: f32, color: rl.Color) bool {

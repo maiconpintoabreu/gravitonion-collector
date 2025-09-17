@@ -44,3 +44,7 @@ PhysicsSystem can edit PhysicsBody
 ## Config
 
 To activate Debug mode and tweak some values: [config.zig](src/config.zig)
+
+## Web Build
+
+`zig build -Dtarget=wasm32-emscripten`
