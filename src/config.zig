@@ -13,12 +13,9 @@ pub const MIN_WINDOW_SIZE_HEIGHT = 225;
 pub const BACKGROUND_COLOR = rl.Color.init(20, 20, 20, 255);
 
 // Game consts
-pub const MAX_PROJECTILES = 30; // enough for now
-pub const MAX_ASTEROIDS = 10;
-pub const MAX_PICKUPS = 10;
 pub const MAX_POWERUP_TEXTURES = 3;
 pub const MAX_PLAYER_PARTICLES = 15;
-pub const MAX_GAME_OBJECTS: comptime_int = MAX_PROJECTILES + MAX_ASTEROIDS + MAX_PICKUPS + MAX_PLAYER_PARTICLES + 3;
+pub const MAX_GAME_OBJECTS: comptime_int = 30;
 pub const MAX_PHYSICS_OBJECTS: comptime_int = MAX_GAME_OBJECTS;
 pub const MAX_PHYSICS_POLYGON_POINTS = 4;
 pub const DEFAULT_ASTEROID_CD = 5;

@@ -33,8 +33,8 @@ pub fn build(b: *std.Build) !void {
 
         const install_dir: std.Build.InstallDir = .{ .custom = "web" };
         var emcc_flags = emsdk.emccDefaultFlags(b.allocator, .{ .optimize = optimize });
-        const emcc_settings = emsdk.emccDefaultSettings(b.allocator, .{ .optimize = optimize, .es3 = false });
-        emcc_flags.put("-sSTACK_SIZE=131072", {}) catch unreachable;
+        const emcc_settings = emsdk.emccDefaultSettings(b.allocator, .{ .optimize = optimize });
+        emcc_flags.put("-sSTACK_SIZE=70400", {}) catch unreachable;
 
         const emcc_step = emsdk.emccStep(b, raylib_artifact, wasm, .{
             .optimize = optimize,
