@@ -17,6 +17,7 @@ pub const Projectile = struct {
     shouldDie: bool = false,
     isAlive: bool = true,
     direction: rl.Vector2 = std.mem.zeroes(rl.Vector2),
+    timeToDie: f32 = 0.0,
 
     fn colliding(self: *Projectile, data: CollisionData) void {
         if (self.shouldDie) return;
@@ -32,9 +33,11 @@ pub const Projectile = struct {
                     .radius = 5,
                 },
             },
+            .isWrapable = true,
             .tag = .PlayerBullet,
             .speedLimit = 10,
         };
+        self.timeToDie = 1.0;
         self.bodyId = physics.addBody(&body);
     }
 
@@ -44,6 +47,13 @@ pub const Projectile = struct {
 
     pub fn tick(self: *Projectile, physics: *PhysicSystem) void {
         if (self.shouldDie) return;
+        if (self.isAlive) {
+            self.timeToDie -= rl.getFrameTime();
+            if (self.timeToDie < 0.0) {
+                self.shouldDie = true;
+                return;
+            }
+        }
         const body: PhysicsBody = physics.getBody(self.bodyId);
         self.shouldDie = !body.isVisible;
         if (body.collidingData) |otherBody| {

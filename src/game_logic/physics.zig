@@ -154,6 +154,7 @@ pub const PhysicsSystem = struct {
                 return i;
             }
         }
+        if (self.physicsBodyCount == configZig.MAX_PHYSICS_OBJECTS) unreachable;
         body.id = self.physicsBodyCount;
         self.physicsBodyList[self.physicsBodyCount] = body;
         self.physicsBodyCount += 1;
