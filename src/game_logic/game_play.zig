@@ -118,7 +118,7 @@ pub const Game = struct {
 
         self.player.isAlive = true;
         self.player.health = 100.0;
-        self.player.isInvunerable = false;
+        self.player.isInvunerable = true;
 
         self.player.teleport(
             &self.physics,

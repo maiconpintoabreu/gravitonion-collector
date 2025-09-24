@@ -85,7 +85,6 @@ pub const PhysicsSystem = struct {
     pub fn reset(self: *PhysicsSystem) void {
         self.physicsBodyCount = 3;
 
-        self.physicsBodyList[0].speedLimit = configZig.MAX_BODY_VELOCITY;
         self.physicsBodyList[0].useGravity = true;
         self.physicsBodyList[2].enabled = false;
     }

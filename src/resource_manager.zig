@@ -273,7 +273,7 @@ pub const ResourceManager = struct {
         rl.setSoundVolume(self.destruction, 0.1);
 
         self.blackholeShader = try rl.loadShader(
-            rl.textFormat("resources/shaders%s/blackhole.vs", .{shaderVersion}),
+            rl.textFormat("resources/shaders%s/base.vs", .{shaderVersion}),
             rl.textFormat("resources/shaders%s/blackhole.fs", .{shaderVersion}),
         );
 
@@ -283,7 +283,7 @@ pub const ResourceManager = struct {
         self.blackholeData.speedLoc = rl.getShaderLocation(self.blackholeShader, "speed");
 
         self.blackholePhaserShader = try rl.loadShader(
-            null,
+            rl.textFormat("resources/shaders%s/base.vs", .{shaderVersion}),
             rl.textFormat("resources/shaders%s/phaser.fs", .{shaderVersion}),
         );
         self.blackholePhaserData.timePhaserLoc = rl.getShaderLocation(self.blackholePhaserShader, "time");
@@ -292,7 +292,7 @@ pub const ResourceManager = struct {
         defer BlackholeImage.unload();
         self.blackholeTexture = try BlackholeImage.toTexture();
 
-        const phaserImage = rl.Image.genColor(256 * 2, 10, .white);
+        const phaserImage = rl.Image.genColor(256 * 2, 30, .white);
         defer phaserImage.unload();
         self.phaserTexture = try phaserImage.toTexture();
 

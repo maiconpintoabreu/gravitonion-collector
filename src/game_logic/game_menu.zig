@@ -187,8 +187,8 @@ pub fn drawFrame(game: *Game) void {
                 if (game.gameControllerType == GameControllerType.TouchScreen) {
                     if (uibuttonIcon(
                         .{
-                            .x = 40,
-                            .y = configZig.NATIVE_HEIGHT - 80,
+                            .x = 80,
+                            .y = configZig.NATIVE_HEIGHT - 90,
                         },
                         resourceManager.textureSheet,
                         resourceManager.uiButtomLeftData,
@@ -200,8 +200,8 @@ pub fn drawFrame(game: *Game) void {
                     }
                     if (uibuttonIcon(
                         .{
-                            .x = (100 + 30),
-                            .y = configZig.NATIVE_HEIGHT - 80,
+                            .x = (220),
+                            .y = configZig.NATIVE_HEIGHT - 90,
                         },
                         resourceManager.textureSheet,
                         resourceManager.uiButtomRightData,
@@ -213,8 +213,8 @@ pub fn drawFrame(game: *Game) void {
                     }
                     if (uibuttonIcon(
                         .{
-                            .x = configZig.NATIVE_WIDTH - 60,
-                            .y = configZig.NATIVE_HEIGHT - 80,
+                            .x = configZig.NATIVE_WIDTH - 80,
+                            .y = configZig.NATIVE_HEIGHT - 90,
                         },
                         resourceManager.textureSheet,
                         resourceManager.uiButtomAccelerateData,
@@ -226,8 +226,8 @@ pub fn drawFrame(game: *Game) void {
                     }
                     if (uibuttonIcon(
                         .{
-                            .x = configZig.NATIVE_WIDTH - 60,
-                            .y = configZig.NATIVE_HEIGHT - 150,
+                            .x = configZig.NATIVE_WIDTH - 80,
+                            .y = configZig.NATIVE_HEIGHT - 240,
                         },
                         resourceManager.textureSheet,
                         resourceManager.uiButtomShootData,
@@ -361,13 +361,16 @@ fn actionbutton(button: rl.Vector2, buttonSize: f32, camera: rl.Camera2D) bool {
 fn uibuttonIcon(button: rl.Vector2, texture: rl.Texture2D, icon: ResourceManagerZig.TextureData, camera: rl.Camera2D) bool {
     texture.drawPro(
         icon.rec,
-        .{ .x = button.x, .y = button.y, .width = icon.rec.width, .height = icon.rec.height },
-        icon.center,
+        .{ .x = button.x, .y = button.y, .width = icon.rec.width * 2.0, .height = icon.rec.height * 2.0 },
+        icon.center.scale(2.0),
         0,
         rl.Color.white,
     );
 
     // remove mouse to use only touch values
+    if (configZig.IS_DEBUG) {
+        rl.drawCircleLinesV(button, icon.rec.height, .yellow);
+    }
     const touchCount = @as(usize, @intCast(rl.getTouchPointCount()));
     for (0..touchCount) |touchIndex| {
         if (rl.checkCollisionPointCircle(

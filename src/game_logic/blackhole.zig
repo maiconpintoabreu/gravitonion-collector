@@ -112,10 +112,11 @@ pub const Blackhole = struct {
             if (self.isRotatingRight) self.size * -1 else self.size,
             0.5,
         );
-        self.collisionpoints[0] = configZig.NATIVE_CENTER.add(.{ .x = 0, .y = -5 });
-        self.collisionpoints[1] = configZig.NATIVE_CENTER.add(.{ .x = 0, .y = 5 });
-        self.collisionpoints[2] = configZig.NATIVE_CENTER.add(.{ .x = 1000, .y = -5 });
-        self.collisionpoints[3] = configZig.NATIVE_CENTER.add(.{ .x = 1000, .y = 5 });
+        const height = if (self.isPhasing) @as(f32, @floatFromInt(ResourceManagerZig.resourceManager.phaserTexture.height)) / 2.0 else 5.0;
+        self.collisionpoints[0] = configZig.NATIVE_CENTER.add(.{ .x = 0, .y = -height });
+        self.collisionpoints[1] = configZig.NATIVE_CENTER.add(.{ .x = 0, .y = height });
+        self.collisionpoints[2] = configZig.NATIVE_CENTER.add(.{ .x = 1000, .y = -height });
+        self.collisionpoints[3] = configZig.NATIVE_CENTER.add(.{ .x = 1000, .y = height });
 
         self.collisionpoints[0] = body.position.add(self.collisionpoints[0].subtract(body.position).rotate(
             body.orient,

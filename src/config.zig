@@ -10,7 +10,7 @@ pub const NATIVE_HEIGHT = 450;
 pub const NATIVE_CENTER = rl.Vector2{ .x = NATIVE_WIDTH / 2, .y = NATIVE_HEIGHT / 2 };
 pub const MIN_WINDOW_SIZE_WIDTH = 400;
 pub const MIN_WINDOW_SIZE_HEIGHT = 225;
-pub const BACKGROUND_COLOR = rl.Color.init(20, 20, 20, 255);
+pub const BACKGROUND_COLOR = rl.Color.dark_gray;
 
 // Game consts
 pub const MAX_POWERUP_TEXTURES = 3;
