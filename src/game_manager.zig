@@ -43,6 +43,13 @@ pub fn initGame(game: *Game, isFullscreen: bool) bool {
             return false;
         },
     };
+    game.renderTarget = rl.RenderTexture.init(configZig.NATIVE_WIDTH, configZig.NATIVE_HEIGHT) catch |err| switch (err) {
+        else => {
+            rl.traceLog(.err, "Render Texture ERROR", .{});
+            return false;
+        },
+    };
+    // rl.setTextureFilter(game.renderTarget.texture, .bilinear); // Texture scale filter to use
     game.gameState = GameState.MainMenu;
     const menuReady = menuZig.initMenu(game);
     game.camera.target = configZig.NATIVE_CENTER;
@@ -115,13 +122,48 @@ pub fn update(game: *Game) bool {
                 game.currentTickLength -= configZig.PHYSICS_TICK_SPEED;
                 game.physicsTick(configZig.PHYSICS_TICK_SPEED);
             }
+            {
+                game.renderTarget.begin();
+                defer game.renderTarget.end();
+
+                rl.clearBackground(configZig.BACKGROUND_COLOR);
+
+                game.draw();
+            }
             rl.beginDrawing();
             defer rl.endDrawing();
+
+            const scale: f32 = @min(game.virtualRatio.x, game.virtualRatio.y);
+            const widthScaled = @as(f32, @floatFromInt(configZig.NATIVE_WIDTH)) * scale;
+            const heightScaled = @as(f32, @floatFromInt(configZig.NATIVE_HEIGHT)) * scale;
             rl.clearBackground(configZig.BACKGROUND_COLOR);
+
+            {
+                ResourceManagerZig.resourceManager.postProcessingShader.activate();
+                defer ResourceManagerZig.resourceManager.postProcessingShader.deactivate();
+
+                game.renderTarget.texture.drawPro(
+                    .{
+                        .x = 0.0,
+                        .y = 0.0,
+                        .width = @floatFromInt(configZig.NATIVE_WIDTH),
+                        .height = @floatFromInt(-configZig.NATIVE_HEIGHT),
+                    },
+                    .{
+                        .x = (@as(f32, @floatFromInt(rl.getScreenWidth())) - widthScaled) * 0.5,
+                        .y = (@as(f32, @floatFromInt(rl.getScreenHeight())) - heightScaled) * 0.5,
+                        .width = widthScaled,
+                        .height = heightScaled,
+                    },
+                    .zero(),
+                    0.0,
+                    .white,
+                );
+            }
             {
                 game.camera.begin();
                 defer game.camera.end();
-                game.draw();
+
                 menuZig.drawFrame(game);
             }
         },

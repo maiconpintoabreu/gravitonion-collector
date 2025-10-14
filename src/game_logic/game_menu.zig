@@ -20,11 +20,13 @@ pub fn initMenu(game: *Game) bool {
     };
     return true;
 }
+
 pub fn closeMenu(game: *Game) void {
     if (game.font.isReady()) {
         game.font.unload();
     }
 }
+
 pub fn updateFrame(game: *Game) void {
     if (rl.isKeyReleased(.escape)) {
         switch (game.gameState) {
@@ -401,6 +403,7 @@ fn uiTextbutton(button: rl.Rectangle, text: [:0]const u8, font: rl.Font, fontSiz
 
     return false;
 }
+
 fn uiText(button: rl.Rectangle, text: [:0]const u8, font: rl.Font, fontSize: f32, color: rl.Color) void {
     rl.drawTextEx(font, text, rl.Vector2{
         .x = button.x + 5,

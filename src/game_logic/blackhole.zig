@@ -38,6 +38,7 @@ pub const Blackhole = struct {
     isPhasing: bool = false,
     isDisturbed: bool = false,
     isRotatingRight: bool = false,
+    rotationSpeed: f32 = 10,
     collisionpoints: [BLACK_HOLE_COLLISION_POINTS]rl.Vector2 = std.mem.zeroes([BLACK_HOLE_COLLISION_POINTS]rl.Vector2),
 
     fn colliding(self: *Blackhole, physics: *PhysicSystem, data: CollisionData) void {
@@ -78,6 +79,7 @@ pub const Blackhole = struct {
 
         rl.traceLog(.info, "Blackhole init Completed", .{});
     }
+
     pub fn tick(self: *Blackhole, physics: *PhysicSystem, delta: f32) void {
         self.isDisturbed = false;
         const body = physics.getBody(self.bodyId);
@@ -86,10 +88,11 @@ pub const Blackhole = struct {
             physics.resetBody(body.id);
         }
         self.phasersCD -= delta;
+        self.rotationSpeed = 50 * self.size;
         if (self.isRotatingRight) {
-            physics.applyTorqueToBody(body.id, 1);
+            physics.applyTorqueToBody(body.id, self.rotationSpeed * delta);
         } else {
-            physics.applyTorqueToBody(body.id, -1);
+            physics.applyTorqueToBody(body.id, -self.rotationSpeed * delta);
         }
         if (self.isPhasing) {
             if (self.size < configZig.BLACK_HOLE_SIZE_DEFAULT) {
@@ -138,6 +141,7 @@ pub const Blackhole = struct {
             },
         });
     }
+
     pub fn setSize(self: *Blackhole, physics: *PhysicSystem, size: f32) void {
         self.size = size;
         self.finalSize = size * BLACK_HOLE_SCALE;
@@ -145,6 +149,7 @@ pub const Blackhole = struct {
             .Circular = .{ .radius = self.finalSize },
         });
     }
+
     pub fn draw(self: Blackhole, physics: PhysicSystem) void {
         const BlackholeBody = physics.getBody(self.bodyId);
         const resourceManager = ResourceManagerZig.resourceManager;
@@ -183,6 +188,7 @@ pub const Blackhole = struct {
             );
         }
     }
+
     pub fn unload(self: *Blackhole) void {
         _ = self;
     }

@@ -87,14 +87,16 @@ pub const PhysicsSystem = struct {
 
         self.physicsBodyList[0].useGravity = true;
         self.physicsBodyList[2].enabled = false;
+        for (0..3) |i| {
+            self.physicsBodyList[i].isColliding = false;
+            self.physicsBodyList[i].collidingData = null;
+        }
     }
 
     pub fn changeBodyShape(self: *PhysicsSystem, id: usize, shape: PhysicsShapeUnion) void {
         self.physicsBodyList[id].shape = shape;
     }
 
-    // TODO: change EnableDesable system to resort the array to keep only enabled bodies on the beginning
-    // may need to change id system
     pub fn enableBody(self: *PhysicsSystem, id: usize) void {
         self.physicsBodyList[id].enabled = true;
     }
@@ -232,6 +234,7 @@ pub const PhysicsSystem = struct {
             body.force.y = 0;
             body.torque = 0;
         }
+
         // std.debug.print("Test {d}", .{self.physicsBodyCount});
         if (self.physicsBodyCount > 1) {
             self.checkCollisions();

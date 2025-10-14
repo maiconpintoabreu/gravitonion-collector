@@ -56,6 +56,7 @@ pub const GameObject = union(enum) {
 };
 
 pub const Game = struct {
+    renderTarget: rl.RenderTexture = std.mem.zeroes(rl.RenderTexture),
     physics: PhysicsSystem = .{},
     gameObjectsAmount: usize = undefined,
     gameObjects: [configZig.MAX_GAME_OBJECTS]GameObject = undefined,
@@ -229,46 +230,47 @@ pub const Game = struct {
                 self.gameOver();
                 return;
             }
+
+            var gameObjectIndex: usize = self.gameObjectsAmount - 1;
+            while (true) {
+                switch (self.gameObjects[gameObjectIndex]) {
+                    .Player => {
+                        self.gameObjects[gameObjectIndex].Player.tick(&self.physics, delta);
+                    },
+                    .Blackhole => {
+                        self.gameObjects[gameObjectIndex].Blackhole.tick(&self.physics, delta);
+                    },
+                    .Asteroid => {
+                        self.gameObjects[gameObjectIndex].Asteroid.tick(&self.physics, delta);
+                        if (self.gameObjects[gameObjectIndex].Asteroid.shouldDie) {
+                            self.gameObjects[gameObjectIndex].Asteroid.isAlive = false;
+                            self.unSpawn(self.gameObjects[gameObjectIndex].Asteroid.id, self.gameObjects[gameObjectIndex].Asteroid.bodyId);
+                        }
+                    },
+                    .Projectile => {
+                        self.gameObjects[gameObjectIndex].Projectile.tick(&self.physics, delta);
+                        if (self.gameObjects[gameObjectIndex].Projectile.shouldDie) {
+                            self.gameObjects[gameObjectIndex].Projectile.isAlive = false;
+                            self.unSpawn(self.gameObjects[gameObjectIndex].Projectile.id, self.gameObjects[gameObjectIndex].Projectile.bodyId);
+                        }
+                    },
+                    .PickupItem => {
+                        self.gameObjects[gameObjectIndex].PickupItem.tick(&self.physics, delta);
+                        if (self.gameObjects[gameObjectIndex].PickupItem.shouldDie) {
+                            self.gameObjects[gameObjectIndex].PickupItem.isAlive = false;
+                            self.unSpawn(self.gameObjects[gameObjectIndex].PickupItem.id, self.gameObjects[gameObjectIndex].PickupItem.bodyId);
+                        }
+                    },
+                }
+                if (gameObjectIndex == 0) break;
+                gameObjectIndex -= 1;
+            }
         }
     }
 
     pub fn physicsTick(self: *Game, delta: f32) void {
         const gravityScale: f32 = if (self.blackhole.isDisturbed) 100.0 else 0.4;
         self.physics.tick(delta, gravityScale);
-        var gameObjectIndex: usize = self.gameObjectsAmount - 1;
-        while (true) {
-            switch (self.gameObjects[gameObjectIndex]) {
-                .Player => {
-                    self.gameObjects[gameObjectIndex].Player.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
-                },
-                .Blackhole => {
-                    self.gameObjects[gameObjectIndex].Blackhole.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
-                },
-                .Asteroid => {
-                    self.gameObjects[gameObjectIndex].Asteroid.tick(&self.physics);
-                    if (self.gameObjects[gameObjectIndex].Asteroid.shouldDie) {
-                        self.gameObjects[gameObjectIndex].Asteroid.isAlive = false;
-                        self.unSpawn(self.gameObjects[gameObjectIndex].Asteroid.id, self.gameObjects[gameObjectIndex].Asteroid.bodyId);
-                    }
-                },
-                .Projectile => {
-                    self.gameObjects[gameObjectIndex].Projectile.tick(&self.physics);
-                    if (self.gameObjects[gameObjectIndex].Projectile.shouldDie) {
-                        self.gameObjects[gameObjectIndex].Projectile.isAlive = false;
-                        self.unSpawn(self.gameObjects[gameObjectIndex].Projectile.id, self.gameObjects[gameObjectIndex].Projectile.bodyId);
-                    }
-                },
-                .PickupItem => {
-                    self.gameObjects[gameObjectIndex].PickupItem.tick(&self.physics, configZig.PHYSICS_TICK_SPEED);
-                    if (self.gameObjects[gameObjectIndex].PickupItem.shouldDie) {
-                        self.gameObjects[gameObjectIndex].PickupItem.isAlive = false;
-                        self.unSpawn(self.gameObjects[gameObjectIndex].PickupItem.id, self.gameObjects[gameObjectIndex].PickupItem.bodyId);
-                    }
-                },
-            }
-            if (gameObjectIndex == 0) break;
-            gameObjectIndex -= 1;
-        }
     }
 
     pub fn draw(self: Game) void {
@@ -276,6 +278,7 @@ pub const Game = struct {
         {
             resourceManager.blackholeShader.activate();
             defer resourceManager.blackholeShader.deactivate();
+
             resourceManager.blackholeTexture.draw(
                 0,
                 0,
@@ -367,8 +370,7 @@ pub const Game = struct {
     }
 
     pub fn unload(self: *Game) void {
-
-        // remove only first as they are all the same
+        self.renderTarget.unload();
         self.blackhole.unload();
         self.player.unload();
     }

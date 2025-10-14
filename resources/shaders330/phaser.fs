@@ -4,7 +4,7 @@
 #define FREQ 8.
 #define MAX_HEIGHT 0.3
 #define THICKNESS 0.05
-#define WOBBLE 0.1
+#define WOBBLE 0.1 // how much each end wobbles
 
 // Input vertex attributes (from vertex shader)
 in vec2 fragTexCoord;

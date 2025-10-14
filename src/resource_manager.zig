@@ -12,6 +12,7 @@ pub const TextureData = struct {
     rec: rl.Rectangle = std.mem.zeroes(rl.Rectangle),
     center: rl.Vector2 = std.mem.zeroes(rl.Vector2),
 };
+
 const BlackholeData = struct {
     resolutionLoc: i32 = 0,
     timeLoc: i32 = 0,
@@ -36,6 +37,7 @@ fn concat(allocator: Allocator, a: []const u8, b: []const u8, l: []const u8) []u
     @memcpy(result[combLen..], b);
     return result;
 }
+
 fn createSheetItem(sheetImage: *rl.Image, source: rl.Image, offSet: rl.Vector2, itemName: []const u8) void {
     sheetImage.drawImage(
         source,
@@ -61,6 +63,9 @@ pub const ResourceManager = struct {
 
     // TextureAtlas
     textureSheet: rl.Texture2D = std.mem.zeroes(rl.Texture2D),
+
+    // Post-Processing
+    postProcessingShader: rl.Shader = std.mem.zeroes(rl.Shader),
 
     // Shaders
     blackholeShader: rl.Shader = std.mem.zeroes(rl.Shader),
@@ -272,6 +277,11 @@ pub const ResourceManager = struct {
         self.destruction = try rl.loadSound("resources/destruction.wav");
         rl.setSoundVolume(self.destruction, 0.1);
 
+        self.postProcessingShader = try rl.loadShader(
+            null,
+            rl.textFormat("resources/shaders%s/grayscale.fs", .{shaderVersion}),
+        );
+
         self.blackholeShader = try rl.loadShader(
             rl.textFormat("resources/shaders%s/base.vs", .{shaderVersion}),
             rl.textFormat("resources/shaders%s/blackhole.fs", .{shaderVersion}),
@@ -311,6 +321,7 @@ pub const ResourceManager = struct {
 
     pub fn unload(self: *ResourceManager) void {
         self.textureSheet.unload();
+        self.postProcessingShader.unload();
         self.blackholePhaserShader.unload();
         self.blackholeShader.unload();
         self.shoot.unload();

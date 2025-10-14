@@ -21,11 +21,9 @@ pub const Asteroid = struct {
 
     fn colliding(self: *Asteroid, data: CollisionData) void {
         if (self.shouldDie) return;
-        if (data.tag != .Asteroid) {
-            if (data.tag == .PlayerBullet) {
-                self.parent.spawnPickupFromAsteroid(self.*);
-            }
-            self.shouldDie = true;
+        self.shouldDie = true;
+        if (data.tag == .PlayerBullet) {
+            self.parent.spawnPickupFromAsteroid(self.*);
         }
     }
 
@@ -50,7 +48,8 @@ pub const Asteroid = struct {
         }
         self.spawn(physics);
     }
-    pub fn tick(self: *Asteroid, physics: *PhysicSystem) void {
+
+    pub fn tick(self: *Asteroid, physics: *PhysicSystem, delta: f32) void {
         if (self.shouldDie) return;
         const body = physics.getBody(self.bodyId);
         if (body.collidingData) |otherBody| {
@@ -58,7 +57,7 @@ pub const Asteroid = struct {
             physics.resetBody(body.id);
         }
         if (self.isAlive) {
-            physics.applyTorqueToBody(self.bodyId, self.constantRotationSpeed);
+            physics.applyTorqueToBody(self.bodyId, self.constantRotationSpeed * delta);
         }
     }
 

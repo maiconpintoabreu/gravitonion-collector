@@ -184,9 +184,6 @@ pub const Player = struct {
             }
         }
 
-        // const currentWidth = self.textureRec.width;
-        // const currentHeight = self.textureRec.height;
-
         // inverted
         if (self.isTurningRight) {
             rl.drawCircleV(self.leftTurbineSlot, 1.0, .yellow);

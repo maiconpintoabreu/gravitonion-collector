@@ -30,11 +30,11 @@ pub fn main() anyerror!void {
     if (gameManager.initGame(&game, isFullScreen)) {
         rl.setExitKey(.null);
         rl.setWindowMinSize(configZig.MIN_WINDOW_SIZE_WIDTH, configZig.MIN_WINDOW_SIZE_HEIGHT);
-        const fps = if (rl.getMonitorRefreshRate(rl.getCurrentMonitor()) != 0)
-            rl.getMonitorRefreshRate(rl.getCurrentMonitor())
-        else
-            60;
-        rl.setTargetFPS(fps);
+        // const fps = if (rl.getMonitorRefreshRate(rl.getCurrentMonitor()) != 0)
+        //     rl.getMonitorRefreshRate(rl.getCurrentMonitor())
+        // else
+        //     60;
+        // rl.setTargetFPS(fps);
         while (gameManager.update(&game)) {}
     }
 }

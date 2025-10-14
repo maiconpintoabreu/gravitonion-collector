@@ -45,10 +45,11 @@ pub const Projectile = struct {
         physics.moveBody(self.bodyId, position, orient);
     }
 
-    pub fn tick(self: *Projectile, physics: *PhysicSystem) void {
+    pub fn tick(self: *Projectile, physics: *PhysicSystem, delta: f32) void {
         if (self.shouldDie) return;
+
         if (self.isAlive) {
-            self.timeToDie -= rl.getFrameTime();
+            self.timeToDie -= delta;
             if (self.timeToDie < 0.0) {
                 self.shouldDie = true;
                 return;
